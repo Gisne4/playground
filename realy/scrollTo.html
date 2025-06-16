@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Random Div Circles with Basic Physics</title>
+    <style>
+      body {
+        margin: 0;
+        overflow: hidden;
+        background-color: #f0f0f0;
+      }
+      .circle {
+        position: absolute;
+        border-radius: 50%;
+        border: 2px solid rgba(0, 0, 0, 0.2);
+        box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.3);
+      }
+    </style>
+  </head>
+  <body>
+    <script>
+      const container = document.body;
+      const gravity = 0.1; // Pixels per frame per frame (acceleration)
+      const friction = 0.9; // Horizontal friction
+      const bounceFactor = -1; // How much bounce on collision with floor
+
+      const circles = [];
+      const numCircles = 50; // Number of circles to generate
+
+      // Function to create a random color
+      function getRandomColor() {
+        const r = Math.floor(Math.random() * 255);
+        const g = Math.floor(Math.random() * 255);
+        const b = Math.floor(Math.random() * 255);
+        return `rgb(${r},${g},${b})`;
+      }
+
+      // Create random div circles
+      for (let i = 0; i < numCircles; i++) {
+        const size = Math.random() * 40 + 20; // Random size between 20 and 60px
+        const div = document.createElement("div");
+        div.className = "circle";
+        div.style.width = `${size}px`;
+        div.style.height = `${size}px`;
+        div.style.backgroundColor = getRandomColor();
+
+        // Initial random position
+        let x = Math.random() * (window.innerWidth - size);
+        let y = Math.random() * (window.innerHeight / 2 - size); // Start in upper half
+
+        div.style.left = `${x}px`;
+        div.style.top = `${y}px`;
+
+        container.appendChild(div);
+
+        circles.push({
+          element: div,
+          x: x,
+          y: y,
+          vx: (Math.random() - 0.5) * 5, // Random initial horizontal velocity
+          vy: 0, // Initial vertical velocity
+          radius: size / 2,
+        });
+      }
+
+      function updatePhysics() {
+        const floorY = window.innerHeight; // The bottom of the window is our floor
+
+        circles.forEach((circle) => {
+          // Apply gravity
+          circle.vy += gravity;
+
+          // Update position
+          circle.x += circle.vx;
+          circle.y += circle.vy;
+
+          // Wall collision (left and right)
+          if (circle.x + circle.radius * 2 > window.innerWidth) {
+            circle.x = window.innerWidth - circle.radius * 2;
+            circle.vx *= bounceFactor;
+          } else if (circle.x < 0) {
+            circle.x = 0;
+            circle.vx *= bounceFactor;
+          }
+
+          // Floor collision
+          if (circle.y + circle.radius * 2 > floorY) {
+            circle.y = floorY - circle.radius * 2; // Position on the floor
+            circle.vy *= bounceFactor; // Reverse and reduce vertical velocity
+            circle.vx *= friction; // Apply friction when on floor
+          }
+
+          // Update div position
+          circle.element.style.left = `${circle.x}px`;
+          circle.element.style.top = `${circle.y}px`;
+        });
+
+        requestAnimationFrame(updatePhysics); // Loop the animation
+      }
+
+      // Start the physics simulation
+      updatePhysics();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GSAP Scroll Effects</title>
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/locomotive-scroll@4.1.3/dist/locomotive-scroll.min.css"
+    />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/locomotive-scroll@4.1.3/dist/locomotive-scroll.min.js"></script>
+    <style>
+      body {
+        margin: 0;
+        font-family: Arial, sans-serif;
+      }
+      [data-scroll-container] {
+        overflow: hidden;
+      }
+      section {
+        height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .scrub-text {
+        font-size: 3rem;
+        color: white;
+      }
+      .image-wrapper {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+      }
+      .image-wrapper img {
+        width: 100%;
+        height: 100%;
+        transform: scale(1.2);
+        mask-image: linear-gradient(to top, transparent 0%, black 100%);
+        -webkit-mask-image: linear-gradient(to top, transparent 0%, black 100%);
+      }
+      .pinned-section {
+        background: lightblue;
+      }
+      .pinned-content {
+        text-align: center;
+        font-size: 2rem;
+      }
+      .rotate-box {
+        width: 100px;
+        height: 100px;
+        background: red;
+      }
+      .fade-in {
+        opacity: 0;
+        transform: translateY(50px);
+      }
+      .horizontal-scroll {
+        display: flex;
+        width: 300vw;
+      }
+      .horizontal-section {
+        width: 100vw;
+        height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        background: lightcoral;
+      }
+      .background-change {
+        background: #ff7b7b;
+        transition: background 0.5s ease-out;
+      }
+    </style>
+  </head>
+  <body>
+    <div data-scroll-container>
+      <section style="background: #222">
+        <h1 class="scrub-text">Scrolling Text Effect</h1>
+      </section>
+      <section style="background: #eee">
+        <div class="image-wrapper">
+          <img src="img/backGround.png" alt="Masked Image" />
+        </div>
+      </section>
+      <section class="pinned-section">
+        <div class="pinned-content">Scroll to see more</div>
+      </section>
+      <section style="background: #333"><div class="rotate-box"></div></section>
+      <section style="background: #444" class="fade-in">
+        <h2>Smooth Fade-In Effect</h2>
+      </section>
+      <section class="horizontal-scroll">
+        <div class="horizontal-section">Section 1</div>
+        <div class="horizontal-section">Section 2</div>
+        <div class="horizontal-section">Section 3</div>
+      </section>
+      <section class="background-change">
+        <h2>Background Changes on Scroll</h2>
+      </section>
+    </div>
+    <script>
+      // Fix initial scroll position issue
+      window.onload = function () {
+        setTimeout(() => {
+          locoScroll.scrollTo(0, { duration: 0, disableLerp: true });
+        }, 10);
+      };
+
+      gsap.registerPlugin(ScrollTrigger);
+      const locoScroll = new LocomotiveScroll({
+        el: document.querySelector("[data-scroll-container]"),
+        smooth: true,
+      });
+      locoScroll.on("scroll", ScrollTrigger.update);
+      ScrollTrigger.scrollerProxy("[data-scroll-container]", {
+        scrollTop(value) {
+          return arguments.length
+            ? locoScroll.scrollTo(value, 0, 0)
+            : locoScroll.scroll.instance.scroll.y;
+        },
+        getBoundingClientRect() {
+          return {
+            top: 0,
+            left: 0,
+            width: window.innerWidth,
+            height: window.innerHeight,
+          };
+        },
+      });
+      ScrollTrigger.addEventListener("refresh", () => locoScroll.update());
+      ScrollTrigger.refresh();
+
+      gsap.to(".scrub-text", {
+        scrollTrigger: {
+          trigger: ".scrub-text",
+          scroller: "[data-scroll-container]",
+          start: "top 80%",
+          end: "top 20%",
+          scrub: true,
+        },
+        opacity: 1,
+        x: 200,
+        rotation: 10,
+      });
+      gsap.to(".image-wrapper img", {
+        scrollTrigger: {
+          trigger: ".image-wrapper",
+          scroller: "[data-scroll-container]",
+          start: "top 60%",
+          end: "top 30%",
+          scrub: true,
+        },
+
+        transform: "scale(1)",
+      });
+      gsap.to(".pinned-content", {
+        scrollTrigger: {
+          trigger: ".pinned-section",
+          scroller: "[data-scroll-container]",
+          start: "top top",
+          end: "+=500px",
+          pin: true,
+          scrub: true,
+        },
+      });
+      gsap.to(".rotate-box", {
+        scrollTrigger: {
+          trigger: ".rotate-box",
+          scroller: "[data-scroll-container]",
+          start: "top 80%",
+          end: "top 10%",
+          scrub: true,
+        },
+        rotation: 360,
+        scale: 1.5,
+      });
+      gsap.to(".fade-in", {
+        scrollTrigger: {
+          trigger: ".fade-in",
+          scroller: "[data-scroll-container]",
+          start: "top 80%",
+          end: "top 50%",
+          scrub: true,
+        },
+        opacity: 1,
+        y: 0,
+      });
+
+      let sections = gsap.utils.toArray(".horizontal-section");
+      gsap.to(sections, {
+        xPercent: -100 * (sections.length - 1),
+        ease: "none",
+        scrollTrigger: {
+          trigger: ".horizontal-scroll",
+          scroller: "[data-scroll-container]",
+          pin: true,
+          scrub: 1,
+          snap: 1 / (sections.length - 1),
+          end: () =>
+            "+=" + document.querySelector(".horizontal-scroll").offsetWidth,
+        },
+      });
+      gsap.to(".background-change", {
+        scrollTrigger: {
+          trigger: ".background-change",
+          scroller: "[data-scroll-container]",
+          start: "top 80%",
+          end: "top 20%",
+          scrub: true,
+        },
+        backgroundColor: "#1e90ff",
+      });
+    </script>
+  </body>
+</html>

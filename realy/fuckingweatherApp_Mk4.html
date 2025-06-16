@@ -1,0 +1,1097 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Weather Forecast App</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+      crossorigin=""
+    />
+    <script
+      src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+      integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+      crossorigin=""
+    ></script>
+    <style>
+      body {
+        font-family: "Inter", sans-serif;
+        background: linear-gradient(to bottom right, #bcdef5, #d9bbf8);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 1rem;
+        margin: 0;
+      }
+
+      .container {
+        background-color: #d1dde44d;
+        border-radius: 1.5rem;
+        box-shadow: 0 20px 25px -10px rgba(250, 242, 242, 0.808),
+          0 8px 10px -3px rgba(0, 0, 0, 0.726);
+        padding: 2rem;
+        width: 100%;
+        max-width: 64rem;
+        display: flex;
+        flex-direction: column;
+        gap: 2rem;
+        transition: all 0.3s ease-in-out;
+      }
+
+      .container:hover {
+        transform: scale(1.01);
+      }
+
+      @media (min-width: 768px) {
+        .container {
+          flex-direction: row;
+        }
+      }
+
+      .current-weather-section {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        padding: 1.5rem;
+      }
+
+      @media (min-width: 768px) {
+        .current-weather-section {
+          border-right: 1px solid #e2e8f0;
+          padding-right: 2rem;
+        }
+      }
+
+      .current-city {
+        font-size: 2.25rem;
+        font-weight: 700;
+        color: #1a202c;
+        margin-bottom: 0.5rem;
+      }
+
+      .current-temp {
+        font-size: 3.75rem;
+        font-weight: 800;
+        color: #2563eb;
+        margin-bottom: 1rem;
+      }
+
+      .current-weather-icon {
+        width: 6rem;
+        height: 6rem;
+        margin-bottom: 0.5rem;
+      }
+
+      .current-description {
+        font-size: 1.25rem;
+        color: #4a5568;
+        text-transform: capitalize;
+        margin-bottom: 1rem;
+      }
+
+      .current-humidity,
+      .current-wind,
+      .current-dewpoint,
+      .current-pressure {
+        font-size: 1.125rem;
+        color: #64748b;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+      }
+
+      .wind-direction-indicator {
+        width: 20px;
+        height: 20px;
+        fill: #64748b;
+        transition: transform 0.3s linear;
+      }
+
+      .icon-pressure {
+        width: 20px;
+        height: 20px;
+        fill: #48484a; /* Ensure the fill matches the text color for consistency */
+      }
+
+      .forecast-section {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+        padding: 1.5rem;
+      }
+
+      .forecast-title {
+        font-size: 1.875rem;
+        font-weight: 700;
+        color: #1a202c;
+        text-align: center;
+        margin-bottom: 1rem;
+      }
+
+      .chart-container {
+        position: relative;
+        height: 16rem;
+        width: 100%;
+      }
+
+      .five-day-forecast-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        color: #4a5568;
+      }
+
+      .five-day-forecast-list li {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.5rem 0;
+        border-bottom: 1px solid #e2e8f0;
+      }
+
+      .five-day-forecast-list li:last-child {
+        border-bottom: none;
+      }
+
+      .gothic-day-values {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .gothic-day-values img {
+        width: 40px;
+        height: 40px;
+      }
+
+      .sub {
+        font-size: 0.875rem;
+        color: #64748b;
+        width: 70px;
+        text-align: right;
+      }
+
+      .left-side-weather-section {
+        min-width: calc(768px / 2);
+      }
+
+      .input-message-section {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1rem;
+        margin-top: 2rem;
+        padding: 1rem;
+
+        background-color: #ffffff;
+        border-radius: 0.75rem;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
+          0 2px 4px -2px rgba(0, 0, 0, 0.1);
+        width: 100%;
+      }
+
+      @media (min-width: 768px) {
+        .input-message-section {
+          width: auto;
+        }
+      }
+
+      .input-group {
+        display: flex;
+        gap: 1rem;
+        width: 100%;
+        justify-content: center;
+      }
+
+      .city-input {
+        flex-grow: 1;
+        padding: 0.75rem;
+        border: 1px solid #d1d5db;
+        border-radius: 0.5rem;
+        outline: none;
+        transition: all 0.2s ease-in-out;
+      }
+
+      .city-input:focus {
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
+      }
+
+      .get-weather-btn {
+        padding: 0.75rem 1.5rem;
+        background-color: #2563eb;
+        color: #ffffff;
+        font-weight: 600;
+        border-radius: 0.5rem;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
+          0 2px 4px -2px rgba(0, 0, 0, 0.1);
+        cursor: pointer;
+        transition: background-color 0.2s ease-in-out,
+          box-shadow 0.2s ease-in-out;
+        border: none;
+        outline: none;
+      }
+
+      .get-weather-btn:hover {
+        background-color: #1d4ed8;
+      }
+
+      .get-weather-btn:focus {
+        box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.75);
+      }
+
+      .message-box {
+        width: 100%;
+        text-align: center;
+        padding: 0.75rem;
+        border-radius: 0.5rem;
+        font-size: 0.875rem;
+      }
+
+      .message-box.hidden {
+        display: none;
+      }
+
+      .message-box.bg-green-100 {
+        background-color: #d1fae5;
+      }
+      .message-box.text-green-800 {
+        color: #065f46;
+      }
+      .message-box.bg-red-100 {
+        background-color: #fee2e2;
+      }
+      .message-box.text-red-800 {
+        color: #991b1b;
+      }
+      .message-box.bg-blue-100 {
+        background-color: #dbeafe;
+      }
+      .message-box.text-blue-800 {
+        color: #1e40af;
+      }
+
+      /* Custom Tooltip Styles for Chart.js */
+      .chartjs-tooltip {
+        background: rgba(0, 0, 0, 0.8);
+        color: white;
+        border-radius: 0.5rem;
+        padding: 0.75rem;
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 0.2s ease-in-out;
+        z-index: 1000;
+        position: absolute;
+        transform: translate(-50%, -100%);
+        display: block;
+        min-width: 120px;
+        text-align: center;
+        font-size: 0.9rem;
+      }
+
+      .chartjs-tooltip .tooltip-content {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 5px;
+      }
+
+      .chartjs-tooltip .tooltip-temp-icon {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+      }
+
+      .chartjs-tooltip img {
+        width: 30px;
+        height: 30px;
+        vertical-align: middle;
+      }
+
+      /* Map Styles */
+      #map {
+        height: 300px; /* Set a fixed height for the map */
+        width: 500px;
+        border-radius: 0.75rem; /* rounded-xl */
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
+          0 2px 4px -2px rgba(0, 0, 0, 0.1);
+        margin-left: 1.5rem;
+      }
+    </style>
+    <script src="https://fastly.jsdelivr.net/npm/live2d-widgets@1.0.0-rc.3/dist/autoload.js"></script>
+  </head>
+  <body>
+    <div class="container">
+      <div class="left-side-weather-section">
+        <div class="current-weather-section">
+          <h2 id="current-city" class="current-city">Loading...</h2>
+          <p id="current-temp" class="current-temp">--°C</p>
+          <img
+            id="current-weather-icon"
+            src="https://placehold.co/100x100/e2e8f0/64748b?text=Icon"
+            alt="Weather Icon"
+            class="current-weather-icon"
+          />
+          <p id="current-description" class="current-description">
+            Loading weather...
+          </p>
+          <p id="current-humidity" class="current-humidity">Humidity: --%</p>
+          <p id="current-wind" class="current-wind">
+            Wind: -- m/s
+            <svg
+              id="wind-direction"
+              class="wind-direction-indicator"
+              viewBox="0 0 24 24"
+            >
+              <path
+                d="M12 2L12 22M12 2L16 6M12 2L8 6"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </p>
+          <p id="current-dewpoint" class="current-dewpoint">Dew Point: --°C</p>
+          <p id="current-pressure" class="current-pressure">
+            <svg
+              width="20px"
+              height="20px"
+              viewBox="0 0 96 96"
+              class="icon-pressure"
+            >
+              <g
+                transform="translate(0,96) scale(0.100000,-0.100000)"
+                fill="#48484a"
+                stroke="none"
+              >
+                <path
+                  d="M351 854 c-98 -35 -179 -108 -227 -202 -27 -53 -29 -65 -29 -172 0 -107 2 -119 29 -172 38 -75 104 -141 180 -181 58 -31 66 -32 176 -32 110 0 118 1 175 32 77 40 138 101 178 178 31 57 32 65 32 175 0 110 -1 118 -32 176 -40 76 -106 142 -181 179 -49 25 -71 29 -157 32 -73 2 -112 -1 -144 -13z m259 -80 c73 -34 126 -86 161 -159 24 -50 29 -73 29 -135 0 -62 -5 -85 -29 -135 -57 -119 -161 -185 -291 -185 -130 0 -234 66 -291 185 -24 50 -29 73 -29 135 0 130 66 234 185 291 82 40 184 41 265 3z"
+                ></path>
+                <path
+                  d="M545 600 c-35 -35 -68 -60 -80 -60 -27 0 -45 -18 -45 -45 0 -33 -50 -75 -89 -75 -18 0 -41 -5 -53 -11 -20 -11 -20 -11 3 -35 12 -13 33 -24 46 -24 17 0 23 -6 23 -23 0 -13 10 -33 23 -45 30 -28 47 -13 47 43 0 32 6 47 28 68 15 15 37 27 48 27 26 0 44 18 44 44 0 12 26 47 60 81 l60 61 -28 27 -28 27 -59 -60z"
+                ></path>
+              </g>
+            </svg>
+            <span id="pressure">Loading...</span>
+          </p>
+        </div>
+        <div class="input-message-section">
+          <div class="input-group">
+            <input
+              type="text"
+              id="city-input"
+              placeholder="Enter city name"
+              class="city-input"
+            />
+            <button id="get-weather-btn" class="get-weather-btn">
+              Get Weather
+            </button>
+          </div>
+          <div id="message-box" class="message-box hidden" role="alert"></div>
+        </div>
+      </div>
+
+      <div class="forecast-section">
+        <h3 class="forecast-title">24-Hour Temperature Forecast</h3>
+        <div class="chart-container">
+          <canvas id="weatherChart"></canvas>
+        </div>
+
+        <h3 class="forecast-title" style="margin-top: 1rem">5-Day Summary</h3>
+        <ul id="five-day-forecast" class="five-day-forecast-list">
+          <li class="text-center text-gray-500">Loading forecast...</li>
+        </ul>
+      </div>
+    </div>
+    <div id="map"></div>
+    <div id="chartjs-tooltip" class="chartjs-tooltip"></div>
+
+    <script>
+      // API Key for OpenWeatherMap - Replace with your own key if needed
+      const apiKey = "b2f5039982623a84a1ebf1e50af77752";
+
+      // Get DOM elements
+      const currentCityElement = document.getElementById("current-city");
+      const currentTempElement = document.getElementById("current-temp");
+      const currentWeatherIconElement = document.getElementById(
+        "current-weather-icon"
+      );
+      const currentDescriptionElement = document.getElementById(
+        "current-description"
+      );
+      const currentHumidityElement =
+        document.getElementById("current-humidity");
+      const currentWindElement = document.getElementById("current-wind");
+      const currentDewPointElement =
+        document.getElementById("current-dewpoint");
+      const currentPressureElement = document.getElementById("pressure");
+      const fiveDayForecastList = document.getElementById("five-day-forecast");
+      const cityInput = document.getElementById("city-input");
+      const getWeatherBtn = document.getElementById("get-weather-btn");
+      const messageBox = document.getElementById("message-box");
+
+      let weatherChartInstance = null; // To store the Chart.js instance
+      let map = null; // To store the Leaflet map instance
+      let marker = null; // To store the Leaflet marker instance
+
+      // --- Helper Functions ---
+      /**
+       * Converts wind degrees to a cardinal direction (e.g., 0-22.5 is N, 22.5-67.5 is NE).
+       * @param {number} degrees - Wind direction in degrees (0-360).
+       * @returns {string} The cardinal wind direction.
+       */
+      function getWindDirection(degrees) {
+        const directions = [
+          "N",
+          "NNE",
+          "NE",
+          "ENE",
+          "E",
+          "ESE",
+          "SE",
+          "SSE",
+          "S",
+          "SSW",
+          "SW",
+          "WSW",
+          "W",
+          "WNW",
+          "NW",
+          "NNW",
+        ];
+        const index = Math.round(degrees / 22.5) % 16;
+        return directions[index];
+      }
+
+      /**
+       * Updates the rotation of the wind direction SVG arrow.
+       * @param {number} degrees - The rotation angle in degrees.
+       */
+      function updateWindDirection(degrees) {
+        const windDirectionSvg = document.getElementById("wind-direction");
+        if (windDirectionSvg) {
+          windDirectionSvg.style.transform = `rotate(${degrees}deg)`;
+          // Add a smooth transition for the rotation
+          windDirectionSvg.style.transition = "transform 0.3s linear";
+        }
+      }
+
+      /**
+       * Calculates the dew point temperature using the August-Roche-Magnus formula.
+       * @param {number} temp - Temperature in Celsius.
+       * @param {number} humidity - Relative humidity in percentage (0-100).
+       * @returns {string} The calculated dew point in Celsius, formatted to one decimal place.
+       */
+      function calculateDewPoint(temp, humidity) {
+        const a = 17.27;
+        const b = 237.7;
+        const alpha = (a * temp) / (b + temp) + Math.log(humidity / 100.0);
+        const dewPoint = (b * alpha) / (a - alpha);
+        return dewPoint.toFixed(1);
+      }
+
+      /**
+       * Capitalizes the first letter of a string.
+       * @param {string} string - The input string.
+       * @returns {string} The string with the first letter capitalized.
+       */
+      function capitalizeFirstLetter(string) {
+        return string.charAt(0).toUpperCase() + string.slice(1);
+      }
+
+      /**
+       * Displays a message to the user in a styled box.
+       * @param {string} message - The message to display.
+       * @param {'success'|'error'|'info'} type - The type of message (determines styling).
+       */
+      function displayMessage(message, type) {
+        messageBox.textContent = message;
+        // Remove all type-specific classes first
+        messageBox.classList.remove(
+          "hidden",
+          "bg-green-100",
+          "text-green-800",
+          "bg-red-100",
+          "text-red-800",
+          "bg-blue-100",
+          "text-blue-800"
+        );
+        // Add the correct classes based on type
+        if (type === "success") {
+          messageBox.classList.add("bg-green-100", "text-green-800");
+        } else if (type === "error") {
+          messageBox.classList.add("bg-red-100", "text-red-800");
+        } else {
+          // info
+          messageBox.classList.add("bg-blue-100", "text-blue-800");
+        }
+        messageBox.classList.remove("hidden");
+        setTimeout(() => {
+          messageBox.classList.add("hidden");
+        }, 5000); // Hide message after 5 seconds
+      }
+
+      /**
+       * Fetches the current weather data for a given latitude and longitude.
+       * @param {number} latitude - The latitude.
+       * @param {number} longitude - The longitude.
+       * @returns {Promise<object|null>} - The current weather data or null if an error occurs.
+       */
+      async function fetchCurrentWeather(latitude, longitude) {
+        const apiUrl = `https://api.openweathermap.org/data/2.5/weather?lat=${latitude}&lon=${longitude}&appid=${apiKey}&units=metric`;
+        try {
+          const response = await fetch(apiUrl);
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+          const data = await response.json();
+          return data;
+        } catch (error) {
+          console.error("Error fetching current weather:", error);
+          displayMessage(
+            "Could not fetch current weather data. Please try again.",
+            "error"
+          );
+          return null;
+        }
+      }
+
+      /**
+       * Fetches the 5-day weather forecast data for a given latitude and longitude.
+       * @param {number} latitude - The latitude.
+       * @param {number} longitude - The longitude.
+       * @returns {Promise<object|null>} - The 5-day forecast data or null if an error occurs.
+       */
+      async function fetchFiveDayForecast(latitude, longitude) {
+        const apiUrl = `https://api.openweathermap.org/data/2.5/forecast?lat=${latitude}&lon=${longitude}&appid=${apiKey}&units=metric`;
+        try {
+          const response = await fetch(apiUrl);
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+          const data = await response.json();
+          return data;
+        } catch (error) {
+          console.error("Error fetching 5-day forecast:", error);
+          displayMessage(
+            "Could not fetch 5-day forecast data. Please try again.",
+            "error"
+          );
+          return null;
+        }
+      }
+
+      /**
+       * Initializes the Leaflet map.
+       */
+      function initializeMap() {
+        // Check if map already exists to prevent re-initialization
+        if (map !== null) {
+          map.remove(); // Remove the old map instance
+        }
+        // Initialize the map with a default view (e.g., world center)
+        map = L.map("map").setView([0, 0], 2); // Centered at 0,0 with zoom level 2
+
+        // Add OpenStreetMap tiles
+        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+          maxZoom: 19,
+          attribution:
+            '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+        }).addTo(map);
+      }
+
+      /**
+       * Updates the map with a marker for the given city coordinates.
+       * @param {number} lat - Latitude of the city.
+       * @param {number} lon - Longitude of the city.
+       * @param {string} cityName - Name of the city.
+       */
+      function updateMap(lat, lon, cityName) {
+        if (map === null) {
+          initializeMap(); // Initialize map if it hasn't been already
+        }
+
+        // Remove existing marker if any
+        if (marker !== null) {
+          marker.remove();
+        }
+
+        // Add a new marker
+        marker = L.marker([lat, lon])
+          .addTo(map)
+          .bindPopup(`<b>${cityName}</b>`)
+          .openPopup();
+
+        // Pan and zoom to the new marker's location
+        map.setView([lat, lon], 11); // Zoom level 10 is a good default for city view
+      }
+
+      /**
+       * Displays the current weather data on the UI.
+       * @param {object} data - The current weather data.
+       */
+      function displayCurrentWeather(data) {
+        if (!data) {
+          currentCityElement.textContent = "N/A";
+          currentTempElement.textContent = "--°C";
+          currentWeatherIconElement.src =
+            "https://placehold.co/100x100/e2e8f0/64748b?text=Icon";
+          currentDescriptionElement.textContent = "No data";
+          currentHumidityElement.textContent = "Humidity: --%";
+          currentWindElement.innerHTML = `Wind: -- m/s <svg id="wind-direction" class="wind-direction-indicator" viewBox="0 0 24 24"><path d="M12 2L12 22M12 2L16 6M12 2L8 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+          currentDewPointElement.textContent = "Dew Point: --°C";
+          currentPressureElement.textContent = "Loading..."; // Reset pressure
+
+          // Clear map marker if no data
+          if (marker) {
+            marker.remove();
+            marker = null;
+          }
+          map.setView([0, 0], 2); // Reset map view to world
+          return;
+        }
+        currentCityElement.textContent = data.name;
+        currentTempElement.textContent = `${Math.round(data.main.temp)}°C`;
+        currentWeatherIconElement.src = `https://openweathermap.org/img/wn/${data.weather[0].icon}@2x.png`;
+        currentWeatherIconElement.alt = data.weather[0].description;
+        currentDescriptionElement.textContent = data.weather[0].description;
+        currentHumidityElement.textContent = `Humidity: ${data.main.humidity}%`;
+
+        // Update wind information
+        const windSpeed = data.wind.speed;
+        const windDegrees = data.wind.deg;
+        const windDirectionText = getWindDirection(windDegrees);
+        currentWindElement.innerHTML = `Wind: ${windSpeed} m/s (${windDirectionText}) <svg id="wind-direction" class="wind-direction-indicator" viewBox="0 0 24 24"><path d="M12 2L12 22M12 2L16 6M12 2L8 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+        updateWindDirection(windDegrees); // Rotate the arrow
+
+        // Calculate and display dew point
+        const dewPoint = calculateDewPoint(data.main.temp, data.main.humidity);
+        currentDewPointElement.textContent = `Dew Point: ${dewPoint}°C`;
+
+        // Display pressure
+        currentPressureElement.textContent = `${data.main.pressure} hPa`;
+
+        // Update the map with the current city's location
+        updateMap(data.coord.lat, data.coord.lon, data.name);
+      }
+
+      /**
+       * Displays the 5-day forecast data and updates the chart.
+       * @param {object} fiveDayData - The 5-day forecast data.
+       */
+      function displayFiveDayForecast(fiveDayData) {
+        fiveDayForecastList.innerHTML = ""; // Clear existing list
+
+        if (
+          !fiveDayData ||
+          !fiveDayData.list ||
+          fiveDayData.list.length === 0
+        ) {
+          fiveDayForecastList.innerHTML =
+            '<li class="text-center text-gray-500">No 5-day forecast data available.</li>';
+          if (weatherChartInstance) {
+            weatherChartInstance.destroy(); // Destroy previous chart
+            weatherChartInstance = null;
+          }
+          return;
+        }
+
+        // Prepare data for Chart.js for 24-hour temperature
+        const chartLabels = []; // Used for x-axis labels
+        const chartDataPoints = []; // Used for actual data points with custom properties
+
+        // Take the first 8 data points for the 24-hour forecast (each point is 3 hours)
+        const twentyFourHourData = fiveDayData.list.slice(0, 8);
+
+        twentyFourHourData.forEach((item) => {
+          const date = new Date(item.dt * 1000);
+          // Format time for labels (e.g., "1 PM", "4 PM")
+          const timeLabel = date.toLocaleTimeString("en-US", {
+            hour: "numeric",
+            hour12: true,
+          });
+          chartLabels.push(timeLabel); // For x-axis ticks
+
+          // Store temperature, icon, and description in the data point object
+          chartDataPoints.push({
+            x: timeLabel, // Store time label for tooltip reference
+            y: Math.round(item.main.temp),
+            icon: item.weather[0].icon,
+            description: item.weather[0].description,
+          });
+        });
+
+        // Chart.js setup
+        const ctx = document.getElementById("weatherChart").getContext("2d");
+
+        if (weatherChartInstance) {
+          weatherChartInstance.destroy(); // Destroy existing chart instance before creating a new one
+        }
+
+        const chartConfig = {
+          type: "line",
+          data: {
+            labels: chartLabels,
+            datasets: [
+              {
+                label: "Temperature (°C)",
+                data: chartDataPoints, // Use the objects with custom properties
+                backgroundColor: "rgba(75, 192, 192, 0.4)",
+                borderColor: "rgba(75, 192, 192, 1)",
+                borderWidth: 2,
+                fill: true,
+                tension: 0.4,
+                pointBackgroundColor: "rgba(75, 192, 192, 1)",
+                pointBorderColor: "#fff",
+                pointHoverBackgroundColor: "#fff",
+                pointHoverBorderColor: "rgba(75, 192, 192, 1)",
+                pointRadius: 5,
+                pointHoverRadius: 8,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+              y: {
+                beginAtZero: false,
+                grid: {
+                  color: "rgba(200, 200, 200, 0.2)",
+                },
+                ticks: {
+                  color: "#4a5568",
+                  callback: function (value) {
+                    return value + "°C";
+                  },
+                },
+              },
+              x: {
+                grid: {
+                  display: false,
+                },
+                ticks: {
+                  color: "#4a5568",
+                },
+              },
+            },
+            plugins: {
+              legend: {
+                display: false,
+              },
+              title: {
+                display: false,
+              },
+              tooltip: {
+                mode: "index",
+                intersect: false,
+                position: "nearest",
+                enabled: false,
+                external: function (context) {
+                  let tooltipEl = document.getElementById("chartjs-tooltip");
+                  if (!tooltipEl) {
+                    tooltipEl = document.createElement("div");
+                    tooltipEl.id = "chartjs-tooltip";
+                    tooltipEl.className = "chartjs-tooltip";
+                    document.body.appendChild(tooltipEl);
+                  }
+                  const tooltipModel = context.tooltip;
+                  if (tooltipModel.opacity === 0) {
+                    tooltipEl.style.opacity = 0;
+                    return;
+                  }
+                  tooltipEl.classList.remove("above", "below", "no-transform");
+                  if (tooltipModel.yAlign) {
+                    tooltipEl.classList.add(tooltipModel.yAlign);
+                  } else {
+                    tooltipEl.classList.add("no-transform");
+                  }
+                  if (tooltipModel.body) {
+                    const dataPoint = tooltipModel.dataPoints[0];
+                    const rawData = dataPoint.raw;
+                    const time = rawData.x;
+                    const temp = rawData.y;
+                    const iconCode = rawData.icon;
+                    const description = rawData.description;
+                    const innerHtml = `
+                                        <div class="tooltip-content">
+                                            <div style="font-weight: bold;">${time}</div>
+                                            <div class="tooltip-temp-icon">
+                                                <img src="https://openweathermap.org/img/wn/${iconCode}.png" alt="${description}">
+                                                <span>${temp}°C</span>
+                                            </div>
+                                            <div style="font-size: 0.8em; color: #ccc; text-transform: capitalize;">${description}</div>
+                                        </div>
+                                    `;
+                    tooltipEl.innerHTML = innerHtml;
+                  }
+                  const position = context.chart.canvas.getBoundingClientRect();
+                  tooltipEl.style.opacity = 1;
+                  tooltipEl.style.left =
+                    position.left +
+                    window.pageXOffset +
+                    tooltipModel.caretX +
+                    "px";
+                  tooltipEl.style.top =
+                    position.top +
+                    window.pageYOffset +
+                    tooltipModel.caretY +
+                    "px";
+                  if (tooltipModel.yAlign === "top") {
+                    tooltipEl.style.transform = "translate(-50%, -100%)";
+                  } else if (tooltipModel.yAlign === "bottom") {
+                    tooltipEl.style.transform = "translate(-50%, 0%)";
+                  } else {
+                    tooltipEl.style.transform = "translate(-50%, -50%)";
+                  }
+                },
+              },
+            },
+            animation: {
+              duration: 1500,
+              easing: "easeInOutQuad",
+            },
+          },
+        };
+
+        weatherChartInstance = new Chart(ctx, chartConfig);
+
+        const dailyForecastsGrouped = {};
+        fiveDayData.list.forEach((item) => {
+          const date = new Date(item.dt * 1000);
+          const dayKey = date.toLocaleDateString("en-US", {
+            year: "numeric",
+            month: "numeric",
+            day: "numeric",
+          });
+
+          if (!dailyForecastsGrouped[dayKey]) {
+            dailyForecastsGrouped[dayKey] = [];
+          }
+          dailyForecastsGrouped[dayKey].push(item);
+        });
+
+        const sortedDailyForecastsKeys = Object.keys(
+          dailyForecastsGrouped
+        ).sort((a, b) => new Date(a).getTime() - new Date(b).getTime());
+
+        sortedDailyForecastsKeys.forEach((dayKey) => {
+          let highTemp = -Infinity;
+          let lowTemp = Infinity;
+          let dayName = "";
+          let weatherIcon = "";
+          let weatherDescription = "";
+          let representativeForecast = null;
+
+          const forecastsForDay = dailyForecastsGrouped[dayKey];
+
+          forecastsForDay.forEach((forecast) => {
+            highTemp = Math.max(highTemp, forecast.main.temp_max);
+            lowTemp = Math.min(lowTemp, forecast.main.temp_min);
+
+            const dateObj = new Date(forecast.dt * 1000);
+            if (
+              !representativeForecast ||
+              (dateObj.getHours() >= 11 && dateObj.getHours() <= 13)
+            ) {
+              representativeForecast = forecast;
+            }
+          });
+
+          if (!representativeForecast && forecastsForDay.length > 0) {
+            representativeForecast = forecastsForDay[0];
+          }
+
+          if (representativeForecast) {
+            const dateObj = new Date(representativeForecast.dt * 1000);
+            dayName = dateObj.toLocaleDateString("en-US", {
+              weekday: "short",
+              month: "short",
+              day: "numeric",
+            });
+            weatherIcon = representativeForecast.weather[0].icon;
+            weatherDescription = capitalizeFirstLetter(
+              representativeForecast.weather[0].description
+            );
+          } else {
+            dayName = new Date(dayKey).toLocaleDateString("en-US", {
+              weekday: "short",
+              month: "short",
+              day: "numeric",
+            });
+            weatherIcon = "01d";
+            weatherDescription = "N/A";
+          }
+
+          const listItem = document.createElement("li");
+          listItem.innerHTML = `
+                        <span>${dayName}</span>
+                        <div class="gothic-day-values">
+                            <img src="https://openweathermap.org/img/wn/${weatherIcon}.png" alt="${weatherDescription} icon">
+                            <span>${Math.round(highTemp)}°C / ${Math.round(
+            lowTemp
+          )}°C</span>
+                        </div>
+                        <span class="sub" style="width: 70px; text-align: right;">${weatherDescription}</span>
+                    `;
+          fiveDayForecastList.appendChild(listItem);
+        });
+      }
+
+      /**
+       * Fetches weather data for a given city name.
+       * Uses OpenWeatherMap's Geocoding API to get coordinates first.
+       */
+      async function getWeatherByCity() {
+        const cityName = cityInput.value.trim();
+        if (!cityName) {
+          displayMessage("Please enter a city name.", "info");
+          return;
+        }
+
+        displayMessage("Fetching weather data...", "info");
+        getWeatherBtn.disabled = true;
+
+        try {
+          // Geocoding API to get coordinates from city name
+          const geoApiUrl = `https://api.openweathermap.org/geo/1.0/direct?q=${cityName}&limit=1&appid=${apiKey}`;
+          const geoResponse = await fetch(geoApiUrl);
+          const geoData = await geoResponse.json();
+
+          if (geoData.length === 0) {
+            displayMessage(
+              `City "${cityName}" not found. Please check the spelling.`,
+              "error"
+            );
+            displayCurrentWeather(null);
+            displayFiveDayForecast(null);
+            return;
+          }
+
+          const { lat, lon, name } = geoData[0]; // Get name from geoData for map popup
+
+          const [currentWeather, fiveDayForecast] = await Promise.all([
+            fetchCurrentWeather(lat, lon),
+            fetchFiveDayForecast(lat, lon),
+          ]);
+
+          // Pass the city name to displayCurrentWeather for map update
+          if (currentWeather) {
+            currentWeather.name = name; // Ensure the name from geoData is used for the map
+          }
+          displayCurrentWeather(currentWeather);
+          displayFiveDayForecast(fiveDayForecast);
+          displayMessage("Weather data updated successfully!", "success");
+        } catch (error) {
+          console.error("Error getting weather by city:", error);
+          displayMessage(
+            "An error occurred while fetching weather data.",
+            "error"
+          );
+          displayCurrentWeather(null);
+          displayFiveDayForecast(null);
+        } finally {
+          getWeatherBtn.disabled = false;
+        }
+      }
+
+      /**
+       * Fetches weather data based on the user's current geolocation.
+       */
+      function getWeatherByGeolocation() {
+        displayMessage("Getting your current location...", "info");
+        if (navigator.geolocation) {
+          navigator.geolocation.getCurrentPosition(
+            async (position) => {
+              const { latitude, longitude } = position.coords;
+              displayMessage("Location found! Fetching weather...", "info");
+              try {
+                const [currentWeather, fiveDayForecast] = await Promise.all([
+                  fetchCurrentWeather(latitude, longitude),
+                  fetchFiveDayForecast(latitude, longitude),
+                ]);
+
+                displayCurrentWeather(currentWeather);
+                displayFiveDayForecast(fiveDayForecast);
+                displayMessage(
+                  "Weather data loaded for your location!",
+                  "success"
+                );
+              } catch (error) {
+                console.error(
+                  "Error fetching weather with geolocation:",
+                  error
+                );
+                displayMessage(
+                  "Failed to fetch weather for your location.",
+                  "error"
+                );
+                displayCurrentWeather(null);
+                displayFiveDayForecast(null);
+              }
+            },
+            (error) => {
+              console.error(
+                "Geolocation error:",
+                error.code,
+                error.message,
+                error
+              );
+              let errorMessage = "Unable to retrieve your location.";
+              switch (error.code) {
+                case error.PERMISSION_DENIED:
+                  errorMessage =
+                    "Location access denied. Please allow location access or enter a city manually.";
+                  break;
+                case error.POSITION_UNAVAILABLE:
+                  errorMessage = "Location information is unavailable.";
+                  break;
+                case error.TIMEOUT:
+                  errorMessage = "The request to get user location timed out.";
+                  break;
+              }
+              displayMessage(errorMessage, "error");
+              // Fallback: try to get weather for a default city (e.g., Seoul)
+              cityInput.value = "Seoul";
+              getWeatherByCity();
+            }
+          );
+        } else {
+          displayMessage(
+            "Geolocation is not supported by your browser. Please enter a city manually.",
+            "error"
+          );
+          // Fallback: try to get weather for a default city (e.g., Seoul)
+          cityInput.value = "Seoul";
+          getWeatherByCity();
+        }
+      }
+
+      // Event Listeners
+      getWeatherBtn.addEventListener("click", getWeatherByCity);
+      cityInput.addEventListener("keypress", (event) => {
+        if (event.key === "Enter") {
+          getWeatherByCity();
+        }
+      });
+
+      // Initial load: Initialize map and get weather based on geolocation
+      document.addEventListener("DOMContentLoaded", () => {
+        initializeMap(); // Initialize the map when the DOM is ready
+        getWeatherByGeolocation();
+      });
+    </script>
+  </body>
+</html>

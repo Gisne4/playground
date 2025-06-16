@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <script src="jquery-3.7.1.min.js"></script>
+    <script src="jquery.simplyscroll.min.js"></script>
+
+    <style>
+        *{margin:0px; padding:0px;}
+        li{list-style:none;}
+        a{color:inherit; text-decoration: inherit;}
+
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Infant:ital,wght@0,300..700;1,300..700&family=Noto+Sans:ital,wght@0,100..900;1,100..900&family=Public+Sans:ital,wght@0,100..900;1,100..900&display=swap');
+        
+body{font-family: "Noto Sans", sans-serif;}
+
+section{width:100%; height:100vh;}
+.con02{width:100%; height:100%;  position: relative;;}
+
+.con02 .textWrap{width:70%; position: absolute; left:50%; top:50%; transform: translate(-50%, -50%);z-index:10; }
+.con02 .title{font-size:18px;}
+.con02 .textWrap .en{ font-family: "Public Sans", sans-serif;}
+.con02 .textWrap .en2{font-family: "Cormorant Infant", serif;}
+.con02 .textWrap li{font-size:60px;  line-height: 1.3;}
+.con02 .textWrap ul li.en2{padding-left:10px;}
+
+
+/*readmore*/
+.con02 .btnWrap{width:170px; height:170px; position:absolute; left:50%; top:60%; transform: translateX(-50%); z-index:20;}
+.con02 .btnWrap a{display: block; width:100%; height:100%;  border:2px solid #fff; border-radius: 50%; box-sizing: border-box; transition: 0.5s; position: relative;}
+.con02 .btnWrap a img{width:15%; position: absolute; left:50%; top:50%; transform: translate(-50%, -50%) rotate(45deg);}
+.con02 .btnWrap a img:nth-child(2) { opacity:0;}
+
+.con02 .btnWrap a::before{content:""; width:0%; height:0%; background:#fff  url(img/more2.png) no-repeat center /160px; position:absolute; left:50%; top:50%;  border-radius: 50%;; animation:spin 10s infinite linear; transition: 0.4s; }
+@keyframes spin{
+    0%{transform: translate(-50%, -50%) rotate(0deg); }
+    100%{transform: translate(-50%, -50%) rotate(360deg);}
+}
+
+.con02 .btnWrap a:hover{
+    border-color:transparent
+}
+.con02 .btnWrap a:hover img:nth-child(2) { opacity:1;}
+.con02 .btnWrap a:hover::before{width:100%; height:100%;}
+
+/*simplayScroll*/
+.simply-scroll .simply-scroll-clip{overflow: hidden; transform: rotate(5deg) translateY(250px);}
+
+.simply-scroll .simply-scroll-clip .simply-scroll-list li{width:400px; height:500px; float:left; filter:brightness(50%); }
+
+.simply-scroll .simply-scroll-clip .simply-scroll-list li img{width:100%; height:100%; object-fit: cover;}
+    </style>
+  </head>
+  <body>
+    <section></section>
+    <section class="con02">
+        <div class="textWrap">
+            <div class="title en">
+                <p>My <span class="en2">Skill</p>
+            </div>
+            <ul>
+                <li>Photoshop</li>
+                <li class="en2">Illustrator</li>
+                <li>Premier</li>
+                <li class="en2">After Effects</li>
+                <li>Figma</li>
+                <li class="en2">Html/Css</li>
+                <li>JQuery</li>
+                <li class="en2">JavaScript</li>
+                <li>React</li>
+                <li class="en2">Git</li>
+            </ul>
+        </div>
+        <ul class="list">
+            <li><img src="img/pic1.jpg" alt=""></li>
+            <li><img src="img/pic2.jpg" alt=""></li>
+            <li><img src="img/pic3.jpg" alt=""></li>
+            <li><img src="img/pic4.jpg" alt=""></li>
+            <li><img src="img/img_5terre.jpg" alt=""></li>
+            <li><img src="img/img_manarola.jpg" alt=""></li>
+            <li><img src="img/img_monterosso.jpg" alt=""></li>
+            <li><img src="img/img_vernazza.jpg" alt=""></li>
+        </ul>
+        <div class="btnWrap">
+            <a href="#">
+                <img src="img/arr3.png"> <!-- 흰색 -->
+                <img src="img/arr2.png"> <!-- 검정색 -->
+                
+            </a>
+        </div>
+    </section>
+    <section></section>
+    <script>
+        $(function(){
+            $(".con02 .list").simplyScroll({
+                speed:4,
+                pauseOnHover:false,
+                pauseOnTouch:false,
+            })
+        })
+    </script>
+  </body>
+</html>

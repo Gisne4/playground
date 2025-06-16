@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Horizontal Scroll Page</title>
+    <style>
+      /* Reset and base styles */
+      body {
+        margin: 0;
+        padding: 0;
+        font-family: "Arial", sans-serif;
+        overflow: hidden; /* Prevent default scrollbar */
+        background-color: #f0f0f0;
+      }
+
+      .horizontal-container {
+        position: relative; /* Needed for absolute positioning */
+        width: 100vw;
+        height: 100vh;
+      }
+
+      .horizontal-wrapper {
+        position: absolute;
+        top: 0;
+        left: 0;
+        display: flex;
+        width: 400vw; /* Adjust as needed */
+        height: 100%;
+      }
+
+      .panel {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        width: 100vw;
+        height: 100vh;
+        color: white;
+        font-size: 2.5em;
+        text-align: center;
+        opacity: 0.9;
+        transition: opacity 0.3s ease, transform 0.3s ease;
+        transform: translateX(0);
+      }
+
+      .panel:hover {
+        opacity: 1;
+        transform: scale(1.03);
+      }
+
+      .panel h2 {
+        font-size: 4em;
+        margin-bottom: 0.5em;
+        text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.4);
+      }
+
+      .panel p {
+        font-size: 1.3em;
+        padding: 0 15vw;
+        line-height: 1.7;
+        text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+      }
+
+      .panel.one {
+        background-color: #6ab7ff;
+      }
+      .panel.two {
+        background-color: #ff7851;
+      }
+      .panel.three {
+        background-color: #88ef88;
+      }
+      .panel.four {
+        background-color: #fdd047;
+      }
+
+      .navigation {
+        position: fixed;
+        bottom: 30px;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        gap: 15px;
+        z-index: 10;
+      }
+
+      .nav-dot {
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background-color: rgba(0, 0, 0, 0.2);
+        cursor: pointer;
+        transition: background-color 0.3s ease, transform 0.2s ease;
+      }
+
+      .nav-dot.active {
+        background-color: rgba(0, 0, 0, 0.8);
+        transform: scale(1.2);
+      }
+
+      .nav-dot:hover {
+        background-color: rgba(0, 0, 0, 0.5);
+        transform: scale(1.1);
+      }
+
+      *::-webkit-scrollbar {
+        display: none;
+      }
+
+      html {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="horizontal-container">
+      <div class="horizontal-wrapper">
+        <div class="panel one">
+          <h2>Welcome to Modern Korea</h2>
+          <p>
+            Scroll horizontally to explore the vibrant landscapes and rich
+            culture.
+          </p>
+        </div>
+        <div class="panel two">
+          <h2>A Land of Contrasts</h2>
+          <p>
+            From bustling cities to serene countryside, experience the dynamic
+            energy.
+          </p>
+        </div>
+        <div class="panel three">
+          <h2>Tradition and Innovation</h2>
+          <p>
+            Discover the harmony of ancient heritage and cutting-edge
+            technology.
+          </p>
+        </div>
+        <div class="panel four">
+          <h2>Your Journey Begins</h2>
+          <p>Embark on a visual adventure through the heart of Korea.</p>
+        </div>
+      </div>
+    </div>
+
+    <nav class="navigation">
+      <div class="nav-dot active"></div>
+      <div class="nav-dot"></div>
+      <div class="nav-dot"></div>
+      <div class="nav-dot"></div>
+    </nav>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.9.1/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.9.1/ScrollTrigger.min.js"></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        const container = document.querySelector(".horizontal-container");
+        const wrapper = document.querySelector(".horizontal-wrapper");
+        const panels = gsap.utils.toArray(".panel");
+        const navDots = gsap.utils.toArray(".nav-dot");
+
+        if (!container || !wrapper) {
+          console.error("Critical elements not found.  Check HTML structure.");
+          return;
+        }
+
+        const totalWidth = panels.length * window.innerWidth;
+        gsap.set(wrapper, { width: totalWidth, x: 0 });
+
+        function updateActiveDot(index) {
+          navDots.forEach((dot) => dot.classList.remove("active"));
+          navDots[index].classList.add("active");
+        }
+
+        let isScrolling = false;
+        let currentIndex = 0;
+
+        const masterTimeline = gsap.timeline({
+          scrollTrigger: {
+            trigger: container,
+            start: "top top",
+            end: () => `+=${totalWidth}`,
+            pin: true,
+            scrub: 0.8,
+            snap: 1 / (panels.length - 1),
+            onUpdate: (self) => {
+              const currentX =
+                -self.progress * (totalWidth - window.innerWidth);
+              gsap.to(wrapper, {
+                x: currentX,
+                ease: "none",
+                duration: 0.5,
+              });
+
+              const activeIndex = Math.round(
+                self.progress * (panels.length - 1)
+              );
+              if (activeIndex !== currentIndex) {
+                currentIndex = activeIndex;
+                updateActiveDot(activeIndex);
+              }
+            },
+            anticipatePin: true,
+            immediateRender: true,
+          },
+        });
+
+        masterTimeline.to(wrapper, {
+          x: () => `-${totalWidth - window.innerWidth}`,
+          ease: "none",
+        });
+
+        navDots.forEach((dot, index) => {
+          dot.addEventListener("click", () => {
+            if (isScrolling) return;
+            isScrolling = true;
+            gsap.to(wrapper, {
+              x: -index * window.innerWidth,
+              ease: "power2.inOut",
+              duration: 0.7,
+              onComplete: () => {
+                isScrolling = false;
+                updateActiveDot(index);
+                currentIndex = index;
+              },
+            });
+          });
+        });
+
+        updateActiveDot(0);
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>hideAndSeek</title>
+    <!--Font Awsome Link 6.7.2vr assetType All https://fontawesome.com/v6/search?o=r&m=free -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
+      integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    />
+    <link rel="stylesheet" href="/css/hideAndSeek.css" />
+    <script src="/js/jquery-3.7.1.min.js"></script>
+  </head>
+  <body>
+    <header class="header" id="header"></header>
+    <div class="main" id="main">
+      <button id="toggle">togle</button>
+      <button id="hide">hide</button>
+      <button id="show">show</button>
+      <button id="up">up</button>
+      <button id="stoggle">slideToggle</button>
+    </div>
+    <div class="show">
+      <button id="down">down</button>
+      <button id="fade">fade</button>
+      <button id="nana">nana</button>
+    </div>
+    <div class="con1">
+      <h1 class="deajung">대중이</h1>
+      <h2 class="deajungs">
+        <strong>nana</strong>ipsom <br /><strong>baba</strong> hulla
+      </h2>
+      <h1 class="gyo">교통이</h1>
+      <h2 class="gyos">
+        <strong>nana</strong>ipsom <br /><strong>baba</strong> hulla
+      </h2>
+      <h1 class="love">사랑스러움</h1>
+      <h2 class="loves">
+        <strong>nana</strong>ipsom <br /><strong>baba</strong> hulla
+      </h2>
+    </div>
+    <footer class="footer" id="footer"></footer>
+    <script>
+      $(".deajung").on("click", function () {
+        $(".deajungs").slideToggle();
+      });
+      $(".gyo").on("click", function () {
+        $(".gyos").slideToggle();
+      });
+      $(".love").on("click", function () {
+        $(".loves").slideToggle();
+      });
+
+      $("#hide").on("click", function () {
+        $("#hide,#toggle").hide(500);
+      });
+      $("#show").on("click", function () {
+        $("#hide,#toggle").show(500);
+      });
+      $("#toggle").on("click", function () {
+        $("#hide,#show").toggle(150);
+      });
+      $("#up").on("click", function () {
+        $(".main").slideUp();
+      });
+      $("#down").on("click", function () {
+        $(".main").slideDown();
+      });
+      $("#stoggle").on("click", function () {
+        $("#toggle,#hide,#show,#up,#down").slideToggle();
+      });
+      $("#fade").on("click", function () {
+        $(".main").fadeToggle();
+      });
+      $("#nana").on("click", function () {
+        setInterval(() => {
+          $("#nana").fadeOut(1000);
+          $("#nana").fadeIn(1000);
+        });
+      });
+    </script>
+  </body>
+</html>
+<!--
+  제이쿼리 형식
+
+  $("선택자").on("이벤트",fuction(){
+    실행문
+  })
+
+  $("chose").on("event",fuction{
+  
+  })
+
+  $("something").on("event",fuction(){
+  
+  })
+
+  $("someThing").on("event",fuction(){
+  
+  })
+
+  $("someThug").on("event",function(){
+  
+  })
+  $("iDontKnowWhat").on("fxk",function(){
+  
+  })
+
+-->

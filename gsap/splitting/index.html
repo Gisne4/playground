@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <script src="jquery-3.7.1.min.js"></script>
+    <script src="splitting.min.js"></script>
+    <style>
+      * {
+        margin: 0px;
+        padding: 0px;
+      }
+      li {
+        list-style: none;
+      }
+      a {
+        color: inherit;
+        text-decoration: inherit;
+      }
+      header {
+        height: 100px;
+        background-color: rgba(0, 0, 0, 1);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 2rem 4rem;
+        box-sizing: border-box;
+        color: #fff;
+      }
+      .gnb ul {
+        display: flex;
+        gap: 20px;
+      }
+
+      .gnb .char {
+        position: relative;
+        display: inline-block;
+        color: transparent;
+        overflow: hidden;
+      }
+      .gnb .char:before,
+      .gnb .char:after {
+        position: absolute;
+        left: 0px;
+        top: 0px;
+        content: attr(data-char);
+        color: #fff;
+        /* opacity: 0.6; */
+        transition: 0.3s;
+        transition-delay: calc(60ms * var(--char-index));
+      }
+
+      .gnb .char::before {
+        transform: translateY(100%);
+        /* color: red; */
+      }
+      .gnb li a:hover .char::before {
+        transform: translateY(0%);
+        /* opacity: 1; */
+      }
+      .gnb li a:hover .char::after {
+        transform: translateY(-100%);
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1><a href="index.html">Portfolio</a></h1>
+      <nav class="gnb">
+        <ul>
+          <li><a href="#" data-splitting>About</a></li>
+          <li><a href="#" data-splitting>Work</a></li>
+          <li><a href="#" data-splitting>Contact</a></li>
+        </ul>
+      </nav>
+    </header>
+    <script>
+      Splitting();
+    </script>
+  </body>
+</html>

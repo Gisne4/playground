@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vito.AI Transcribe with JavaScript</title>
+  </head>
+  <body>
+    <h1>Vito.AI Audio Transcription</h1>
+
+    <div>
+      <label for="jwtTokenInput"
+        >Your JWT Token (from previous authentication):</label
+      ><br />
+      <input
+        type="text"
+        id="jwtTokenInput"
+        size="80"
+        placeholder="Paste your JWT token here"
+      /><br />
+      <div id="jwtTokenCheatsheet"></div>
+      <br />
+
+      <label for="audioFileInput">Select Audio File (.wav, .mp3, etc.):</label
+      ><br />
+      <input
+        type="file"
+        id="audioFileInput"
+        accept=".wav,.mp3,.flac,.ogg"
+      /><br /><br />
+
+      <button id="transcribeButton">Start Transcription</button>
+    </div>
+
+    <h2>Configuration:</h2>
+    <pre id="configOutput"></pre>
+
+    <h2>Response:</h2>
+    <pre
+      id="responseOutput"
+      style="
+        background-color: #eee;
+        padding: 10px;
+        border: 1px solid #ddd;
+        white-space: pre-wrap;
+        word-break: break-all;
+      "
+    ></pre>
+
+    <script>
+      //get jwtToken
+      async function authenticateVitoAI(clientId, clientSecret) {
+        const url = "https://openapi.vito.ai/v1/authenticate";
+
+        // Data to be sent in the request body (form-urlencoded)
+        const formData = new URLSearchParams();
+        formData.append("client_id", clientId);
+        formData.append("client_secret", clientSecret);
+
+        try {
+          const response = await fetch(url, {
+            method: "POST", // Specify the HTTP method
+            headers: {
+              "Content-Type": "application/x-www-form-urlencoded", // Essential for form data
+            },
+            body: formData, // The data payload
+          });
+
+          // Equivalent to resp.raise_for_status()
+          if (!response.ok) {
+            const errorText = await response.text(); // Get raw error response
+            throw new Error(
+              `HTTP error! status: ${response.status}, message: ${errorText}`
+            );
+          }
+
+          // Equivalent to resp.json()
+          const data = await response.json();
+          console.log(data); // Log the successful response
+          return data; // Return the authentication token/data
+        } catch (error) {
+          console.error("Authentication failed:", error);
+          throw error; // Re-throw to allow further error handling
+        }
+      }
+
+      // --- How to use this function ---
+      // IMPORTANT: Replace with your actual client_id and client_secret
+      const YOUR_CLIENT_ID = "FT-FusjqCt_L2ltC8irX";
+      const YOUR_CLIENT_SECRET = "w6WX6NlEY1MRG6xb0tqA6LtDlCIZHygpyGFZteA3";
+      let YOUR_JWT_TOKEN = "";
+
+      authenticateVitoAI(YOUR_CLIENT_ID, YOUR_CLIENT_SECRET)
+        .then((authData) => {
+          // You can now use authData (e.g., access_token) for subsequent API calls
+          console.log(
+            "Authentication successful! Token:",
+            authData.access_token
+          );
+          YOUR_JWT_TOKEN = authData.access_token;
+          let cheatsheat = document.createElement("div");
+          cheatsheat.innerText = YOUR_JWT_TOKEN;
+          document.getElementById("jwtTokenCheatsheet").appendChild(cheatsheat);
+        })
+        .catch((error) => {
+          console.error("Failed to authenticate:", error);
+        });
+      // Configuration object for transcription
+      const config = {
+        use_diarization: true,
+        diarization: {
+          spk_count: 2,
+        },
+        use_itn: false,
+        use_disfluency_filter: false,
+        use_profanity_filter: false,
+        use_paragraph_splitter: true,
+        paragraph_splitter: {
+          max: 50,
+        },
+      };
+
+      // Display the config object in the HTML
+      document.getElementById("configOutput").textContent = JSON.stringify(
+        config,
+        null,
+        2
+      );
+
+      async function transcribeAudio() {
+        const jwtToken = document.getElementById("jwtTokenInput").value.trim();
+        const audioFile = document.getElementById("audioFileInput").files[0]; // Get the selected file
+
+        const responseOutput = document.getElementById("responseOutput");
+        responseOutput.textContent = "Processing transcription request...";
+        responseOutput.style.color = "initial"; // Reset color
+
+        if (!jwtToken) {
+          responseOutput.textContent = "Error: Please enter your JWT token.";
+          responseOutput.style.color = "red";
+          return;
+        }
+
+        if (!audioFile) {
+          responseOutput.textContent = "Error: Please select an audio file.";
+          responseOutput.style.color = "red";
+          return;
+        }
+
+        const url = "https://openapi.vito.ai/v1/transcribe";
+
+        // Create FormData object to send both file and config
+        const formData = new FormData();
+        formData.append("config", JSON.stringify(config)); // JSON.stringify to convert config object to string
+        formData.append("file", audioFile); // The actual audio file
+
+        try {
+          const response = await fetch(url, {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${jwtToken}`, // Include the JWT token in the Authorization header
+            },
+            body: formData, // Use the FormData object directly; fetch will set Content-Type: multipart/form-data
+          });
+
+          // Check for HTTP errors (e.g., 4xx or 5xx)
+          if (!response.ok) {
+            const errorDetails = await response.text(); // Get raw error response
+            throw new Error(
+              `HTTP error! status: ${response.status}, details: ${errorDetails}`
+            );
+          }
+
+          // Parse the JSON response
+          const data = await response.json();
+          console.log(data); // Log the full response to console
+
+          // Display the response in the HTML
+          responseOutput.textContent = JSON.stringify(data, null, 2);
+          responseOutput.style.color = "green";
+
+          // You might get a 'job_id' back here.
+          // For real-time transcription, you'd then poll a status endpoint with this job_id.
+          if (data.job_id) {
+            responseOutput.textContent +=
+              `\n\nTranscription job submitted. Job ID: ${data.job_id}\n` +
+              `You'll need to poll the /transcribe/${data.job_id} endpoint ` +
+              `to get the final transcription result.`;
+          }
+        } catch (error) {
+          console.error("Transcription failed:", error);
+          responseOutput.textContent = `Transcription failed: ${
+            error.message || error
+          }`;
+          responseOutput.style.color = "red";
+        }
+      }
+
+      // Add event listener to the button
+      document
+        .getElementById("transcribeButton")
+        .addEventListener("click", transcribeAudio);
+    </script>
+  </body>
+</html>

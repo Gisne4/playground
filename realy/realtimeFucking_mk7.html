@@ -1,0 +1,1515 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>서울 실시간 지하철 도착 정보</title>
+    <style>
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        margin: 20px;
+        background-color: #f4f7f6;
+        color: #333;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+      h1 {
+        color: #2c3e50;
+        text-align: center;
+        margin-bottom: 20px;
+      }
+      .container {
+        max-width: 1240px;
+        margin: 0 auto;
+        background-color: #fff;
+        padding: 25px;
+        border-radius: 8px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        position: relative;
+      }
+      .subway-map-container {
+        position: relative;
+        margin-bottom: 20px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        overflow: hidden;
+      }
+      canvas {
+        display: block;
+        background-color: #f8f8f8;
+      }
+      .canvas-tooltip {
+        position: absolute;
+        background-color: rgba(0, 0, 0, 0.75);
+        color: white;
+        padding: 5px 10px;
+        border-radius: 5px;
+        font-size: 0.8em;
+        pointer-events: none;
+        white-space: nowrap;
+        z-index: 10;
+        display: none;
+        transform: translate(-50%, -100%);
+        top: 0;
+        left: 0;
+      }
+      .subway-info-list {
+        width: 100%;
+        margin-top: 20px;
+        border-top: 1px solid #eee;
+        padding-top: 15px;
+        min-height: 100px; /* Ensure space for messages */
+      }
+      .subway-line {
+        border-bottom: 1px solid #eee;
+        padding: 10px 0;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 15px;
+      }
+      .subway-line:last-child {
+        border-bottom: none;
+      }
+      .line-info {
+        flex-grow: 1;
+      }
+      .line-name {
+        font-weight: bold;
+        color: #34495e;
+        font-size: 1em;
+      }
+      .arrival-msg {
+        background-color: #e8f5e9;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-weight: bold;
+        color: #2e7d32;
+        font-size: 0.85em;
+        min-width: 100px;
+        text-align: center;
+      }
+      .status-msg {
+        background-color: #f0f4c3;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-weight: bold;
+        color: #fbc02d;
+        font-size: 0.85em;
+        min-width: 100px;
+        text-align: center;
+      }
+      .error-message,
+      .info-message {
+        color: #d32f2f;
+        text-align: center;
+        padding: 20px;
+        background-color: #ffebee;
+        border-radius: 5px;
+        border: 1px solid #ef9a9a;
+      }
+      .info-message {
+        color: #333;
+        background-color: #e3f2fd;
+        border-color: #90caf9;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>서울 실시간 지하철 도착 정보</h1>
+
+      <div class="subway-map-container">
+        <canvas id="subwayCanvas" width="1200" height="800"></canvas>
+        <div class="canvas-tooltip" id="canvasTooltip"></div>
+      </div>
+
+      <div id="subwayInfo" class="subway-info-list">
+        <p class="info-message">
+          지하철역을 클릭하면 실시간 도착 정보가 표시됩니다.
+        </p>
+      </div>
+    </div>
+
+    <script>
+      const API_KEY = "456a50567a646b7239334f6d716b4f";
+      // 지도에 열차를 표시하고 백그라운드에서 주기적으로 데이터를 가져올 역 목록
+      const STATION_NAMES = [
+        "서울",
+        "시청",
+        "신도림",
+        "성수",
+        "잠실",
+        "강남",
+        "교대",
+        "사당",
+        "홍대입구",
+        "건대입구",
+        "신설동",
+        // Added stations from new lines
+        "을지로3가",
+        "종로3가",
+        "충무로",
+        "동대입구",
+        "약수",
+        "고속터미널",
+        "양재", // Line 3
+        "명동",
+        "동대문",
+        "혜화",
+        "성신여대입구",
+        "수유",
+        "미아사거리",
+        "노원",
+        "창동",
+        "사당",
+        "이촌",
+        "삼각지", // Line 4
+        "광화문",
+        "여의도",
+        "공덕",
+        "왕십리",
+        "군자",
+        "천호",
+        "하남검단산",
+        "마천", // Line 5
+        "이태원",
+        "월드컵경기장",
+        "응암",
+        "봉화산", // Line 6
+        "가산디지털단지",
+        "건대입구",
+        "고속터미널",
+        "청담",
+        "노원",
+        "태릉입구", // Line 7
+        "잠실",
+        "강동구청",
+        "암사",
+        "모란", // Line 8
+      ];
+
+      const canvas = document.getElementById("subwayCanvas");
+      const ctx = canvas.getContext("2d");
+      const canvasTooltip = document.getElementById("canvasTooltip");
+
+      // Line Colors
+      const LINE1_COLOR = "#0052A4"; // Blue
+      const LINE2_COLOR = "#3CB44A"; // Green
+      const LINE3_COLOR = "#F36D1B"; // Orange
+      const LINE4_COLOR = "#2C93D8"; // Sky Blue
+      const LINE5_COLOR = "#995B24"; // Purple-Brown
+      const LINE6_COLOR = "#CD7C2F"; // Brown
+      const LINE7_COLOR = "#546500"; // Dark Green/Olive
+      const LINE8_COLOR = "#ED5482"; // Pink
+
+      const STATION_DOT_COLOR = "#666";
+      const STATION_TEXT_COLOR = "black";
+      const STATION_DOT_RADIUS = 3;
+      const CLICK_TOLERANCE = 10; // Pixels around the station dot for click detection
+
+      // Adjusted coordinates for drawing the map schematically on a 1200x800 canvas
+      const allStationCoordinates = {
+        // --- Line 1 Stations (Blue) ---
+        소요산: { x: 100, y: 100, lines: ["1"] },
+        동두천: { x: 150, y: 100, lines: ["1"] },
+        보산: { x: 200, y: 100, lines: ["1"] },
+        동두천중앙: { x: 250, y: 100, lines: ["1"] },
+        지행: { x: 300, y: 100, lines: ["1"] },
+        덕정: { x: 350, y: 100, lines: ["1"] },
+        덕계: { x: 400, y: 100, lines: ["1"] },
+        양주: { x: 450, y: 100, lines: ["1"] },
+        녹양: { x: 500, y: 100, lines: ["1"] },
+        가능: { x: 550, y: 100, lines: ["1"] },
+        의정부: { x: 600, y: 100, lines: ["1"] },
+        회룡: { x: 650, y: 100, lines: ["1"] },
+        망월사: { x: 700, y: 100, lines: ["1"] },
+        도봉산: { x: 750, y: 100, lines: ["1"] },
+        도봉: { x: 800, y: 100, lines: ["1"] },
+        방학: { x: 850, y: 100, lines: ["1"] },
+        창동: { x: 900, y: 100, lines: ["1", "4"] },
+        녹천: { x: 950, y: 100, lines: ["1"] },
+        월계: { x: 1000, y: 100, lines: ["1"] },
+
+        광운대: { x: 1050, y: 100, lines: ["1"] },
+        석계: { x: 1080, y: 150, lines: ["1", "6"] }, // Interchange
+        신이문: { x: 1050, y: 180, lines: ["1"] },
+        외대앞: { x: 1000, y: 180, lines: ["1"] },
+        회기: { x: 950, y: 180, lines: ["1"] },
+        청량리: { x: 900, y: 180, lines: ["1"] },
+        제기동: { x: 850, y: 180, lines: ["1"] },
+        신설동: { x: 800, y: 180, lines: ["1", "2"] }, // Interchange
+        동묘앞: { x: 750, y: 180, lines: ["1"] },
+        동대문: { x: 700, y: 180, lines: ["1", "4"] }, // Interchange
+        종로5가: { x: 650, y: 180, lines: ["1"] },
+        종로3가: { x: 600, y: 180, lines: ["1", "3", "5"] }, // Interchange
+        종각: { x: 550, y: 180, lines: ["1"] },
+        시청: { x: 500, y: 180, lines: ["1", "2"] }, // Interchange
+        서울: { x: 450, y: 180, lines: ["1", "4"] }, // Interchange
+
+        남영: { x: 450, y: 230, lines: ["1"] },
+        용산: { x: 450, y: 280, lines: ["1"] },
+        노량진: { x: 450, y: 330, lines: ["1", "9"] }, // Interchange (Line 9 not drawn)
+        대방: { x: 450, y: 380, lines: ["1"] },
+        신길: { x: 450, y: 430, lines: ["1", "5"] }, // Interchange
+        영등포: { x: 450, y: 480, lines: ["1"] },
+        신도림: { x: 450, y: 530, lines: ["1", "2"] }, // Interchange
+
+        구로: { x: 450, y: 580, lines: ["1"] },
+        가산디지털단지: { x: 400, y: 580, lines: ["1", "7"] }, // Interchange
+        독산: { x: 350, y: 580, lines: ["1"] },
+        금천구청: { x: 300, y: 580, lines: ["1"] },
+        광명: { x: 250, y: 580, lines: ["1"] },
+
+        구일: { x: 450, y: 630, lines: ["1"] },
+        개봉: { x: 450, y: 680, lines: ["1"] },
+        오류동: { x: 400, y: 680, lines: ["1"] },
+        온수: { x: 350, y: 680, lines: ["1", "7"] },
+        역곡: { x: 300, y: 680, lines: ["1"] },
+        부천: { x: 250, y: 680, lines: ["1"] },
+        송내: { x: 200, y: 680, lines: ["1"] },
+        중동: { x: 150, y: 680, lines: ["1"] },
+        부개: { x: 100, y: 680, lines: ["1"] },
+        부평: { x: 100, y: 730, lines: ["1"] },
+        백운: { x: 150, y: 730, lines: ["1"] },
+        동암: { x: 200, y: 730, lines: ["1"] },
+        간석: { x: 250, y: 730, lines: ["1"] },
+        주안: { x: 300, y: 730, lines: ["1"] },
+        도원: { x: 350, y: 730, lines: ["1"] },
+        제물포: { x: 400, y: 730, lines: ["1"] },
+        동인천: { x: 450, y: 730, lines: ["1"] },
+        인천: { x: 500, y: 730, lines: ["1"] },
+
+        병점: { x: 500, y: 630, lines: ["1"] },
+        세마: { x: 550, y: 630, lines: ["1"] },
+        오산대: { x: 600, y: 630, lines: ["1"] },
+        오산: { x: 650, y: 630, lines: ["1"] },
+        진위: { x: 700, y: 630, lines: ["1"] },
+        송탄: { x: 750, y: 630, lines: ["1"] },
+        서정리: { x: 800, y: 630, lines: ["1"] },
+        평택지제: { x: 850, y: 630, lines: ["1"] },
+        평택: { x: 900, y: 630, lines: ["1"] },
+        성환: { x: 950, y: 630, lines: ["1"] },
+        직산: { x: 1000, y: 630, lines: ["1"] },
+        두정: { x: 1050, y: 630, lines: ["1"] },
+        천안: { x: 1100, y: 630, lines: ["1"] },
+        봉명: { x: 1100, y: 680, lines: ["1"] },
+        쌍용: { x: 1050, y: 680, lines: ["1"] },
+        아산: { x: 1000, y: 680, lines: ["1"] },
+        탕정: { x: 950, y: 680, lines: ["1"] },
+        배방: { x: 900, y: 680, lines: ["1"] },
+        온양온천: { x: 850, y: 680, lines: ["1"] },
+        신창: { x: 800, y: 680, lines: ["1"] },
+
+        // --- Line 2 Stations (Green) ---
+        을지로입구: { x: 550, y: 230, lines: ["2"] },
+        을지로3가: { x: 600, y: 230, lines: ["2", "3"] }, // Interchange
+        을지로4가: { x: 650, y: 230, lines: ["2", "5"] }, // Interchange
+        동대문역사문화공원: { x: 700, y: 230, lines: ["2", "4", "5"] }, // Interchange
+        신당: { x: 750, y: 230, lines: ["2", "6"] }, // Interchange
+        상왕십리: { x: 800, y: 230, lines: ["2"] },
+        왕십리: { x: 850, y: 230, lines: ["2", "5"] }, // Interchange
+        한양대: { x: 900, y: 230, lines: ["2"] },
+        뚝섬: { x: 950, y: 230, lines: ["2"] },
+        성수: { x: 1000, y: 230, lines: ["2"] },
+        건대입구: { x: 1000, y: 280, lines: ["2", "7"] }, // Interchange
+        강변: { x: 1000, y: 330, lines: ["2"] },
+        잠실나루: { x: 1000, y: 380, lines: ["2"] },
+        잠실: { x: 1000, y: 430, lines: ["2", "8"] }, // Interchange
+        잠실새내: { x: 950, y: 480, lines: ["2"] },
+        종합운동장: { x: 900, y: 530, lines: ["2", "9"] }, // Interchange (Line 9 not drawn)
+        삼성: { x: 850, y: 580, lines: ["2"] },
+        선릉: { x: 800, y: 630, lines: ["2"] },
+        역삼: { x: 750, y: 630, lines: ["2"] },
+        강남: { x: 700, y: 630, lines: ["2", "신분당"] }, // Interchange (Shinbundang not drawn)
+        교대: { x: 650, y: 630, lines: ["2", "3"] }, // Interchange
+        서초: { x: 600, y: 630, lines: ["2"] },
+        방배: { x: 550, y: 630, lines: ["2"] },
+        사당: { x: 500, y: 630, lines: ["2", "4"] }, // Interchange
+        낙성대: { x: 450, y: 630, lines: ["2"] },
+        서울대입구: { x: 400, y: 630, lines: ["2"] },
+        봉천: { x: 350, y: 630, lines: ["2"] },
+        신림: { x: 300, y: 630, lines: ["2"] },
+        신대방: { x: 250, y: 630, lines: ["2"] },
+        구로디지털단지: { x: 200, y: 630, lines: ["2"] },
+        대림: { x: 150, y: 630, lines: ["2", "7"] }, // Interchange
+        문래: { x: 100, y: 530, lines: ["2"] },
+        영등포구청: { x: 100, y: 480, lines: ["2", "5"] }, // Interchange
+        당산: { x: 100, y: 430, lines: ["2", "9"] }, // Interchange (Line 9 not drawn)
+        합정: { x: 100, y: 380, lines: ["2", "6"] }, // Interchange
+        홍대입구: { x: 150, y: 330, lines: ["2"] },
+        신촌: { x: 200, y: 280, lines: ["2"] },
+        이대: { x: 250, y: 280, lines: ["2"] },
+        아현: { x: 300, y: 280, lines: ["2"] },
+        충정로: { x: 350, y: 280, lines: ["2", "5"] }, // Interchange
+
+        // Line 2 Seongsu Branch (성수지선)
+        용답: { x: 950, y: 180, lines: ["2"] },
+        신답: { x: 900, y: 150, lines: ["2"] },
+        용두: { x: 850, y: 150, lines: ["2"] },
+
+        // Line 2 Sinjeong Branch (신정지선)
+        도림천: { x: 400, y: 530, lines: ["2"] },
+        양천구청: { x: 350, y: 530, lines: ["2"] },
+        신정네거리: { x: 300, y: 530, lines: ["2"] },
+        까치산: { x: 250, y: 530, lines: ["2", "5"] }, // Interchange
+
+        // --- Line 3 Stations (Orange) ---
+        대화: { x: 100, y: 50, lines: ["3"] },
+        주엽: { x: 150, y: 50, lines: ["3"] },
+        정발산: { x: 200, y: 50, lines: ["3"] },
+        마두: { x: 250, y: 50, lines: ["3"] },
+        백석: { x: 300, y: 50, lines: ["3"] },
+        대곡: { x: 350, y: 50, lines: ["3"] },
+        화정: { x: 400, y: 50, lines: ["3"] },
+        원흥: { x: 450, y: 50, lines: ["3"] },
+        삼송: { x: 500, y: 50, lines: ["3"] },
+        지축: { x: 550, y: 50, lines: ["3"] },
+        구파발: { x: 600, y: 50, lines: ["3"] },
+        연신내: { x: 650, y: 50, lines: ["3", "6"] }, // Interchange
+        불광: { x: 700, y: 50, lines: ["3", "6"] }, // Interchange
+        녹번: { x: 750, y: 50, lines: ["3"] },
+        홍제: { x: 800, y: 50, lines: ["3"] },
+        무악재: { x: 850, y: 50, lines: ["3"] },
+        독립문: { x: 900, y: 50, lines: ["3"] },
+        경복궁: { x: 500, y: 130, lines: ["3"] }, // Down from Gyeongbokgung
+        안국: { x: 550, y: 130, lines: ["3"] },
+        을지로3가: { x: 600, y: 230, lines: ["2", "3"] }, // Already defined as interchange
+        충무로: { x: 650, y: 280, lines: ["3", "4"] }, // Interchange
+        동대입구: { x: 700, y: 330, lines: ["3"] },
+        약수: { x: 750, y: 380, lines: ["3", "6"] }, // Interchange
+        금호: { x: 800, y: 430, lines: ["3"] },
+        옥수: { x: 850, y: 480, lines: ["3"] },
+        압구정: { x: 900, y: 530, lines: ["3"] },
+        신사: { x: 950, y: 580, lines: ["3"] },
+        고속터미널: { x: 700, y: 680, lines: ["3", "7", "9"] }, // Interchange (Line 9 not drawn)
+        교대: { x: 650, y: 630, lines: ["2", "3"] }, // Already defined as interchange
+        남부터미널: { x: 700, y: 730, lines: ["3"] },
+        양재: { x: 750, y: 730, lines: ["3", "신분당"] }, // Interchange (Shinbundang not drawn)
+        매봉: { x: 800, y: 730, lines: ["3"] },
+        도곡: { x: 850, y: 730, lines: ["3"] },
+        대치: { x: 900, y: 730, lines: ["3"] },
+        학여울: { x: 950, y: 730, lines: ["3"] },
+        대청: { x: 1000, y: 730, lines: ["3"] },
+        일원: { x: 1050, y: 730, lines: ["3"] },
+        수서: { x: 1100, y: 730, lines: ["3"] },
+        가락시장: { x: 1150, y: 730, lines: ["3"] },
+        경찰병원: { x: 1100, y: 780, lines: ["3"] },
+        오금: { x: 1150, y: 780, lines: ["3"] },
+
+        // --- Line 4 Stations (Sky Blue) ---
+        당고개: { x: 1100, y: 50, lines: ["4"] },
+        상계: { x: 1050, y: 50, lines: ["4"] },
+        노원: { x: 1000, y: 50, lines: ["4", "7"] }, // Interchange
+        창동: { x: 900, y: 100, lines: ["1", "4"] }, // Already defined as interchange
+        쌍문: { x: 850, y: 150, lines: ["4"] },
+        수유: { x: 800, y: 150, lines: ["4"] },
+        미아: { x: 750, y: 150, lines: ["4"] },
+        미아사거리: { x: 700, y: 150, lines: ["4"] },
+        길음: { x: 650, y: 150, lines: ["4"] },
+        성신여대입구: { x: 600, y: 150, lines: ["4"] },
+        한성대입구: { x: 550, y: 150, lines: ["4"] },
+        혜화: { x: 500, y: 150, lines: ["4"] },
+        동대문: { x: 700, y: 180, lines: ["1", "4"] }, // Already defined as interchange
+        동대문역사문화공원: { x: 700, y: 230, lines: ["2", "4", "5"] }, // Already defined as interchange
+        충무로: { x: 650, y: 280, lines: ["3", "4"] }, // Already defined as interchange
+        명동: { x: 600, y: 330, lines: ["4"] },
+        회현: { x: 550, y: 380, lines: ["4"] },
+        서울: { x: 450, y: 180, lines: ["1", "4"] }, // Already defined as interchange
+        숙대입구: { x: 500, y: 430, lines: ["4"] },
+        삼각지: { x: 500, y: 480, lines: ["4", "6"] }, // Interchange
+        신용산: { x: 500, y: 530, lines: ["4"] },
+        이촌: { x: 500, y: 580, lines: ["4"] },
+        동작: { x: 500, y: 630, lines: ["4"] },
+        "총신대입구(이수)": { x: 500, y: 680, lines: ["4", "7"] }, // Interchange
+        사당: { x: 500, y: 630, lines: ["2", "4"] }, // Already defined as interchange
+        남태령: { x: 500, y: 730, lines: ["4"] },
+        과천: { x: 550, y: 730, lines: ["4"] },
+        인덕원: { x: 600, y: 730, lines: ["4"] },
+        평촌: { x: 650, y: 730, lines: ["4"] },
+        범계: { x: 700, y: 730, lines: ["4"] },
+        금정: { x: 750, y: 730, lines: ["4"] },
+        산본: { x: 800, y: 730, lines: ["4"] },
+        상록수: { x: 850, y: 730, lines: ["4"] },
+        오이도: { x: 900, y: 730, lines: ["4"] },
+
+        // --- Line 5 Stations (Purple-Brown) ---
+        방화: { x: 50, y: 280, lines: ["5"] },
+        개화산: { x: 100, y: 280, lines: ["5"] },
+        김포공항: { x: 150, y: 280, lines: ["5"] },
+        송정: { x: 200, y: 280, lines: ["5"] },
+        마곡: { x: 250, y: 280, lines: ["5"] },
+        발산: { x: 300, y: 280, lines: ["5"] },
+        우장산: { x: 350, y: 280, lines: ["5"] },
+        화곡: { x: 400, y: 280, lines: ["5"] },
+        까치산: { x: 250, y: 530, lines: ["2", "5"] }, // Already defined as interchange
+        목동: { x: 300, y: 480, lines: ["5"] },
+        오목교: { x: 350, y: 480, lines: ["5"] },
+        영등포구청: { x: 100, y: 480, lines: ["2", "5"] }, // Already defined as interchange
+        신길: { x: 450, y: 430, lines: ["1", "5"] }, // Already defined as interchange
+        여의도: { x: 400, y: 380, lines: ["5", "9"] }, // Interchange (Line 9 not drawn)
+        여의나루: { x: 350, y: 380, lines: ["5"] },
+        마포: { x: 300, y: 380, lines: ["5"] },
+        공덕: { x: 250, y: 380, lines: ["5", "6"] }, // Interchange
+        애오개: { x: 200, y: 380, lines: ["5"] },
+        충정로: { x: 350, y: 280, lines: ["2", "5"] }, // Already defined as interchange
+        서대문: { x: 400, y: 230, lines: ["5"] },
+        광화문: { x: 450, y: 230, lines: ["5"] },
+        종로3가: { x: 600, y: 180, lines: ["1", "3", "5"] }, // Already defined as interchange
+        을지로4가: { x: 650, y: 230, lines: ["2", "5"] }, // Already defined as interchange
+        동대문역사문화공원: { x: 700, y: 230, lines: ["2", "4", "5"] }, // Already defined as interchange
+        청구: { x: 750, y: 280, lines: ["5", "6"] }, // Interchange
+        신금호: { x: 800, y: 330, lines: ["5"] },
+        행당: { x: 850, y: 380, lines: ["5"] },
+        왕십리: { x: 850, y: 230, lines: ["2", "5"] }, // Already defined as interchange
+        마장: { x: 900, y: 280, lines: ["5"] },
+        답십리: { x: 950, y: 330, lines: ["5"] },
+        장한평: { x: 1000, y: 380, lines: ["5"] },
+        군자: { x: 1050, y: 430, lines: ["5", "7"] }, // Interchange
+        아차산: { x: 1100, y: 480, lines: ["5"] },
+        광나루: { x: 1150, y: 530, lines: ["5"] },
+        천호: { x: 1100, y: 580, lines: ["5", "8"] }, // Interchange
+        강동: { x: 1050, y: 630, lines: ["5"] },
+        길동: { x: 1100, y: 680, lines: ["5"] },
+        굽은다리: { x: 1150, y: 730, lines: ["5"] },
+        명일: { x: 1100, y: 780, lines: ["5"] },
+        고덕: { x: 1050, y: 780, lines: ["5"] },
+        상일동: { x: 1000, y: 780, lines: ["5"] },
+        강일: { x: 950, y: 780, lines: ["5"] },
+        미사: { x: 900, y: 780, lines: ["5"] },
+        하남풍산: { x: 850, y: 780, lines: ["5"] },
+        하남시청: { x: 800, y: 780, lines: ["5"] },
+        하남검단산: { x: 750, y: 780, lines: ["5"] },
+        둔촌동: { x: 1000, y: 680, lines: ["5"] },
+        올림픽공원: { x: 950, y: 630, lines: ["5", "9"] }, // Interchange (Line 9 not drawn)
+        방이: { x: 900, y: 580, lines: ["5"] },
+        오금: { x: 1150, y: 780, lines: ["3", "5"] }, // Already defined as interchange
+        개롱: { x: 1100, y: 730, lines: ["5"] },
+        거여: { x: 1050, y: 680, lines: ["5"] },
+        마천: { x: 1000, y: 630, lines: ["5"] },
+
+        // --- Line 6 Stations (Brown) ---
+        응암: { x: 50, y: 330, lines: ["6"] },
+        역촌: { x: 100, y: 330, lines: ["6"] },
+        불광: { x: 700, y: 50, lines: ["3", "6"] }, // Interchange
+        독바위: { x: 150, y: 330, lines: ["6"] },
+        연신내: { x: 650, y: 50, lines: ["3", "6"] }, // Interchange
+        구산: { x: 200, y: 330, lines: ["6"] },
+        새절: { x: 250, y: 330, lines: ["6"] },
+        증산: { x: 300, y: 330, lines: ["6"] },
+        디지털미디어시티: { x: 350, y: 330, lines: ["6"] },
+        월드컵경기장: { x: 400, y: 330, lines: ["6"] },
+        마포구청: { x: 450, y: 330, lines: ["6"] },
+        합정: { x: 100, y: 380, lines: ["2", "6"] }, // Interchange
+        상수: { x: 150, y: 380, lines: ["6"] },
+        광흥창: { x: 200, y: 380, lines: ["6"] },
+        대흥: { x: 250, y: 380, lines: ["6"] },
+        공덕: { x: 250, y: 380, lines: ["5", "6"] }, // Already defined as interchange
+        효창공원앞: { x: 300, y: 430, lines: ["6"] },
+        삼각지: { x: 500, y: 480, lines: ["4", "6"] }, // Already defined as interchange
+        녹사평: { x: 550, y: 430, lines: ["6"] },
+        이태원: { x: 600, y: 430, lines: ["6"] },
+        한강진: { x: 650, y: 430, lines: ["6"] },
+        버티고개: { x: 700, y: 430, lines: ["6"] },
+        약수: { x: 750, y: 380, lines: ["3", "6"] }, // Already defined as interchange
+        청구: { x: 750, y: 280, lines: ["5", "6"] }, // Already defined as interchange
+        동묘앞: { x: 750, y: 180, lines: ["1", "6"] }, // Interchange
+        신당: { x: 750, y: 230, lines: ["2", "6"] }, // Already defined as interchange
+        동대문역사문화공원: { x: 700, y: 230, lines: ["2", "4", "5", "6"] }, // Interchange
+        보문: { x: 800, y: 150, lines: ["6"] },
+        안암: { x: 850, y: 150, lines: ["6"] },
+        고려대: { x: 900, y: 150, lines: ["6"] },
+        월곡: { x: 950, y: 150, lines: ["6"] },
+        상월곡: { x: 1000, y: 150, lines: ["6"] },
+        돌곶이: { x: 1050, y: 150, lines: ["6"] },
+        석계: { x: 1080, y: 150, lines: ["1", "6"] }, // Already defined as interchange
+        태릉입구: { x: 1100, y: 200, lines: ["6", "7"] }, // Interchange
+        화랑대: { x: 1150, y: 250, lines: ["6"] },
+        봉화산: { x: 1100, y: 300, lines: ["6"] },
+
+        // --- Line 7 Stations (Dark Green/Olive) ---
+        장암: { x: 50, y: 150, lines: ["7"] },
+        도봉산: { x: 750, y: 100, lines: ["1", "7"] }, // Interchange
+        수락산: { x: 100, y: 150, lines: ["7"] },
+        마들: { x: 150, y: 150, lines: ["7"] },
+        노원: { x: 1000, y: 50, lines: ["4", "7"] }, // Interchange
+        중계: { x: 200, y: 150, lines: ["7"] },
+        하계: { x: 250, y: 150, lines: ["7"] },
+        공릉: { x: 300, y: 150, lines: ["7"] },
+        태릉입구: { x: 1100, y: 200, lines: ["6", "7"] }, // Interchange
+        먹골: { x: 1050, y: 250, lines: ["7"] },
+        중화: { x: 1000, y: 300, lines: ["7"] },
+        상봉: { x: 950, y: 350, lines: ["7"] },
+        면목: { x: 900, y: 400, lines: ["7"] },
+        사가정: { x: 850, y: 450, lines: ["7"] },
+        용마산: { x: 800, y: 500, lines: ["7"] },
+        중곡: { x: 750, y: 550, lines: ["7"] },
+        군자: { x: 1050, y: 430, lines: ["5", "7"] }, // Interchange
+        어린이대공원: { x: 700, y: 600, lines: ["7"] },
+        건대입구: { x: 1000, y: 280, lines: ["2", "7"] }, // Interchange
+        뚝섬유원지: { x: 650, y: 650, lines: ["7"] },
+        청담: { x: 600, y: 700, lines: ["7"] },
+        강남구청: { x: 550, y: 750, lines: ["7"] },
+        학동: { x: 500, y: 750, lines: ["7"] },
+        논현: { x: 450, y: 750, lines: ["7"] },
+        반포: { x: 400, y: 750, lines: ["7"] },
+        고속터미널: { x: 700, y: 680, lines: ["3", "7", "9"] }, // Already defined as interchange
+        내방: { x: 350, y: 750, lines: ["7"] },
+        "총신대입구(이수)": { x: 500, y: 680, lines: ["4", "7"] }, // Already defined as interchange
+        남성: { x: 300, y: 750, lines: ["7"] },
+        숭실대입구: { x: 250, y: 750, lines: ["7"] },
+        상도: { x: 200, y: 750, lines: ["7"] },
+        장승배기: { x: 150, y: 750, lines: ["7"] },
+        신대방삼거리: { x: 100, y: 750, lines: ["7"] },
+        보라매: { x: 50, y: 750, lines: ["7"] },
+        신풍: { x: 50, y: 700, lines: ["7"] },
+        대림: { x: 150, y: 630, lines: ["2", "7"] }, // Already defined as interchange
+        남구로: { x: 100, y: 630, lines: ["7"] },
+        가산디지털단지: { x: 400, y: 580, lines: ["1", "7"] }, // Already defined as interchange
+        철산: { x: 50, y: 580, lines: ["7"] },
+        광명사거리: { x: 100, y: 580, lines: ["7"] },
+        천왕: { x: 150, y: 580, lines: ["7"] },
+        온수: { x: 350, y: 680, lines: ["1", "7"] }, // Already defined as interchange
+        까치울: { x: 200, y: 580, lines: ["7"] },
+        부천종합운동장: { x: 250, y: 580, lines: ["7"] },
+        춘의: { x: 300, y: 580, lines: ["7"] },
+        신중동: { x: 350, y: 580, lines: ["7"] },
+        부천시청: { x: 400, y: 580, lines: ["7"] },
+        상동: { x: 450, y: 580, lines: ["7"] },
+        삼산체육관: { x: 500, y: 580, lines: ["7"] },
+        굴포천: { x: 550, y: 580, lines: ["7"] },
+        부평구청: { x: 600, y: 580, lines: ["7"] },
+        산곡: { x: 650, y: 580, lines: ["7"] },
+        석남: { x: 700, y: 580, lines: ["7"] },
+
+        // --- Line 8 Stations (Pink) ---
+        암사: { x: 1150, y: 300, lines: ["8"] },
+        천호: { x: 1100, y: 580, lines: ["5", "8"] }, // Interchange
+        강동구청: { x: 1050, y: 480, lines: ["8"] },
+        몽촌토성: { x: 1000, y: 480, lines: ["8"] },
+        잠실: { x: 1000, y: 430, lines: ["2", "8"] }, // Already defined as interchange
+        석촌: { x: 950, y: 430, lines: ["8"] },
+        송파: { x: 900, y: 430, lines: ["8"] },
+        가락시장: { x: 1150, y: 730, lines: ["3", "8"] }, // Already defined as interchange
+        문정: { x: 850, y: 430, lines: ["8"] },
+        장지: { x: 800, y: 430, lines: ["8"] },
+        복정: { x: 750, y: 430, lines: ["8"] },
+        산성: { x: 700, y: 430, lines: ["8"] },
+        남한산성입구: { x: 650, y: 430, lines: ["8"] },
+        단대오거리: { x: 600, y: 430, lines: ["8"] },
+        신흥: { x: 550, y: 430, lines: ["8"] },
+        수진: { x: 500, y: 430, lines: ["8"] },
+        모란: { x: 450, y: 430, lines: ["8"] },
+      };
+
+      // Simplified segments for drawing lines.
+      const allLinePaths = {
+        1: [
+          [
+            "소요산",
+            "동두천",
+            "보산",
+            "동두천중앙",
+            "지행",
+            "덕정",
+            "덕계",
+            "양주",
+            "녹양",
+            "가능",
+            "의정부",
+            "회룡",
+            "망월사",
+            "도봉산",
+            "도봉",
+            "방학",
+            "창동",
+            "녹천",
+            "월계",
+            "광운대",
+          ],
+          [
+            "광운대",
+            "석계",
+            "신이문",
+            "외대앞",
+            "회기",
+            "청량리",
+            "제기동",
+            "신설동",
+            "동묘앞",
+            "동대문",
+            "종로5가",
+            "종로3가",
+            "종각",
+            "시청",
+            "서울",
+            "남영",
+            "용산",
+            "노량진",
+            "대방",
+            "신길",
+            "영등포",
+            "신도림",
+          ],
+          ["구로", "가산디지털단지", "독산", "금천구청", "광명"],
+          [
+            "구로",
+            "구일",
+            "개봉",
+            "오류동",
+            "온수",
+            "역곡",
+            "부천",
+            "송내",
+            "중동",
+            "부개",
+            "부평",
+            "백운",
+            "동암",
+            "간석",
+            "주안",
+            "도원",
+            "제물포",
+            "동인천",
+            "인천",
+          ],
+          ["신도림", "구로"],
+          [
+            "구로",
+            "병점",
+            "세마",
+            "오산대",
+            "오산",
+            "진위",
+            "송탄",
+            "서정리",
+            "평택지제",
+            "평택",
+            "성환",
+            "직산",
+            "두정",
+            "천안",
+            "봉명",
+            "쌍용",
+            "아산",
+            "탕정",
+            "배방",
+            "온양온천",
+            "신창",
+          ],
+        ],
+        2: [
+          [
+            "시청",
+            "을지로입구",
+            "을지로3가",
+            "을지로4가",
+            "동대문역사문화공원",
+            "신당",
+            "상왕십리",
+            "왕십리",
+            "한양대",
+            "뚝섬",
+            "성수",
+            "건대입구",
+            "강변",
+            "잠실나루",
+            "잠실",
+            "잠실새내",
+            "종합운동장",
+            "삼성",
+            "선릉",
+            "역삼",
+            "강남",
+            "교대",
+            "서초",
+            "방배",
+            "사당",
+            "낙성대",
+            "서울대입구",
+            "봉천",
+            "신림",
+            "신대방",
+            "구로디지털단지",
+            "대림",
+            "신도림",
+            "문래",
+            "영등포구청",
+            "당산",
+            "합정",
+            "홍대입구",
+            "신촌",
+            "이대",
+            "아현",
+            "충정로",
+            "시청",
+          ],
+          ["성수", "용답", "신답", "용두", "신설동"],
+          ["신도림", "도림천", "양천구청", "신정네거리", "까치산"],
+        ],
+        3: [
+          [
+            "대화",
+            "주엽",
+            "정발산",
+            "마두",
+            "백석",
+            "대곡",
+            "화정",
+            "원흥",
+            "삼송",
+            "지축",
+            "구파발",
+            "연신내",
+            "불광",
+            "녹번",
+            "홍제",
+            "무악재",
+            "독립문",
+            "경복궁",
+            "안국",
+            "종로3가",
+            "을지로3가",
+            "충무로",
+            "동대입구",
+            "약수",
+            "금호",
+            "옥수",
+            "압구정",
+            "신사",
+            "고속터미널",
+            "교대",
+            "남부터미널",
+            "양재",
+            "매봉",
+            "도곡",
+            "대치",
+            "학여울",
+            "대청",
+            "일원",
+            "수서",
+            "가락시장",
+            "경찰병원",
+            "오금",
+          ],
+        ],
+        4: [
+          [
+            "당고개",
+            "상계",
+            "노원",
+            "창동",
+            "쌍문",
+            "수유",
+            "미아",
+            "미아사거리",
+            "길음",
+            "성신여대입구",
+            "한성대입구",
+            "혜화",
+            "동대문",
+            "동대문역사문화공원",
+            "충무로",
+            "명동",
+            "회현",
+            "서울",
+            "숙대입구",
+            "삼각지",
+            "신용산",
+            "이촌",
+            "동작",
+            "총신대입구(이수)",
+            "사당",
+            "남태령",
+            "과천",
+            "인덕원",
+            "평촌",
+            "범계",
+            "금정",
+            "산본",
+            "상록수",
+            "오이도",
+          ],
+        ],
+        5: [
+          [
+            "방화",
+            "개화산",
+            "김포공항",
+            "송정",
+            "마곡",
+            "발산",
+            "우장산",
+            "화곡",
+            "까치산",
+            "목동",
+            "오목교",
+            "영등포구청",
+            "신길",
+            "여의도",
+            "여의나루",
+            "마포",
+            "공덕",
+            "애오개",
+            "충정로",
+            "서대문",
+            "광화문",
+            "종로3가",
+            "을지로4가",
+            "동대문역사문화공원",
+            "청구",
+            "신금호",
+            "행당",
+            "왕십리",
+            "마장",
+            "답십리",
+            "장한평",
+            "군자",
+            "아차산",
+            "광나루",
+            "천호",
+            "강동",
+          ],
+          [
+            "강동",
+            "길동",
+            "굽은다리",
+            "명일",
+            "고덕",
+            "상일동",
+            "강일",
+            "미사",
+            "하남풍산",
+            "하남시청",
+            "하남검단산",
+          ], // Hanam branch
+          [
+            "강동",
+            "둔촌동",
+            "올림픽공원",
+            "방이",
+            "오금",
+            "개롱",
+            "거여",
+            "마천",
+          ], // Macheon branch
+        ],
+        6: [
+          [
+            "응암",
+            "역촌",
+            "불광",
+            "독바위",
+            "연신내",
+            "구산",
+            "새절",
+            "증산",
+            "디지털미디어시티",
+            "월드컵경기장",
+            "마포구청",
+            "합정",
+            "상수",
+            "광흥창",
+            "대흥",
+            "공덕",
+            "효창공원앞",
+            "삼각지",
+            "녹사평",
+            "이태원",
+            "한강진",
+            "버티고개",
+            "약수",
+            "청구",
+            "신당",
+            "동묘앞",
+            "보문",
+            "안암",
+            "고려대",
+            "월곡",
+            "상월곡",
+            "돌곶이",
+            "석계",
+            "태릉입구",
+            "화랑대",
+            "봉화산",
+          ],
+        ],
+        7: [
+          [
+            "장암",
+            "도봉산",
+            "수락산",
+            "마들",
+            "노원",
+            "중계",
+            "하계",
+            "공릉",
+            "태릉입구",
+            "먹골",
+            "중화",
+            "상봉",
+            "면목",
+            "사가정",
+            "용마산",
+            "중곡",
+            "군자",
+            "어린이대공원",
+            "건대입구",
+            "뚝섬유원지",
+            "청담",
+            "강남구청",
+            "학동",
+            "논현",
+            "반포",
+            "고속터미널",
+            "내방",
+            "총신대입구(이수)",
+            "남성",
+            "숭실대입구",
+            "상도",
+            "장승배기",
+            "신대방삼거리",
+            "보라매",
+            "신풍",
+            "대림",
+            "남구로",
+            "가산디지털단지",
+            "철산",
+            "광명사거리",
+            "천왕",
+            "온수",
+            "까치울",
+            "부천종합운동장",
+            "춘의",
+            "신중동",
+            "부천시청",
+            "상동",
+            "삼산체육관",
+            "굴포천",
+            "부평구청",
+            "산곡",
+            "석남",
+          ],
+        ],
+        8: [
+          [
+            "암사",
+            "천호",
+            "강동구청",
+            "몽촌토성",
+            "잠실",
+            "석촌",
+            "송파",
+            "가락시장",
+            "문정",
+            "장지",
+            "복정",
+            "산성",
+            "남한산성입구",
+            "단대오거리",
+            "신흥",
+            "수진",
+            "모란",
+          ],
+        ],
+      };
+
+      // Mapping subwayId to line number and color
+      const LINE_COLORS = {
+        1001: LINE1_COLOR, // Line 1
+        1002: LINE2_COLOR, // Line 2
+        1003: LINE3_COLOR, // Line 3
+        1004: LINE4_COLOR, // Line 4
+        1005: LINE5_COLOR, // Line 5
+        1006: LINE6_COLOR, // Line 6
+        1007: LINE7_COLOR, // Line 7
+        1008: LINE8_COLOR, // Line 8
+        // Add more line IDs and colors as you expand the map
+        1063: "#747F00", // 경의중앙선 (Olive Green)
+        1065: "#003366", // 공항철도 (Dark Blue)
+        1075: "#FABE00", // 분당선 (Yellow)
+        1077: "#D40056", // 신분당선 (Red-Pink)
+      };
+
+      // Global variables for train data and currently selected station
+      let currentAllTrainData = []; // Stores all data fetched from STATION_NAMES
+      let trainsOnMap = []; // For canvas hover detection
+      let selectedStationName = null; // Currently clicked station
+
+      document.addEventListener("DOMContentLoaded", () => {
+        drawMapAndStations(); // Initial draw without highlight
+        fetchSubwayData(); // Start background fetching for map
+        // Refresh map data every 30 seconds
+        setInterval(fetchSubwayData, 30000);
+      });
+
+      // Function to draw the map lines and stations
+      function drawMapAndStations(highlightedStation = null) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "#f8f8f8";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Draw all subway lines
+        for (const lineNum in allLinePaths) {
+          const color = LINE_COLORS[`100${lineNum}`]; // Convert '1' to '1001' etc.
+          if (!color) {
+            console.warn(`Color not defined for line ID: 100${lineNum}`);
+            continue;
+          }
+          ctx.strokeStyle = color;
+          ctx.lineWidth = 4;
+
+          allLinePaths[lineNum].forEach((segment) => {
+            ctx.beginPath();
+            if (segment.length > 0) {
+              const startCoords = allStationCoordinates[segment[0]];
+              if (startCoords) {
+                ctx.moveTo(startCoords.x, startCoords.y);
+                for (let i = 1; i < segment.length; i++) {
+                  const nextCoords = allStationCoordinates[segment[i]];
+                  if (nextCoords) {
+                    ctx.lineTo(nextCoords.x, nextCoords.y);
+                  }
+                }
+              }
+            }
+            ctx.stroke();
+          });
+        }
+
+        // Draw all stations and their names
+        ctx.font = "10px Arial";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+
+        for (const stationName in allStationCoordinates) {
+          const coords = allStationCoordinates[stationName];
+
+          // Draw station dot
+          ctx.beginPath();
+          ctx.arc(coords.x, coords.y, STATION_DOT_RADIUS, 0, Math.PI * 2);
+          ctx.fillStyle = "white"; // White dot
+          ctx.fill();
+
+          // Draw border color based on the first line or highlight
+          if (highlightedStation && stationName === highlightedStation) {
+            ctx.strokeStyle = "red"; // Highlight color
+            ctx.lineWidth = 3;
+          } else if (coords.lines && coords.lines.length > 0) {
+            // Use the color of the first line the station belongs to
+            const firstLineId = coords.lines[0];
+            ctx.strokeStyle =
+              LINE_COLORS[`100${firstLineId}`] || STATION_DOT_COLOR;
+            ctx.lineWidth = 1.5;
+          } else {
+            ctx.strokeStyle = STATION_DOT_COLOR;
+            ctx.lineWidth = 1.5;
+          }
+          ctx.stroke();
+
+          // Draw station name
+          ctx.fillStyle = STATION_TEXT_COLOR;
+          ctx.fillText(
+            stationName,
+            coords.x,
+            coords.y + STATION_DOT_RADIUS + 8
+          );
+        }
+      }
+
+      // Draws train indicators on top of the map
+      function drawTrainIndicators() {
+        // Redraw map elements and stations with the current selected station highlighted
+        drawMapAndStations(selectedStationName);
+
+        trainsOnMap = []; // Clear previous train positions for hover detection
+
+        currentAllTrainData.forEach((train) => {
+          const { subwayId, arvlCd, statnNm, arvlMsg2, arvlMsg3, trainLineNm } =
+            train;
+
+          let stationToMark = arvlMsg3;
+          if (!stationToMark || stationToMark === "정보 없음") {
+            stationToMark = statnNm;
+          }
+
+          const coords = allStationCoordinates[stationToMark];
+
+          if (coords) {
+            const radius = 6;
+            let color = "gray"; // Default for unknown status
+            let borderColor = "white";
+
+            // Use line color for train indicator background if available, otherwise generic
+            const lineIndicatorColor =
+              LINE_COLORS[subwayId] || "rgba(128, 128, 128, 0.7)";
+
+            if (arvlCd === "1" || arvlCd === "2") {
+              // Arrival/Departure
+              color = "rgba(255, 0, 0, 0.8)"; // Red for arriving/departing
+              borderColor = "black";
+            } else if (arvlCd === "5") {
+              // Arrived previous station
+              color = "rgba(255, 165, 0, 0.8)"; // Orange for previous station arrival
+              borderColor = "black";
+            } else if (arvlCd === "99") {
+              // In operation (far away)
+              color = "rgba(0, 0, 255, 0.6)"; // Blue for far away (in operation)
+              borderColor = "white";
+            } else {
+              // Other statuses, default to line color or gray
+              color = lineIndicatorColor;
+              borderColor = "white";
+            }
+
+            ctx.beginPath();
+            ctx.arc(coords.x, coords.y, radius, 0, Math.PI * 2);
+            ctx.fillStyle = color;
+            ctx.fill();
+            ctx.strokeStyle = borderColor;
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+
+            trainsOnMap.push({
+              x: coords.x,
+              y: coords.y,
+              radius: radius,
+              tooltipText: `${trainLineNm} (${
+                lineMap[subwayId] || subwayId
+              }) - ${arvlMsg2} (${arvlMsg3})`,
+            });
+          } else {
+            // console.warn(`Coordinates not found for station: ${stationToMark} (Line ID: ${subwayId}). Train will not be displayed on map.`);
+          }
+        });
+      }
+
+      // --- Event Listeners ---
+      canvas.addEventListener("mousemove", (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
+
+        let hoveredTrain = null;
+        for (const train of trainsOnMap) {
+          const distance = Math.sqrt(
+            (mouseX - train.x) ** 2 + (mouseY - train.y) ** 2
+          );
+          if (distance < train.radius) {
+            hoveredTrain = train;
+            break;
+          }
+        }
+
+        if (hoveredTrain) {
+          canvasTooltip.style.display = "block";
+          canvasTooltip.style.left = `${hoveredTrain.x}px`;
+          canvasTooltip.style.top = `${hoveredTrain.y - 10}px`;
+          canvasTooltip.textContent = hoveredTrain.tooltipText;
+        } else {
+          canvasTooltip.style.display = "none";
+        }
+      });
+
+      canvas.addEventListener("mouseout", () => {
+        canvasTooltip.style.display = "none";
+      });
+
+      canvas.addEventListener("click", (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const clickX = e.clientX - rect.left;
+        const clickY = e.clientY - rect.top;
+
+        let clickedStation = null;
+        for (const stationName in allStationCoordinates) {
+          const coords = allStationCoordinates[stationName];
+          const distance = Math.sqrt(
+            (clickX - coords.x) ** 2 + (clickY - coords.y) ** 2
+          );
+          if (distance < STATION_DOT_RADIUS + CLICK_TOLERANCE) {
+            clickedStation = stationName;
+            break;
+          }
+        }
+
+        if (clickedStation) {
+          selectedStationName = clickedStation; // Set the selected station
+          fetchAndDisplayClickedStationInfo(selectedStationName); // NEW: Fetch and display info for this specific station
+          drawTrainIndicators(); // Redraw map with highlight and trains
+        } else {
+          selectedStationName = null; // No station selected
+          document.getElementById("subwayInfo").innerHTML =
+            '<p class="info-message">지하철역을 클릭하면 실시간 도착 정보가 표시됩니다.</p>';
+          drawTrainIndicators(); // Redraw map without highlight
+        }
+      });
+
+      // --- Data Fetching and Processing ---
+
+      // This function fetches data for ALL stations in STATION_NAMES (for map display)
+      async function fetchSubwayData() {
+        try {
+          // Only show loading message for map update if no specific station is selected
+          if (selectedStationName === null) {
+            document.getElementById("subwayInfo").innerHTML =
+              '<p class="info-message">실시간 지하철 도착 정보를 불러오는 중... (지도 업데이트)</p>';
+          }
+
+          const fetchPromises = STATION_NAMES.map((stationName) => {
+            const endpoint = `http://swopenapi.seoul.go.kr/api/subway/${API_KEY}/xml/realtimeStationArrival/0/20/${encodeURIComponent(
+              stationName
+            )}`;
+            return fetch(endpoint)
+              .then((response) => {
+                if (!response.ok) {
+                  return response.text().then((text) => {
+                    throw new Error(
+                      `HTTP error! Status: ${
+                        response.status
+                      } for ${stationName}. API message: ${text.substring(
+                        0,
+                        100
+                      )}...`
+                    );
+                  });
+                }
+                return response.text();
+              })
+              .catch((error) => {
+                console.error(`Error fetching data for ${stationName}:`, error);
+                return null;
+              });
+          });
+
+          const allXmlResponses = await Promise.all(fetchPromises);
+          let newAllTrainData = [];
+
+          allXmlResponses.forEach((xmlText) => {
+            if (xmlText) {
+              const parser = new DOMParser();
+              const xmlDoc = parser.parseFromString(xmlText, "text/xml");
+
+              const resultCode =
+                xmlDoc.getElementsByTagName("code")[0]?.textContent;
+              if (resultCode && resultCode !== "INFO-000") {
+                return;
+              }
+
+              const rows = xmlDoc.getElementsByTagName("row");
+              for (let i = 0; i < rows.length; i++) {
+                const row = rows[i];
+                const train = {
+                  trainLineNm:
+                    row.getElementsByTagName("trainLineNm")[0]?.textContent ||
+                    "정보 없음",
+                  arvlMsg2:
+                    row.getElementsByTagName("arvlMsg2")[0]?.textContent ||
+                    "정보 없음",
+                  arvlMsg3:
+                    row.getElementsByTagName("arvlMsg3")[0]?.textContent || "",
+                  subwayId:
+                    row.getElementsByTagName("subwayId")[0]?.textContent,
+                  btrainNo:
+                    row.getElementsByTagName("btrainNo")[0]?.textContent,
+                  recptnDt:
+                    row.getElementsByTagName("recptnDt")[0]?.textContent,
+                  updnLine:
+                    row.getElementsByTagName("updnLine")[0]?.textContent,
+                  statnNm: row.getElementsByTagName("statnNm")[0]?.textContent,
+                  arvlCd: row.getElementsByTagName("arvlCd")[0]?.textContent,
+                  barvlDt:
+                    row.getElementsByTagName("barvlDt")[0]?.textContent ||
+                    "N/A",
+                };
+                newAllTrainData.push(train);
+              }
+            }
+          });
+
+          currentAllTrainData = newAllTrainData; // Update global data cache for map
+          drawTrainIndicators(); // Redraw trains on map
+
+          // If a station was already selected, refresh its info display using the newly fetched data
+          if (selectedStationName) {
+            displayStationInfo(selectedStationName, currentAllTrainData); // Pass currentAllTrainData
+          }
+        } catch (error) {
+          console.error("Error fetching subway data for map:", error);
+          if (selectedStationName === null) {
+            document.getElementById("subwayInfo").innerHTML = `
+                        <p class="error-message">지도 데이터 업데이트 실패: ${error.message}</p>
+                    `;
+          }
+        }
+      }
+
+      // NEW: Function to fetch and display data for a SINGLE clicked station
+      async function fetchAndDisplayClickedStationInfo(stationName) {
+        const subwayInfoDiv = document.getElementById("subwayInfo");
+        subwayInfoDiv.innerHTML = `<h2>${stationName}역 실시간 도착 정보</h2><p class="loading-message">정보를 불러오는 중...</p>`;
+
+        try {
+          const endpoint = `http://swopenapi.seoul.go.kr/api/subway/${API_KEY}/xml/realtimeStationArrival/0/20/${encodeURIComponent(
+            stationName
+          )}`;
+          const response = await fetch(endpoint);
+
+          if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(
+              `HTTP error! Status: ${
+                response.status
+              }. API message: ${errorText.substring(0, 100)}...`
+            );
+          }
+
+          const xmlText = await response.text();
+          const parser = new DOMParser();
+          const xmlDoc = parser.parseFromString(xmlText, "text/xml");
+
+          const resultCode =
+            xmlDoc.getElementsByTagName("code")[0]?.textContent;
+          const developerMessage =
+            xmlDoc.getElementsByTagName("developerMessage")[0]?.textContent;
+
+          if (resultCode && resultCode !== "INFO-000") {
+            subwayInfoDiv.innerHTML = `<h2>${stationName}역 실시간 도착 정보</h2><p class="error-message">API 오류 발생: ${resultCode}<br>${
+              developerMessage || "알 수 없는 오류"
+            }</p>`;
+            console.error(
+              "API returned an error code for clicked station:",
+              resultCode,
+              developerMessage
+            );
+            return;
+          }
+
+          const rows = xmlDoc.getElementsByTagName("row");
+          let clickedStationTrainData = [];
+
+          if (rows.length === 0) {
+            subwayInfoDiv.innerHTML = `<h2>${stationName}역 실시간 도착 정보</h2><p class="info-message">현재 ${stationName}역에 대한 도착 정보가 없습니다.</p>`;
+            return;
+          }
+
+          for (let i = 0; i < rows.length; i++) {
+            const row = rows[i];
+            const train = {
+              trainLineNm:
+                row.getElementsByTagName("trainLineNm")[0]?.textContent ||
+                "정보 없음",
+              arvlMsg2:
+                row.getElementsByTagName("arvlMsg2")[0]?.textContent ||
+                "정보 없음",
+              arvlMsg3:
+                row.getElementsByTagName("arvlMsg3")[0]?.textContent || "",
+              subwayId: row.getElementsByTagName("subwayId")[0]?.textContent,
+              btrainNo: row.getElementsByTagName("btrainNo")[0]?.textContent,
+              recptnDt: row.getElementsByTagName("recptnDt")[0]?.textContent,
+              updnLine: row.getElementsByTagName("updnLine")[0]?.textContent,
+              statnNm: row.getElementsByTagName("statnNm")[0]?.textContent,
+              arvlCd: row.getElementsByTagName("arvlCd")[0]?.textContent,
+              barvlDt:
+                row.getElementsByTagName("barvlDt")[0]?.textContent || "N/A",
+            };
+            clickedStationTrainData.push(train);
+          }
+
+          // Display the fetched data for the clicked station
+          displayStationInfo(stationName, clickedStationTrainData);
+        } catch (error) {
+          console.error(
+            `Error fetching data for clicked station ${stationName}:`,
+            error
+          );
+          subwayInfoDiv.innerHTML = `<h2>${stationName}역 실시간 도착 정보</h2><p class="error-message">정보를 불러오는 데 실패했습니다: ${error.message}</p>`;
+        }
+      }
+
+      const lineMap = {
+        1001: "1호선",
+        1002: "2호선",
+        1003: "3호선",
+        1004: "4호선",
+        1005: "5호선",
+        1006: "6호선",
+        1007: "7호선",
+        1008: "8호선",
+        1009: "9호선",
+        1063: "경의중앙선",
+        1065: "공항철도",
+        1075: "분당선",
+        1077: "신분당선",
+      };
+
+      // Function to display info for a specific station (now takes data as argument)
+      function displayStationInfo(stationName, dataToDisplay) {
+        const subwayInfoDiv = document.getElementById("subwayInfo");
+        subwayInfoDiv.innerHTML = `<h2>${stationName}역 실시간 도착 정보</h2>`;
+
+        // Filter data for the selected station from the provided dataToDisplay
+        const stationTrains = dataToDisplay.filter(
+          (train) =>
+            train.statnNm === stationName || train.arvlMsg3 === stationName
+        );
+
+        if (stationTrains.length === 0) {
+          subwayInfoDiv.innerHTML += `<p class="info-message">현재 ${stationName}역에 대한 도착 정보가 없습니다.</p>`;
+          return;
+        }
+
+        // Sort data for better readability
+        stationTrains.sort((a, b) => {
+          if (a.subwayId !== b.subwayId) {
+            return a.subwayId.localeCompare(b.subwayId);
+          }
+          // Prioritize trains arriving/departing
+          if (a.arvlCd === "2" || a.arvlCd === "1") return -1;
+          if (b.arvlCd === "2" || b.arvlCd === "1") return 1;
+          return parseInt(a.barvlDt) - parseInt(b.barvlDt);
+        });
+
+        const uniqueTrainsToDisplay = new Map();
+        stationTrains.forEach((train) => {
+          const uniqueKey = `${train.btrainNo}-${train.subwayId}-${train.arvlMsg2}-${train.arvlMsg3}`;
+          if (!uniqueTrainsToDisplay.has(uniqueKey)) {
+            uniqueTrainsToDisplay.set(uniqueKey, train);
+
+            let lineNameDisplay = train.trainLineNm;
+            if (lineMap[train.subwayId]) {
+              lineNameDisplay = `${lineMap[train.subwayId]} (${
+                train.trainLineNm
+              })`;
+            }
+
+            const subwayLineDiv = document.createElement("div");
+            subwayLineDiv.classList.add("subway-line");
+            subwayLineDiv.innerHTML = `
+                        <div class="line-info">
+                            <div class="line-name">${lineNameDisplay}</div>
+                            <div>방면: ${train.updnLine || "정보 없음"}</div>
+                            <div>현재 위치: ${
+                              train.arvlMsg3 || "알 수 없음"
+                            }</div>
+                        </div>
+                        <div class="${
+                          train.arvlMsg2.includes("도착")
+                            ? "arrival-msg"
+                            : "status-msg"
+                        }">
+                            ${train.arvlMsg2}
+                            ${
+                              train.barvlDt !== "N/A"
+                                ? ` (약 ${train.barvlDt}초)`
+                                : ""
+                            }
+                        </div>
+                    `;
+            subwayInfoDiv.appendChild(subwayLineDiv);
+          }
+        });
+      }
+    </script>
+  </body>
+</html>

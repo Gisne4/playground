@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="ko">
+  {/* 언어 속성 한국어로 변경 */}
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>개선된 가로 스크롤 페이지</title>
+    {/* 제목 한국어로 변경 */}
+    <style>
+      /* Reset and base styles */
+      body {
+        margin: 0;
+        padding: 0;
+        font-family: "Arial", sans-serif;
+        overflow: hidden; /* Prevent default scrollbar */
+        background-color: #6ab7ff; /* Initial background color (first panel) */
+        /* Use GSAP for background color changes, remove CSS transition */
+      }
+
+      .horizontal-container {
+        position: relative;
+        width: 100vw;
+        height: 100vh;
+        overflow: hidden; /* Ensure container clips content */
+      }
+
+      .horizontal-wrapper {
+        position: relative; /* Changed from absolute for easier calculations? Let's test. No, needs to be absolute for pinning. Reverting. */
+        position: absolute;
+        top: 0;
+        left: 0;
+        display: flex;
+        /* width will be set by JS */
+        height: 100%;
+        will-change: transform; /* Performance hint */
+      }
+
+      .panel {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        width: 100vw;
+        height: 100vh;
+        flex-shrink: 0; /* Prevent panels from shrinking */
+        color: white;
+        font-size: 2.5em; /* Base font size, consider vw units for scaling */
+        text-align: center;
+        overflow: hidden; /* Hide overflowing animated content */
+        position: relative;
+        box-sizing: border-box; /* Include padding in width/height */
+      }
+
+      .panel h2 {
+        font-size: clamp(2em, 8vw, 4em); /* Responsive font size */
+        margin-bottom: 0.5em;
+        text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.5);
+        /* Initial state for animation - handled by GSAP */
+      }
+
+      .panel p {
+        font-size: clamp(0.9em, 3vw, 1.3em); /* Responsive font size */
+        padding: 0 10vw; /* Adjusted padding */
+        line-height: 1.6;
+        text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.4);
+        max-width: 800px; /* Limit text width for readability */
+        /* Initial state for animation - handled by GSAP */
+      }
+
+      /* Navigation Styles */
+      .navigation {
+        position: fixed;
+        bottom: 25px; /* Slightly adjusted position */
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        gap: 15px;
+        z-index: 100; /* Ensure it's above everything */
+        padding: 5px;
+        background: rgba(0, 0, 0, 0.1); /* Subtle background for contrast */
+        border-radius: 20px;
+      }
+
+      .nav-dot {
+        width: 16px; /* Slightly smaller */
+        height: 16px;
+        border-radius: 50%;
+        background-color: rgba(255, 255, 255, 0.4);
+        cursor: pointer;
+        transition: background-color 0.3s ease; /* Keep CSS transition for hover */
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+      }
+
+      .nav-dot.active {
+        background-color: rgba(255, 255, 255, 0.9);
+        /* GSAP will handle active scale */
+      }
+
+      .nav-dot:hover {
+        background-color: rgba(255, 255, 255, 0.7);
+      }
+
+      /* Hide scrollbar */
+      *::-webkit-scrollbar {
+        display: none;
+      }
+      html {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+      }
+      body {
+        overflow-y: scroll;
+      } /* Enable vertical scroll for ScrollTrigger pinning */
+    </style>
+  </head>
+  <body>
+    <div class="horizontal-container">
+      <div class="horizontal-wrapper">
+        <div class="panel one" data-color="#6ab7ff">
+          <h2>모던 코리아에 오신 것을 환영합니다</h2>
+          {/* 한국어 텍스트 */}
+          <p>가로로 스크롤하여 다채로운 풍경과 풍부한 문화를 탐험하세요.</p>
+        </div>
+        <div class="panel two" data-color="#ff7851">
+          <h2>대조의 땅</h2>
+          <p>활기찬 도시부터 고요한 시골까지, 역동적인 에너지를 경험하세요.</p>
+        </div>
+        <div class="panel three" data-color="#88ef88">
+          <h2>전통과 혁신</h2>
+          <p>오랜 유산과 최첨단 기술의 조화를 발견하세요.</p>
+        </div>
+        <div class="panel four" data-color="#fdd047">
+          <h2>여정의 시작</h2>
+          <p>한국의 심장을 통과하는 시각적인 모험을 시작하세요.</p>
+        </div>
+      </div>
+    </div>
+
+    <nav class="navigation">
+      <div class="nav-dot active"></div>
+      <div class="nav-dot"></div>
+      <div class="nav-dot"></div>
+      <div class="nav-dot"></div>
+    </nav>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollToPlugin.min.js"></script>
+    {/* ScrollToPlugin 추가 */}
+
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        gsap.registerPlugin(ScrollTrigger, ScrollToPlugin); // ScrollToPlugin 등록
+
+        const container = document.querySelector(".horizontal-container");
+        const wrapper = document.querySelector(".horizontal-wrapper");
+        const panels = gsap.utils.toArray(".panel");
+        const navDots = gsap.utils.toArray(".nav-dot");
+        const body = document.body;
+
+        if (
+          !container ||
+          !wrapper ||
+          panels.length === 0 ||
+          navDots.length !== panels.length
+        ) {
+          console.error(
+            "필수 요소(컨테이너, 래퍼, 패널, 네비게이션 닷)를 찾을 수 없거나 개수가 맞지 않습니다. HTML 구조를 확인하세요."
+          );
+          return;
+        }
+
+        const totalPanels = panels.length;
+        // Wrapper 너비 설정 (패널 수 * 100vw)
+        gsap.set(wrapper, { width: `${totalPanels * 100}vw` });
+        // 각 패널 너비 강제 (혹시 모를 CSS 충돌 방지)
+        gsap.set(panels, { width: "100vw" });
+
+        let isScrolling = false; // 수동 스크롤 또는 자동 스냅 중인지 확인하는 플래그
+        let currentIndex = 0;
+        let backgroundTween; // 배경색 애니메이션 참조
+
+        const panelColors = panels.map(
+          (panel) => panel.getAttribute("data-color") || "#f0f0f0"
+        );
+
+        // --- 메인 가로 스크롤 애니메이션 ---
+        // 패널들을 직접 움직이는 대신 래퍼(wrapper)를 움직이는 것이 더 안정적일 수 있음
+        const scrollTween = gsap.to(wrapper, {
+          x: () => `-${wrapper.offsetWidth - window.innerWidth}px`, // 래퍼를 왼쪽으로 이동
+          ease: "none", // ScrollTrigger scrub에는 필수
+          scrollTrigger: {
+            trigger: container, // 트리거 요소
+            pin: true, // 컨테이너 고정
+            scrub: 0.5, // 스크롤 따라 부드럽게 움직임 (0.1 ~ 1 사이 값)
+            snap: {
+              snapTo: 1 / (totalPanels - 1), // 각 패널의 시작 지점에 스냅
+              duration: { min: 0.2, max: 0.4 }, // 스냅 애니메이션 지속 시간
+              delay: 0.05, // 스냅 전 지연 시간 (너무 길지 않게)
+              ease: "power1.inOut",
+            },
+            end: () => `+=${wrapper.offsetWidth - window.innerWidth}`, // 스크롤 끝 지점 동적 계산
+            // markers: true, // 디버깅용 마커 표시
+            onUpdate: (self) => {
+              // isScrolling 플래그가 true이면 (즉, 닷 클릭으로 인한 애니메이션 중이면) 업데이트 건너뛰기
+              if (isScrolling) return;
+
+              const progress = self.progress;
+              // 현재 보이는 패널 인덱스 계산 (반올림)
+              const activeIndex = Math.min(
+                totalPanels - 1,
+                Math.round(progress * (totalPanels - 1))
+              );
+
+              if (activeIndex !== currentIndex) {
+                currentIndex = activeIndex;
+                updateActiveDot(currentIndex);
+                // --- 배경색 전환 ---
+                // 이전 배경색 애니메이션이 있다면 중지
+                if (backgroundTween) {
+                  backgroundTween.kill();
+                }
+                // 새 배경색 애니메이션 시작
+                backgroundTween = gsap.to(body, {
+                  backgroundColor: panelColors[currentIndex],
+                  duration: 0.6, // 전환 시간 조정
+                  ease: "sine.inOut", // 부드러운 전환 이징
+                });
+              }
+            },
+            onToggle: (self) => {
+              body.classList.toggle("is-pinned", self.isActive);
+            },
+            // 스냅 애니메이션 시작/끝 콜백 (isScrolling 플래그 관리)
+            onSnapComplete: () => {
+              isScrolling = false;
+            },
+            onScrollStart: () => {
+              isScrolling = true;
+            }, // 스크롤 시작 시 플래그 설정 (스냅 포함)
+          },
+        });
+
+        // --- 패널 콘텐츠 애니메이션 ---
+        panels.forEach((panel, i) => {
+          const heading = panel.querySelector("h2");
+          const paragraph = panel.querySelector("p");
+          const contentElements = [heading, paragraph].filter((el) => el); // null 요소 제외
+
+          if (contentElements.length > 0) {
+            // 초기 상태 설정 (CSS 대신 JS로)
+            gsap.set(contentElements, { y: 40, opacity: 0 });
+
+            ScrollTrigger.create({
+              trigger: panel,
+              containerAnimation: scrollTween, // 메인 스크롤 타임라인에 연결
+              start: "left 70%", // 패널 왼쪽이 뷰포트 70% 지점에 도달했을 때 시작
+              end: "left 30%", // 패널 왼쪽이 뷰포트 30% 지점을 지날 때
+              // toggleActions: "play none none reverse", // 들어올 때 재생, 나갈 때 반대로
+              onEnter: () =>
+                gsap.to(contentElements, {
+                  y: 0,
+                  opacity: 1,
+                  duration: 0.6,
+                  ease: "power2.out",
+                  stagger: 0.15,
+                }),
+              onLeaveBack: () =>
+                gsap.to(contentElements, {
+                  y: 40,
+                  opacity: 0,
+                  duration: 0.4,
+                  ease: "power1.in",
+                  stagger: 0.1,
+                }),
+              // markers: true, // 개별 패널 트리거 마커
+              id: `panel-content-${i}`,
+            });
+
+            // --- 미세한 시차 효과 (Parallax) ---
+            // 콘텐츠 요소에 약간 다른 스크롤 속도 적용
+            gsap.to(contentElements, {
+              xPercent: -5, // 텍스트를 왼쪽으로 약간 이동 (패널 이동 방향과 반대)
+              ease: "none",
+              scrollTrigger: {
+                trigger: panel,
+                containerAnimation: scrollTween,
+                start: "left right", // 패널 왼쪽이 뷰포트 오른쪽 가장자리에 닿을 때 시작
+                end: "right left", // 패널 오른쪽이 뷰포트 왼쪽 가장자리에 닿을 때 끝
+                scrub: true, // 스크롤에 직접 연결
+                //  markers: true, // 시차 효과 마커
+                id: `panel-parallax-${i}`,
+              },
+            });
+          }
+        });
+
+        // --- 네비게이션 닷 업데이트 함수 ---
+        function updateActiveDot(index) {
+          navDots.forEach((dot, idx) => {
+            const isActive = idx === index;
+            dot.classList.toggle("active", isActive);
+            // 활성 닷 스케일 애니메이션
+            gsap.to(dot, {
+              scale: isActive ? 1.25 : 1, // 활성/비활성 크기
+              duration: 0.3,
+              ease: "back.out(1.7)", // 통통 튀는 효과
+            });
+          });
+        }
+
+        // --- 네비게이션 닷 클릭 이벤트 ---
+        navDots.forEach((dot, index) => {
+          dot.addEventListener("click", () => {
+            // 이미 애니메이션 중이거나 해당 인덱스가 활성화 상태면 클릭 무시
+            if (isScrolling || index === currentIndex) return;
+
+            isScrolling = true; // 클릭으로 인한 스크롤 시작 플래그 설정
+
+            // 목표 스크롤 위치 계산
+            // ScrollTrigger 시작점 + (전체 스크롤 가능 거리 * 목표 진행률)
+            const targetProgress = index / (totalPanels - 1);
+            const scrollableDistance = wrapper.offsetWidth - window.innerWidth;
+            const targetScrollY =
+              scrollTween.scrollTrigger.start +
+              targetProgress * scrollableDistance;
+
+            // ScrollToPlugin 사용하여 스크롤 애니메이션
+            gsap.to(window, {
+              scrollTo: {
+                y: targetScrollY,
+                autoKill: false, // 다른 스크롤 애니메이션 방해 방지
+              },
+              duration: 1.0, // 스크롤 이동 시간
+              ease: "power2.inOut", // 부드러운 이동 이징
+              onComplete: () => {
+                // 스크롤 완료 후 상태 업데이트
+                currentIndex = index;
+                updateActiveDot(currentIndex);
+                // 배경색 즉시 변경 (또는 부드럽게)
+                if (backgroundTween) backgroundTween.kill();
+                backgroundTween = gsap.to(body, {
+                  backgroundColor: panelColors[currentIndex],
+                  duration: 0.4,
+                  ease: "sine.out",
+                });
+                // 중요: ScrollTrigger의 내부 상태를 업데이트해야 할 수 있음
+                // scrollTween.scrollTrigger.update(); // 강제 업데이트 (필요시)
+                isScrolling = false; // 플래그 해제
+              },
+              overwrite: true, // 이전 scrollTo 애니메이션 덮어쓰기
+            });
+
+            // 클릭된 닷 시각적 피드백
+            gsap.fromTo(
+              dot,
+              { scale: 0.8 },
+              { scale: 1.25, duration: 0.3, ease: "back.out(2)" }
+            );
+          });
+        });
+
+        // --- 초기 상태 설정 ---
+        updateActiveDot(0); // 첫 번째 닷 활성화
+        gsap.set(body, { backgroundColor: panelColors[0] }); // 초기 배경색 설정
+
+        // --- 창 크기 변경 시 ScrollTrigger 업데이트 ---
+        let resizeTimer;
+        window.addEventListener("resize", () => {
+          clearTimeout(resizeTimer);
+          resizeTimer = setTimeout(() => {
+            console.log("창 크기 변경 감지, ScrollTrigger 새로고침");
+            ScrollTrigger.refresh(); // 모든 계산 새로고침
+          }, 250); // 250ms 디바운스
+        });
+
+        console.log("GSAP 및 ScrollTrigger 초기화 완료.");
+      });
+    </script>
+  </body>
+</html>

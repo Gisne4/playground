@@ -1,0 +1,95 @@
+* {
+  margin: 0px;
+}
+.con1 {
+  display: flex;
+}
+.con1 div {
+  width: 100px;
+  height: fit-content;
+  margin: 100px;
+  background-color: orange;
+}
+.con1 h2 {
+  transition: 0.8s;
+}
+.active {
+  background-color: rgb(116, 75, 0);
+  transform: translate(0px, 20px);
+  transition: 0.8s;
+  color: blanchedalmond;
+}
+.con2 {
+  width: 100%;
+}
+.con2 header {
+  display: flex;
+  z-index: 100;
+  position: fixed;
+  width: 100%;
+}
+.con2 header .logo {
+  position: absolute;
+  left: 30px;
+  top: 30px;
+}
+.con2 header ul {
+  display: flex;
+  list-style: none;
+  gap: 50px;
+  position: absolute;
+  right: 30px;
+  top: 30px;
+}
+
+.con2 header button {
+  background-color: unset;
+  height: fit-content;
+  display: none;
+  border: none;
+}
+
+.con2 header a {
+  text-decoration: none;
+  color: beige;
+  font-weight: 900;
+}
+.con2 .videoContainer {
+  width: 100%;
+}
+@media (max-width: 800px) {
+  .con2 header button {
+    padding: 10px;
+    color: beige;
+    font-size: 30px;
+  }
+  .con2 header .dada {
+    display: none;
+  }
+  .con2 header .menubut {
+    position: absolute;
+    right: 30px;
+    top: 30px;
+    display: block;
+  }
+  .con2 header .xbut {
+    position: absolute;
+    right: 30px;
+    top: 30px;
+    display: none;
+  }
+  .con2 header ul {
+    display: grid;
+    margin-top: 20%;
+    left: 20px;
+  }
+  .con2 header li {
+    margin-top: 30px;
+  }
+  .con2 header div {
+    background-color: rgba(0, 0, 0, 0.603);
+    width: 100vw;
+    display: none;
+    height: 100vh;
+  }
+}

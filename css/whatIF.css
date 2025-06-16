@@ -1,0 +1,48 @@
+* {
+  margin: 0px;
+  padding: 0px;
+}
+ul {
+  list-style: none;
+}
+.mama {
+  width: 90%;
+  padding-inline: 5%;
+  justify-items: center;
+}
+.caca {
+  display: inline-block;
+  font-size: 20px;
+  margin-block: 30px;
+}
+.tata {
+  height: 100vh;
+  align-content: center;
+}
+.coco {
+  height: 100vh;
+  width: 100%;
+  background-image: url(../img/consub_4.png);
+  background-repeat: repeat;
+  background-size: cover;
+  background-position: center;
+  justify-items: center;
+  align-content: center;
+}
+.coco ul {
+  width: 90%;
+  padding-inline: 5%;
+  display: flex;
+  gap: 10px;
+  transform: translate(0px, 400px);
+  flex-wrap: wrap;
+}
+.coco ul li {
+  width: calc(100% / 2 - 10px);
+  height: fit-content;
+}
+.coco ul li:nth-child(1) {
+}
+.coco ul li img {
+  width: 100%;
+}

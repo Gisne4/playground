@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vanilla JS CountUp</title>
+    <style>
+      .count-up-text {
+        font-size: 3em;
+        font-family: Arial, sans-serif;
+        color: #0056b3;
+        text-align: center;
+        margin-top: 50px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="myCountUp" class="count-up-text">0</div>
+
+    <script>
+      function vanillaCountUp(elementId, from, to, duration, separatorChar) {
+        const element = document.getElementById(elementId);
+        let current = from;
+        const range = to - from;
+        const increment = to > from ? 1 : -1;
+        const stepTime = Math.abs(Math.floor(duration / range)); // Time per increment
+
+        function formatNumber(num, sep) {
+          const parts = num.toFixed(0).toString().split(".");
+          parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, sep);
+          return parts.join(".");
+        }
+
+        const timer = setInterval(() => {
+          current += increment;
+          element.textContent = formatNumber(current, separatorChar);
+
+          if (
+            (increment > 0 && current >= to) ||
+            (increment < 0 && current <= to)
+          ) {
+            element.textContent = formatNumber(to, separatorChar); // Ensure it ends exactly on 'to'
+            clearInterval(timer);
+          }
+        }, stepTime);
+      }
+
+      // --- Usage Example ---
+      document.addEventListener("DOMContentLoaded", () => {
+        // This assumes the element with id 'myCountUp' is in view on page load.
+        // For more advanced "startWhenInView" functionality, you'd need an Intersection Observer.
+        vanillaCountUp("myCountUp", 0, 100, 5000, ","); // from 0 to 100 in 1 second, with comma separator
+      });
+    </script>
+  </body>
+</html>

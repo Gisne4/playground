@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Chart.js Line Chart</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+      /* Custom styles for centering and responsive canvas */
+      body {
+        font-family: "Inter", sans-serif;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh; /* Ensures body takes at least full viewport height */
+        background-color: #f0f4f8; /* Light background */
+        margin: 0;
+        padding: 20px;
+        box-sizing: border-box;
+      }
+      .chart-container {
+        background-color: #ffffff;
+        padding: 24px;
+        border-radius: 12px; /* Rounded corners */
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); /* Subtle shadow */
+        max-width: 800px; /* Max width for larger screens */
+        width: 100%; /* Fluid width */
+        /* Added height constraints to prevent vertical stretching */
+        height: 500px; /* Fixed height for the container */
+        max-height: 80vh; /* Max height relative to viewport height */
+        box-sizing: border-box;
+        display: flex; /* Use flexbox for internal alignment */
+        flex-direction: column; /* Stack children vertically */
+      }
+      canvas {
+        display: block; /* Ensures canvas takes full width of its container */
+        width: 100% !important; /* Override inline styles if any */
+        height: 100% !important; /* Make canvas fill the height of its container */
+      }
+
+      /* Custom styles for the chart title */
+      .chart-title {
+        font-size: 1.5rem; /* Equivalent to text-2xl */
+        font-weight: bold; /* Equivalent to font-bold */
+        text-align: center; /* Equivalent to text-center */
+        margin-bottom: 1.5rem; /* Equivalent to mb-6 (24px) */
+        color: #4a5568; /* Equivalent to text-gray-800 */
+      }
+    </style>
+  </head>
+  <body>
+    <div class="chart-container">
+      <canvas id="myLineChart"></canvas>
+    </div>
+
+    <script>
+      // Ensure the DOM is fully loaded before trying to access the canvas
+      document.addEventListener("DOMContentLoaded", function () {
+        // Get the canvas element
+        const ctx = document.getElementById("myLineChart").getContext("2d");
+
+        // Define the data for the chart
+        const data = {
+          labels: [
+            "January",
+            "February",
+            "March",
+            "April",
+            "May",
+            "June",
+            "July",
+          ],
+          datasets: [
+            {
+              label: "Sales",
+              data: [65, 59, 80, 81, 56, 55, 40],
+              // For line charts, typically a transparent background and a single line color
+              backgroundColor: "rgba(75, 192, 192, 0.2)", // Light fill under the line
+              borderColor: "rgba(75, 192, 192, 1)", // Solid line color
+              borderWidth: 2, // Thicker line
+              fill: true, // Fill the area under the line
+              tension: 0.4, // Smooth the line (0 for sharp corners)
+              pointBackgroundColor: "rgba(75, 192, 192, 1)", // Color of data points
+              pointBorderColor: "#fff", // Border color of data points
+              pointHoverBackgroundColor: "#fff", // Hover background color of data points
+              pointHoverBorderColor: "rgba(75, 192, 192, 1)", // Hover border color of data points
+              pointRadius: 5, // Size of data points
+              pointHoverRadius: 8, // Size of data points on hover
+            },
+          ],
+        };
+
+        // Configure the chart options
+        const options = {
+          responsive: true, // Make the chart responsive
+          maintainAspectRatio: false, // Allow canvas to resize freely within its container
+          scales: {
+            y: {
+              beginAtZero: true, // Start y-axis at 0
+              grid: {
+                color: "rgba(200, 200, 200, 0.2)", // Light grid lines
+              },
+              ticks: {
+                color: "#4a5568", // Darker tick labels
+              },
+            },
+            x: {
+              grid: {
+                display: false, // Hide x-axis grid lines
+              },
+              ticks: {
+                color: "#4a5568", // Darker tick labels
+              },
+            },
+          },
+          plugins: {
+            legend: {
+              display: true,
+              position: "top",
+              labels: {
+                color: "#4a5568", // Darker legend labels
+              },
+            },
+            title: {
+              display: false, // Title is in H1 tag, so hide chart title
+            },
+            tooltip: {
+              mode: "index", // Show tooltips for all datasets at the hovered x-axis position
+              intersect: false, // Show tooltip even if not directly over a data point
+              position: "nearest", // Position the tooltip near the mouse
+              callbacks: {
+                title: function (tooltipItems) {
+                  // Display the label (e.g., "January") as the title
+                  return tooltipItems[0].label;
+                },
+                label: function (tooltipItem) {
+                  // Display the dataset label and value (e.g., "Sales: 65")
+                  return tooltipItem.dataset.label + ": " + tooltipItem.raw;
+                },
+              },
+            },
+          },
+          animation: {
+            duration: 1500, // Animation duration in milliseconds
+            easing: "easeInOutQuad", // Easing function for animation
+          },
+        };
+
+        // Create the line chart
+        const myLineChart = new Chart(ctx, {
+          type: "line", // Changed type to 'line'
+          data: data,
+          options: options,
+        });
+      });
+    </script>
+  </body>
+</html>

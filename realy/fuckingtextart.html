@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+
+    <title>Splitting.js: Are we good?</title>
+
+    <style>
+      @import url("https://fonts.googleapis.com/css?family=Work+Sans:800");
+      .skid {
+        color: rgb(255, 0, 170);
+        font-family: "Work Sans", sans-serif;
+        font-weight: 800;
+        font-size: calc(50vw / var(--char-total));
+        transform: skewY(-5deg) translateY(0%);
+        -webkit-animation: slide-down 2.5s cubic-bezier(0.7, 0, 0.2, 1)
+          alternate both infinite;
+        animation: slide-down 2.5s cubic-bezier(0.7, 0, 0.2, 1) alternate both
+          infinite;
+      }
+      @-webkit-keyframes slide-down {
+        100% {
+          transform: skewY(-5deg) translateY(50%);
+        }
+      }
+      @keyframes slide-down {
+        100% {
+          transform: skewY(-5deg) translateY(50%);
+        }
+      }
+      .skid .word,
+      .skid .char {
+        display: inline-block;
+        position: relative;
+      }
+      .skid .word:before,
+      .skid .word:after,
+      .skid .char:before,
+      .skid .char:after {
+        content: attr(data-char);
+        visibility: visible;
+        color: #f8c43a;
+        position: absolute;
+        left: 0;
+        display: block;
+        top: auto;
+        bottom: 0;
+        z-index: 3;
+        -webkit-animation: expand 2.5s cubic-bezier(0.6, 0, 0.15, 1) alternate
+          both infinite;
+        animation: expand 2.5s cubic-bezier(0.6, 0, 0.15, 1) alternate both
+          infinite;
+      }
+      @-webkit-keyframes expand {
+        0%,
+        20% {
+          transform: translateY(0%);
+        }
+      }
+      @keyframes expand {
+        0%,
+        20% {
+          transform: translateY(0%);
+        }
+      }
+      .skid .word:before,
+      .skid .word:after {
+        content: attr(data-word);
+        z-index: 2;
+      }
+      .skid .word:before {
+        color: #a61bc9;
+        transform: translateY(-45%);
+        -webkit-clip-path: polygon(0 0, 100% 0, 100% 60%, 0 60%);
+        clip-path: polygon(0 0, 100% 0, 100% 60%, 0 60%);
+      }
+      .skid .word:after {
+        color: #6233e4;
+        transform: translateY(-75%);
+        -webkit-clip-path: polygon(0 0, 100% 0, 100% 45%, 0 45%);
+        clip-path: polygon(0 0, 100% 0, 100% 45%, 0 45%);
+      }
+      .skid .char:before {
+        color: #4aacfd;
+        transform: translateY(-95%);
+        -webkit-clip-path: polygon(0 0, 100% 0, 100% 35%, 0 35%);
+        clip-path: polygon(0 0, 100% 0, 100% 35%, 0 35%);
+      }
+      .skid .char:after {
+        color: #18f7ff;
+        transform: translateY(-105%);
+        -webkit-clip-path: polygon(0 0, 100% 0, 100% 25%, 0 25%);
+        clip-path: polygon(0 0, 100% 0, 100% 25%, 0 25%);
+      }
+    </style>
+  </head>
+
+  <body translate="no">
+    <div
+      class="skid words chars splitting"
+      data-splitting="chars"
+      style="--word-total: 4; --char-total: 18"
+    >
+      <span class="word" data-word="CLICK" style="--word-index: 0"
+        ><span class="char" data-char="C" style="--char-index: 1">C</span
+        ><span class="char" data-char="L" style="--char-index: 2">L</span
+        ><span class="char" data-char="I" style="--char-index: 3">I</span
+        ><span class="char" data-char="C" style="--char-index: 4">C</span
+        ><span class="char" data-char="K" style="--char-index: 5">K</span></span
+      >
+      <span class="whitespace"> </span>
+
+      <span class="word" data-word="TO" style="--word-index: 1"
+        ><span class="char" data-char="T" style="--char-index: 6">T</span
+        ><span class="char" data-char="O" style="--char-index: 7">O</span>
+      </span>
+      <span class="whitespace"> </span>
+
+      <span class="word" data-word="SPEED" style="--word-index: 2"
+        ><span class="char" data-char="S" style="--char-index: 8">S</span
+        ><span class="char" data-char="P" style="--char-index: 9">P</span
+        ><span class="char" data-char="E" style="--char-index: 10">E</span
+        ><span class="char" data-char="E" style="--char-index: 11">E</span
+        ><span class="char" data-char="D" style="--char-index: 12">D</span>
+      </span>
+    </div>
+  </body>
+</html>

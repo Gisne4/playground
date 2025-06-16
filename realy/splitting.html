@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Text Animation</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inconsolata:700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        overflow: hidden;
+        min-height: 100vh;
+        background-color: black;
+        display: flex;
+        flex-wrap: wrap;
+        color: white;
+        justify-content: center; /* Center the text container */
+        align-items: center;
+      }
+      h2 {
+        font-family: "Inconsolata", monospace;
+        font-size: 1.5rem;
+        text-transform: uppercase;
+        width: fit-content; /* Adjust width to content */
+        line-height: 2;
+        position: relative; /* Allows for absolute positioning of characters */
+      }
+      .char {
+        position: absolute;
+        animation: move 5s infinite linear; /* Shortened animation for circular motion */
+        transform-origin: 0 0; /* Important for circular positioning */
+        white-space: nowrap;
+      }
+      @keyframes move {
+        from {
+          transform: rotate(0deg) translateX(100px); /* Start at original */
+        }
+        to {
+          transform: rotate(360deg) translateX(100px);
+        }
+      }
+    </style>
+    <script src="https://unpkg.com/splitting/dist/splitting.min.js"></script>
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/splitting/dist/splitting.css"
+    />
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        Splitting({
+          by: "chars", //split by characters
+        });
+        const h2 = document.querySelector("h2");
+        const chars = h2.querySelectorAll(".char");
+
+        const radius = 10; // Radius of the circle
+        const circumference = 2 * Math.PI * radius;
+        const charLength = chars.length;
+        const angleStep = 360 / charLength;
+
+        chars.forEach((char, index) => {
+          const angle = index * angleStep;
+          char.style.setProperty("--char-index", index);
+          char.style.transform = `rotate(${angle}deg) translateX(${radius}px)`;
+          char.style.animationDelay = `${index * 50}ms`; // Stagger the animation start
+        });
+      });
+    </script>
+  </head>
+  <body>
+    <h2 data-splitting>
+      BEERWAVES BEERWAVES BEERWAVES BEERWAVES BEERWAVES BEERWAVES BEERWAVES
+      BEERWAVES BEERWAVES BEERWAVES BEERWAVES BEERWAVES BEERWAVES BEERWAVES
+      BEERWAVES BEERWAVES BEERWAVES BEERWAVES BEERWAVES BEERWAVES BEERWAVES
+      BEERWAVES BEERWAVES BEERWAVES BEERWAVES BEERWAVES BEERWAVES BEERWAVES
+      BEERWAVES BEERWAVES BEERWAVES BEERWAVES BEERWAVES BEERWAVES BEERWAVES
+      BEERWAVES BEERWAVES BEERWAVES BEERWAVES BEERWAVES BEERWAVES BEERWAVES
+      BEERWAVES BEERWAVES BEERWAVES BEERWAVES BEERWAVES BEERWAVES BEERWAVES
+      BEERWAVES BEERWAVES BEERWAVES BEERWAVES BEERWAVES BEERWAVES BEERWAVES
+      BEERWAVES BEERWAVES BEERWAVES BEERWAVES BEERWAVES BEERWAVES BEERWAVES
+      BEERWAVES BEERWAVES BEERWAVES BEERWAVES BEERWAVES BEERWAVES BEERWAVES
+      BEERWAVES BEERWAVES BEERWAVES BEERWAVES BEERWAVES BEERWAVES BEERWAVES
+      BEERWAVES BEERWAVES BEERWAVES BEERWAVES BEERWAVES BEERWAVES BEERWAVES
+      BEERWAVES BEERWAVES BEERWAVES BEERWAVES BEERWAVES BEERWAVES BEERWAVES
+      BEERWAVES BEERWAVES BEERWAVES BEERWAVES BEERWAVES BEERWAVES BEERWAVES
+      BEERWAVES BEERWAVES BEERWAVES BEERWAVES BEERWAVES BEERWAVES BEERWAVES
+      BEERWAVES BEERWAVES BEERWAVES BEERWAVES BEERWAVES BEERWAVES BEERWAVES
+      BEERWAVES BEERWAVES BEERWAVES BEERWAVES BEERWAVES BEERWAVES BEERWAVES
+      BEERWAVES BEERWAVES BEERWAVES BEERWAVES BEERWAVES BEERWAVES BEERWAVES
+      BEERWAVES BEERWAVES BEERWAVES BEERWAVES BEERWAVES BEERWAVES BEERWAVES
+      BEERWAVES BEERWAVES BEERWAVES BEERWAVES BEERWAVES BEERWAVES BEERWAVES
+      BEERWAVES BEERWAVES BEERWAVES BEERWAVES BEERWAVES BEERWAVES BEERWAVES
+      BEERWAVES BEERWAVES BEERWAVES BEERWAVES BEERWAVES BEERWAVES BEERWAVES
+      BEERWAVES BEERWAVES BEERWAVES BEERWAVES BEERWAVES BEERWAVES BEERWAVES
+      BEERWAVES BEERWAVES BEERWAVES BEERWAVES BEERWAVES BEERWAVES BEERWAVES
+      BEERWAVES BEERWAVES BEERWAVES BEERWAVES BEERWAVES BEERWAVES BEERWAVES
+      BEERWAVES BEERWAVES BEERWAVES BEERWAVES BEERWAVES BEERWAVES BEERWAVES
+      BEERWAVES BEERWAVES BEERWAVES BEERWAVES BEERWAVES BEERWAVES BEERWAVES
+      BEERWAVES BEERWAVES BEERWAVES BEERWAVES BEERWAVES BEERWAVES BEERWAVES
+      BEERWAVES BEERWAVES BEERWAVES BEERWAVES BEERWAVES BEERWAVES BEERWAVES
+      BEERWAVES BEERWAVES BEERWAVES BEERWAVES BEERWAVES BEERWAVES BEERWAVES
+      BEERWAVES BEERWAVES BEERWAVES BEERWAVES BEERWAVES BEERWAVES BEERWAVES
+      BEERWAVES BEERWAVES BEERWAVES BEERWAVES BEERWAVES BEERWAVES BEERWAVES
+      BEERWAVES BEERWAVES BEERWAVES BEERWAVES
+    </h2>
+  </body>
+</html>

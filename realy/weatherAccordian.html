@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <style>
+      .fade-in-ul {
+        overflow-x: auto; /* Enable horizontal scrolling if content overflows */
+        white-space: nowrap; /* Prevent list items from wrapping */
+      }
+
+      .day-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: flex; /* Arrange list items horizontally */
+      }
+
+      .day-list li {
+        /* Initial styling for each day item (tab) */
+        background-color: #816664; /* Example background */
+        border: 1px solid #ccc;
+        margin-right: 5px; /* Space between tabs */
+        cursor: pointer;
+        transition: width 0.3s ease-in-out; /* Smooth width transition */
+        overflow: hidden; /* Hide content that exceeds initial width */
+        display: flex;
+        flex-direction: column; /* Stack content vertically within each tab */
+        align-items: center; /* Center content horizontally */
+        padding: 10px;
+        width: 80px; /* Initial collapsed width */
+      }
+
+      .day-list li:first-child {
+        margin-left: 0; /* Remove left margin for the first item */
+      }
+
+      .day-list li.active {
+        /* Styling for the expanded/active tab */
+        width: 300px; /* Example expanded width */
+      }
+
+      .day-list li span,
+      .day-list li .day-values {
+        white-space: nowrap; /* Prevent inner content from wrapping */
+        opacity: 0; /* Initially hide inner content in collapsed state */
+        transition: opacity 0.3s ease-in-out 0.1s; /* Fade in with a slight delay */
+      }
+
+      .day-list li.active span,
+      .day-list li.active .day-values {
+        opacity: 1; /* Show inner content in expanded state */
+      }
+
+      .day-list li span:first-child {
+        /* The date span */
+        opacity: 1; /* Always show the date */
+        margin-bottom: 5px;
+      }
+
+      .day-list li.active span:first-child {
+        margin-bottom: 10px;
+      }
+
+      .day-list li .day-values {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin-bottom: 5px;
+      }
+
+      .day-list li.active .day-values {
+        margin-bottom: 10px;
+      }
+
+      .day-list li .day-values img {
+        max-width: 50px;
+        height: auto;
+        margin-bottom: 5px;
+      }
+
+      .day-list li.active .day-values img {
+        max-width: 70px;
+        margin-bottom: 10px;
+      }
+
+      .day-list li .sub {
+        text-align: center !important; /* Override inline style */
+        width: auto !important; /* Override inline style */
+      }
+    </style>
+  </head>
+  <body>
+    <div
+      class="fade-in-ul"
+      style="
+        translate: none;
+        rotate: none;
+        scale: none;
+        transform: translate(0px, 0px);
+        opacity: 1;
+      "
+    >
+      <h3 class="">Do Not Ask for Me The Further Future!</h3>
+      <ul class="day-list" id="forecast">
+        <li>
+          <span>Tue, Apr 8</span>
+          <div class="day-values">
+            <img
+              src="https://openweathermap.org/img/wn/01d.png"
+              alt="Weather Icon"
+            />
+            <span>19 / 18°C</span>
+          </div>
+          <span class="sub" style="width: 70px; text-align: right"
+            >clear sky</span
+          >
+        </li>
+        <li>
+          <span>Wed, Apr 9</span>
+          <div class="day-values">
+            <img
+              src="https://openweathermap.org/img/wn/04d.png"
+              alt="Weather Icon"
+            />
+            <span>16 / 16°C</span>
+          </div>
+          <span class="sub" style="width: 70px; text-align: right"
+            >overcast clouds</span
+          >
+        </li>
+        <li>
+          <span>Thu, Apr 10</span>
+          <div class="day-values">
+            <img
+              src="https://openweathermap.org/img/wn/03d.png"
+              alt="Weather Icon"
+            />
+            <span>18 / 18°C</span>
+          </div>
+          <span class="sub" style="width: 70px; text-align: right"
+            >scattered clouds</span
+          >
+        </li>
+        <li>
+          <span>Fri, Apr 11</span>
+          <div class="day-values">
+            <img
+              src="https://openweathermap.org/img/wn/04d.png"
+              alt="Weather Icon"
+            />
+            <span>20 / 20°C</span>
+          </div>
+          <span class="sub" style="width: 70px; text-align: right"
+            >broken clouds</span
+          >
+        </li>
+        <li>
+          <span>Sat, Apr 12</span>
+          <div class="day-values">
+            <img
+              src="https://openweathermap.org/img/wn/04d.png"
+              alt="Weather Icon"
+            />
+            <span>23 / 23°C</span>
+          </div>
+          <span class="sub" style="width: 70px; text-align: right"
+            >overcast clouds</span
+          >
+        </li>
+      </ul>
+    </div>
+    <video
+      id="weatherVideo"
+      width="320"
+      height="240"
+      controls
+      autoplay
+      loop
+      muted
+    >
+      <source src="" type="video/mp4" />
+      Your browser does not support the video tag.
+    </video>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const forecastList = document.getElementById("forecast");
+        const dayItems = forecastList.querySelectorAll("li");
+        const initialActiveIndex = 0; // Set the index of the initially expanded item (or -1 for none)
+        const weatherVideo = document.getElementById("weatherVideo");
+
+        // Function to toggle the active class
+        function toggleActive() {
+          dayItems.forEach((item) => item.classList.remove("active"));
+          this.classList.add("active");
+        }
+
+        // Add click event listeners to each list item
+        dayItems.forEach((item, index) => {
+          item.addEventListener("click", toggleActive);
+          // Initially set one item as active if needed
+          if (index === initialActiveIndex && initialActiveIndex !== -1) {
+            item.classList.add("active");
+          }
+        });
+
+        // If no item is initially active, maybe activate the first one
+        if (initialActiveIndex === -1 && dayItems.length > 0) {
+          dayItems[0].classList.add("active");
+        }
+
+        if (!weatherVideo) {
+          console.error("Video element with ID 'weatherVideo' not found.");
+          return;
+        }
+
+        const weatherVideoMap = {
+          "clear sky": "video/blanc.mp4",
+          "few clouds": "video/main_video_haha.mp4",
+          "scattered clouds": "video/main-visual.mp4",
+          "broken clouds": "video/video_visual_01_4.mp4",
+          "overcast clouds": "video/blanc.mp4",
+          rain: "video/blanc.mp4",
+          drizzle: "video/blanc.mp4",
+          thunderstorm: "video/blanc.mp4",
+          snow: "video/blanc.mp4",
+          mist: "video/blanc.mp4",
+          // Add more weather conditions and their corresponding video paths
+        };
+
+        function updateVideoSource(weatherDescription) {
+          const videoSrc = weatherVideoMap[weatherDescription.toLowerCase()];
+          if (videoSrc) {
+            weatherVideo.src = videoSrc;
+            weatherVideo.load(); // Important: Reload the video to apply the new source
+            weatherVideo.play(); // Optionally play the video automatically
+          } else {
+            console.warn(
+              `No video found for weather condition: ${weatherDescription}`
+            );
+            // Optionally set a default video or hide the video element
+            // weatherVideo.src = 'path/to/default.mp4';
+            // weatherVideo.load();
+            // weatherVideo.style.display = 'none';
+          }
+        }
+
+        function handleDayClick() {
+          dayItems.forEach((item) => item.classList.remove("active"));
+          this.classList.add("active");
+
+          // Find the weather description within the clicked list item
+          const weatherSpan = this.querySelector(".sub");
+          if (weatherSpan) {
+            const weatherText = weatherSpan.textContent.trim();
+            updateVideoSource(weatherText);
+          }
+        }
+
+        // Add click event listeners to each list item
+        dayItems.forEach((item) => {
+          item.addEventListener("click", handleDayClick);
+        });
+
+        // Initial video setup (e.g., based on the weather of the first day)
+        if (dayItems.length > 0) {
+          const firstWeatherSpan = dayItems[0].querySelector(".sub");
+          if (firstWeatherSpan) {
+            const initialWeather = firstWeatherSpan.textContent.trim();
+            updateVideoSource(initialWeather);
+            dayItems[0].classList.add("active"); // Optionally activate the first day initially
+          }
+        }
+      });
+    </script>
+  </body>
+</html>

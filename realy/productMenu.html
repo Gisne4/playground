@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Product Display</title>
+    <style>
+      * {
+        margin: 0px;
+        padding: 0px;
+        box-sizing: border-box;
+      }
+      .container {
+        width: 100vw;
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+      }
+      .menuList {
+        display: flex;
+        width: 100%;
+        border-bottom: 2px solid gray;
+        justify-content: center;
+        list-style: none;
+      }
+      .menuList li {
+        padding: 20px 40px;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+      }
+
+      .menuList li:hover {
+        background-color: #f0f0f0;
+      }
+
+      .menuList li.active {
+        background-color: lightblue;
+        font-weight: bold;
+      }
+
+      .display {
+        height: 20vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+
+      .display h1 {
+        font-size: 2em;
+      }
+
+      .tata {
+        margin-top: 20px;
+        padding: 20px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        text-align: left;
+      }
+
+      .tata h1 {
+        font-size: 1.5em;
+        margin-bottom: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="display">
+        <h1 id="productTitle">Product 1</h1>
+      </div>
+      <ul class="menuList">
+        <li data-product="1">Product 1</li>
+        <li data-product="2">Product 2</li>
+        <li data-product="3">Product 3</li>
+      </ul>
+      <div class="tata">
+        <h1 id="productInfoTitle">Product 1 Info</h1>
+        <p id="productInfo">Information about product 1</p>
+      </div>
+    </div>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        let menuItems = document.querySelectorAll(".menuList li");
+        let pT = document.querySelector("#productTitle");
+        let pIT = document.querySelector("#productInfoTitle");
+        let pI = document.querySelector("#productInfo");
+        const productData = {
+          1: {
+            name: "Product 1",
+            info: "ἄνδρα μοι ἔννεπε, μοῦσα, πολύτροπον, ὃς μάλα πολλὰ πλάγχθη, ἐπεὶ Τροίης ἱερὸν πτολίεθρον ἔπερσεν",
+            color: "rgb(212, 93, 93)",
+          },
+          2: {
+            name: "Product 2",
+            info: "아아, 날이 저문다, 서편 하늘에, 외로운 강물 위에, 스러져 가는 분홍빛 놀 ······ 아아, 해가 저물면, 해가 저물면, 날마다 살구나무 그늘에 혼자 우는 밤이 또 오건마는, 오늘은 4월이라 파일날, 큰 길을 물밀어 가는 사람 소리는 듣기만 하여도 흥성스러운 것을, 왜 나만 혼자 가슴에 눈물을 참을 수 없는고?",
+            color: "rgb(93, 212, 119)",
+          },
+          3: {
+            name: "Product 3",
+            info: "늦은 저녁때 오는 눈발은 말집 호롱불 밑에 붐비다 늦은 저녁때 오는 눈발은 조랑말 발굽 밑에 붐비다 늦은 저녁때 오는 눈발은 여물 써는 소리에 붐비다 늦은 저녁때 오는 눈발은 변두리 빈터만 다니며 붐비다",
+            color: " rgb(200, 212, 93)",
+          },
+        };
+        menuItems.forEach((element) => {
+          element.addEventListener("click", function () {
+            const productId = this.dataset.product;
+            for (element of menuItems) {
+              element.classList.remove("active");
+            }
+            this.classList.add("active");
+            pT.textContent = productData[productId].name;
+            pT.style.backgroundColor = productData[productId].color;
+            pIT.textContent = `${productData[productId].name} Info`;
+            pI.textContent = productData[productId].info;
+          });
+        });
+      });
+    </script>
+  </body>
+</html>

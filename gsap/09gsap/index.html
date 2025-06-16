@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.7/dist/gsap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.7/dist/ScrollTrigger.min.js"></script>
+    <style>
+      * {
+        margin: 0px;
+        padding: 0px;
+      }
+      li {
+        list-style: none;
+      }
+      a {
+        color: inherit;
+        text-decoration: inherit;
+      }
+
+      #container {
+        width: 100%;
+      }
+      .con01,
+      .con03 {
+        width: 100%;
+        height: 100vh;
+        background-color: #222;
+        color: #fff;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+      }
+      .con01 .title {
+        font-size: 7vw;
+        margin-bottom: 10px;
+        font-weight: bold;
+        color: orangered;
+      }
+      .con01 .txt {
+        font-size: 4vw;
+        letter-spacing: -2px;
+      }
+
+      /*con03*/
+      .con03 h2 {
+        font-size: 7vw;
+        text-transform: uppercase;
+      }
+
+      /*gallery*/
+      .gallery {
+        width: 100%;
+        background-color: orangered;
+        color: #fff;
+        padding-top: 250px;
+      }
+      .gallery .inner {
+        width: 70%;
+        margin: 0px auto;
+        display: flex;
+        justify-content: space-between;
+        padding-bottom: 200px;
+      }
+      /*gallery textBox*/
+      .gallery .inner .textBox {
+        width: 45%;
+        padding-top: 70px;
+      }
+
+      .gallery .inner .textBox h2 {
+        font-size: 2vw;
+      }
+      .gallery .inner .textBox h2 span {
+        font-style: italic;
+        display: block;
+        font-size: 4vw;
+        margin-bottom: 10px;
+      }
+
+      .gallery .inner .textBox .txt {
+        font-size: 1.5vw;
+        letter-spacing: -1px;
+        margin-bottom: 20px;
+      }
+
+      .gallery .inner .textBox ul {
+        margin-left: 40px;
+        margin-bottom: 30px;
+      }
+      .gallery .inner .textBox ul li {
+        font-size: 1.5vw;
+        line-height: 2;
+        position: relative;
+      }
+
+      .gallery .inner .textBox ul li ::before {
+        content: "";
+        position: absolute;
+        left: -20px;
+        top: 50%;
+        width: 10px;
+        height: 1px;
+        background-color: #fff;
+      }
+
+      .gallery .inner .textBox .btn {
+        display: block;
+        width: 150px;
+        height: 50px;
+        background-color: #222;
+        text-align: center;
+        line-height: 50px;
+        border-radius: 25px;
+      }
+
+      /*gallery imgBox*/
+      .gallery .inner .imgBox {
+        width: 50%;
+        position: relative;
+      }
+
+      .gallery .inner .imgBox li {
+        width: 550px;
+        height: 450px;
+        position: absolute;
+        left: 0px;
+        top: 50%;
+        transform: translateY(-50%);
+      }
+      .gallery .inner .imgBox li img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+
+      .gallery .inner .imgBox li.img1 {
+        transform: translateY(-50%) rotate(5deg);
+        z-index: 1;
+      }
+      .gallery .inner .imgBox li.img2 {
+        transform: translateY(-50%) rotate(-5deg);
+        z-index: 2;
+      }
+      .gallery .inner .imgBox li.img3 {
+        transform: translateY(-50%) rotate(7deg);
+        z-index: 3;
+      }
+      .gallery .inner .imgBox li.img4 {
+        transform: translateY(-50%) rotate(-7deg);
+        z-index: 4;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="container">
+      <section class="con01">
+        <div class="textBox">
+          <p class="title">scrollTrigger</p>
+          <p class="txt">실전! 웹사이트 제작</p>
+        </div>
+      </section>
+      <section class="gallery">
+        <div class="inner">
+          <div class="textBox">
+            <h2>Clone<span>Coding</span></h2>
+            <p class="txt">클론코딩 결과물입니다</p>
+            <ul>
+              <li><a href="#">spc</a></li>
+              <li><a href="#">spc</a></li>
+              <li><a href="#">spc</a></li>
+              <li><a href="#">spc</a></li>
+            </ul>
+            <a href="#" class="btn">Read More</a>
+          </div>
+          <ul class="imgBox">
+            <li class="img1 upBox">
+              <img src="img/frontrunner_technology_img1.png" />
+            </li>
+            <li class="img2 upBox">
+              <img src="img/frontrunner_technology_img2.png" />
+            </li>
+            <li class="img3 upBox">
+              <img src="img/frontrunner_technology_img3.png" />
+            </li>
+            <li class="img4 upBox"><img src="img/main_visual_1.jpg" /></li>
+          </ul>
+        </div>
+      </section>
+      <section class="con03">
+        <div class="textBox">
+          <h2>thank you</h2>
+        </div>
+      </section>
+    </div>
+    <script>
+      let upBox = document.querySelectorAll(".upBox");
+      //   console.log(upBox);
+      gsap
+        .timeline({
+          scrollTrigger: {
+            trigger: ".gallery",
+            start: "top top",
+            end: "+=400%", //시작부분에서 400%까지 스크롤한 후 종료
+            scrub: 2,
+            pin: true,
+            markers: true,
+          },
+        })
+
+        .fromTo(
+          upBox,
+          { y: "400%", opacity: 0 },
+          { y: 0, opacity: 1, duration: 3, ease: "none", stagger: 4 }
+        );
+    </script>
+  </body>
+</html>

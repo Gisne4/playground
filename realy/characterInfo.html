@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>3D Rotating Card Effect</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      /* Custom CSS for the 3D card effect */
+      body {
+        font-family: "Inter", sans-serif;
+        perspective: 1000px; /* Defines the 3D space for the children */
+        background: linear-gradient(to bottom right, #3730a3, #6b21a8);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 1rem;
+        margin: 0;
+      }
+
+      .card-container {
+        transform-style: preserve-3d;
+        /* Transition for scale and glare, rotation will be handled by JS */
+        transition: scale 0.3 s ease-in-out;
+        width: 100%;
+        max-width: 300px;
+        aspect-ratio: 2 / 3;
+        position: relative;
+        border-radius: 1rem;
+        overflow: hidden;
+        background-color: #1f2937;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        /* Initial transform for the card when not hovered, or when mouse leaves */
+        transform: rotateY(0deg) rotateX(0deg) scale(1);
+      }
+
+      .card-container.hovered {
+        transform: scale(
+          1.05
+        ); /* Slight scale on hover, rotation handled by JS */
+      }
+
+      /* Glare effect */
+      .card-glare {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(
+          to right,
+          rgba(255, 255, 255, 0) 0%,
+          rgba(255, 255, 255, 0.2) 50%,
+          rgba(255, 255, 255, 0) 100%
+        );
+        transform: translateX(-100%) skewX(-30deg);
+        transition: transform 0.3s ease-in-out;
+      }
+
+      .card-container.hovered .card-glare {
+        transform: translateX(100%) skewX(-30deg);
+      }
+
+      /* Card content styling */
+      .card-content {
+        position: relative;
+        z-index: 10;
+        padding: 1.5rem;
+        color: #ffffff;
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+      }
+
+      .card-content h2 {
+        font-size: 1.875rem;
+        font-weight: 700;
+        margin-bottom: 1rem;
+      }
+
+      .card-content p {
+        font-size: 1.125rem;
+        margin-bottom: 1.5rem;
+      }
+
+      .card-content button {
+        background-color: #9333ea;
+        color: #ffffff;
+        font-weight: 600;
+        padding: 0.5rem 1.5rem;
+        border-radius: 9999px;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
+          0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        transition: background-color 0.2s ease-in-out;
+        border: none;
+        cursor: pointer;
+      }
+
+      .card-content button:hover {
+        background-color: #7e22ce;
+      }
+
+      /* Responsive adjustments for smaller screens */
+      @media (max-width: 768px) {
+        .card-container {
+          max-width: 250px;
+        }
+      }
+
+      @media (max-width: 480px) {
+        .card-container {
+          max-width: 200px;
+        }
+        .card-content h2 {
+          font-size: 1.5rem;
+        }
+        .card-content p {
+          font-size: 1rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card-container">
+      <div class="card-content">
+        <h2>Awesome Card</h2>
+        <p>This is a cool 3D rotating card with a shiny glare effect!</p>
+        <button>Learn More</button>
+      </div>
+      <div class="card-glare"></div>
+    </div>
+
+    <script>
+      // Get a reference to the card container
+      const card = document.querySelector(".card-container");
+
+      // Add a transition property for smooth rotation when the mouse leaves
+      // This is added via JS to avoid interfering with live mousemove updates
+      let transitionTimeout;
+
+      // Function to handle mouse movement over the card
+      card.addEventListener("mousemove", (e) => {
+        // Clear any existing transition timeout
+        clearTimeout(transitionTimeout);
+        card.style.transition = "transform 0.2 ease-in-out"; // Temporarily remove transition for immediate response
+
+        // Get the mouse position relative to the card element
+        const { offsetX, offsetY } = e;
+
+        // Get the width and height of the card
+        const { offsetWidth: width, offsetHeight: height } = card;
+
+        // Calculate rotation angles based on the provided formulas
+        // The formulas are adjusted to center the rotation effect
+        // For rotateY: mouseX (offsetX) from 0 to width, mapping to -20deg to +20deg
+        // For rotateX: mouseY (offsetY) from 0 to height, mapping to +20deg to -20deg
+        const rotateY = -1 * ((offsetX / width) * 40 - 20); // -20deg to +20deg
+        const rotateX = (offsetY / height) * 40 - 20; // +20deg to -20deg
+
+        // Apply the transform to the card
+        card.style.transform = `perspective(400px) rotateY(${rotateY}deg) rotateX(${rotateX}deg) scale(1.05)`;
+
+        // Add 'hovered' class for glare effect
+        card.classList.add("hovered");
+      });
+
+      // Function to reset the card's rotation when the mouse leaves
+      card.addEventListener("mouseleave", () => {
+        // Add a transition for smooth return to original state
+        card.style.transition =
+          "transform 0.5s ease-out, scale 0.3s ease-in-out";
+        // Reset the transform
+        card.style.transform = "rotateY(0deg) rotateX(0deg) scale(1)";
+
+        // Remove 'hovered' class to reset glare effect after a short delay
+        // This delay allows the glare transition to complete
+        transitionTimeout = setTimeout(() => {
+          card.classList.remove("hovered");
+        }, 500); // Match the glare transition duration
+      });
+
+      // Function to handle mouse entering the card (primarily for glare effect)
+      card.addEventListener("mouseenter", () => {
+        // Add 'hovered' class for glare effect
+        card.classList.add("hovered");
+      });
+    </script>
+  </body>
+</html>

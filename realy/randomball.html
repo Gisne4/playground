@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Random Div Circles with Inter-Circle Physics</title>
+    <style>
+      body {
+        margin: 0;
+        overflow: hidden;
+        background-color: #f0f0f0;
+        cursor: grab; /* Indicate draggable */
+      }
+      body:active {
+        cursor: grabbing;
+      }
+      .circle {
+        position: absolute;
+        border-radius: 50%;
+        background-color: rgb(70, 130, 180); /* SteelBlue */
+        border: 2px solid rgba(0, 0, 0, 0.2);
+        box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.3);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: sans-serif;
+        color: white;
+        font-weight: bold;
+        user-select: none; /* Prevent text selection */
+      }
+    </style>
+  </head>
+  <body>
+    <script>
+      const container = document.body;
+      const gravity = 0.1; // Pixels per frame per frame (acceleration)
+      const wallFriction = 0.9; // Horizontal friction for walls/floor
+      const wallBounceFactor = -0.9; // How much bounce on collision with walls/floor
+      const interCircleBounceFactor = -0.99; // How much bounce between circles
+
+      const circles = [];
+      const numCircles = 15; // Number of circles to generate
+
+      let draggedCircle = null;
+      let mouseXOffset, mouseYOffset;
+
+      // Function to create a random color
+      function getRandomColor() {
+        const r = Math.floor(Math.random() * 255);
+        const g = Math.floor(Math.random() * 255);
+        const b = Math.floor(Math.random() * 255);
+        return `rgb(${r},${g},${b})`;
+      }
+
+      // Create random div circles
+      for (let i = 0; i < numCircles; i++) {
+        const size = Math.random() * 60 + 60;
+        const div = document.createElement("div");
+        div.className = "circle";
+        div.style.width = `${size}px`;
+        div.style.height = `${size}px`;
+        div.style.backgroundColor = getRandomColor();
+
+        // Initial random position in the upper middle
+        let x = Math.random() * (window.innerWidth - size * 2) + size;
+        let y = Math.random() * (window.innerHeight / 2 - size * 2);
+
+        div.style.left = `${x}px`;
+        div.style.top = `${y}px`;
+
+        container.appendChild(div);
+
+        const circleData = {
+          element: div,
+          x: x,
+          y: y,
+          vx: (Math.random() - 0.5) * 5, // Random initial horizontal velocity
+          vy: 0, // Initial vertical velocity
+          radius: size / 2,
+          isDragging: false,
+        };
+        circles.push(circleData);
+
+        // Add drag functionality
+        div.addEventListener("mousedown", (e) => {
+          draggedCircle = circleData;
+          draggedCircle.isDragging = true;
+          draggedCircle.vx = 0; // Stop movement while dragging
+          draggedCircle.vy = 0;
+          mouseXOffset = e.clientX - draggedCircle.x;
+          mouseYOffset = e.clientY - draggedCircle.y;
+          div.style.zIndex = "100"; // Bring to front
+        });
+      }
+
+      document.addEventListener("mousemove", (e) => {
+        if (draggedCircle) {
+          draggedCircle.x = e.clientX - mouseXOffset;
+          draggedCircle.y = e.clientY - mouseYOffset;
+          draggedCircle.element.style.left = `${draggedCircle.x}px`;
+          draggedCircle.element.style.top = `${draggedCircle.y}px`;
+        }
+      });
+
+      document.addEventListener("mouseup", () => {
+        if (draggedCircle) {
+          draggedCircle.isDragging = false;
+          draggedCircle.element.style.zIndex = "auto"; // Reset z-index
+          draggedCircle = null;
+        }
+      });
+
+      function updatePhysics() {
+        const floorY = window.innerHeight; // The bottom of the window is our floor
+        const wallX = window.innerWidth;
+
+        circles.forEach((circle) => {
+          if (circle.isDragging) return; // Don't apply physics to dragged circle
+
+          // Apply gravity
+          circle.vy += gravity;
+
+          // Update position
+          circle.x += circle.vx;
+          circle.y += circle.vy;
+
+          // Wall and Floor collision
+          // Bottom
+          if (circle.y + circle.radius * 2 > floorY) {
+            circle.y = floorY - circle.radius * 2;
+            circle.vy *= wallBounceFactor;
+            circle.vx *= wallFriction;
+          }
+          // Top (prevent going above screen if thrown upwards)
+          if (circle.y < 0) {
+            circle.y = 0;
+            circle.vy *= wallBounceFactor;
+          }
+          // Right
+          if (circle.x + circle.radius * 2 > wallX) {
+            circle.x = wallX - circle.radius * 2;
+            circle.vx *= wallBounceFactor;
+          }
+          // Left
+          if (circle.x < 0) {
+            circle.x = 0;
+            circle.vx *= wallBounceFactor;
+          }
+
+          // Apply a small amount of damping to velocity when not bouncing
+          if (
+            Math.abs(circle.vy) < 0.1 &&
+            circle.y + circle.radius * 2 >= floorY - 1
+          ) {
+            // If almost stopped on floor
+            circle.vy = 0;
+            circle.vx *= 0.95; // More friction to stop horizontal movement
+          }
+          if (
+            Math.abs(circle.vx) < 0.1 &&
+            Math.abs(circle.vy) < 0.1 &&
+            circle.y + circle.radius * 2 >= floorY - 1
+          ) {
+            circle.vx = 0;
+          }
+        });
+
+        // Inter-circle collisions
+        for (let i = 0; i < circles.length; i++) {
+          const circleA = circles[i];
+          if (circleA.isDragging) continue;
+
+          for (let j = i + 1; j < circles.length; j++) {
+            // Check against subsequent circles to avoid duplicate checks
+            const circleB = circles[j];
+            if (circleB.isDragging) continue;
+
+            const dx = circleB.x - circleA.x;
+            const dy = circleB.y - circleA.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            const minDistance = circleA.radius + circleB.radius;
+
+            if (distance < minDistance) {
+              // Collision detected!
+
+              // 1. Positional Correction (separate them to prevent sticking)
+              const overlap = minDistance - distance;
+              const normalX = dx / distance; // Normalized vector from A to B
+              const normalY = dy / distance;
+
+              // Move circles apart proportionally to their radii or equally if assumed equal mass
+              // For simplicity, let's distribute overlap equally:
+              circleA.x -= overlap * 0.5 * normalX;
+              circleA.y -= overlap * 0.5 * normalY;
+              circleB.x += overlap * 0.5 * normalX;
+              circleB.y += overlap * 0.5 * normalY;
+
+              // 2. Velocity Resolution (bounce) - simplified elastic collision
+              const relativeVelocityX = circleB.vx - circleA.vx;
+              const relativeVelocityY = circleB.vy - circleA.y;
+
+              const velocityAlongNormal =
+                relativeVelocityX * normalX + relativeVelocityY * normalY;
+
+              // If objects are already moving apart or hit almost tangentially, skip impulse
+              if (velocityAlongNormal > 0) continue;
+
+              // Calculate impulse scalar (assuming equal mass for simplicity)
+              // This formula is derived from conservation of momentum and coefficient of restitution for elastic collisions
+              const impulseScalar =
+                -(1 + interCircleBounceFactor) * velocityAlongNormal;
+
+              // Apply impulse to velocities
+              circleA.vx -= impulseScalar * normalX;
+              circleA.vy -= impulseScalar * normalY;
+              circleB.vx += impulseScalar * normalX;
+              circleB.vy += impulseScalar * normalY;
+            }
+          }
+        }
+
+        // Update DOM positions
+        circles.forEach((circle) => {
+          circle.element.style.left = `${circle.x}px`;
+          circle.element.style.top = `${circle.y}px`;
+        });
+
+        requestAnimationFrame(updatePhysics); // Loop the animation
+      }
+
+      // Start the physics simulation
+      updatePhysics();
+    </script>
+  </body>
+</html>

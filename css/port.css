@@ -1,0 +1,115 @@
+* {
+  margin: 0px;
+  padding: 0px;
+}
+ul {
+  list-style: none;
+}
+a {
+  color: inherit;
+  text-decoration: none;
+}
+::-webkit-scrollbar {
+  width: 0px;
+  height: 0px;
+}
+.main {
+  width: 100%;
+}
+.content div {
+  width: inherit;
+  height: 100vh;
+}
+.header {
+  position: fixed;
+  width: 100%;
+  bottom: 0px;
+  left: 0px;
+}
+.header ul {
+  display: flex;
+  width: 100%;
+}
+.header li {
+  width: calc(100% / 4);
+  text-align: center;
+  background-color: bisque;
+}
+.header li a {
+  height: 100px;
+  display: inline-block;
+  width: 100%;
+  align-content: center;
+  z-index: 10;
+}
+.con1,
+.con2,
+.con3,
+.con4 {
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+.con1 {
+  background-image: url(../img/port/pic11.jpg);
+}
+.con2 {
+  background-image: url(../img/port/pic22.jpg);
+}
+.con3 {
+  background-image: url(../img/port/pic33.jpg);
+}
+.con4 {
+  background-image: url(../img/port/pic44.jpg);
+}
+.main .pro {
+  position: fixed;
+  left: 10px;
+  width: 20px;
+  height: 50%;
+  top: 50%;
+  z-index: 10;
+  transform: translate(0px, -50%);
+}
+.prograss {
+  display: grid;
+  gap: 30px;
+  height: fit-content;
+}
+.prograss li {
+  width: 10px;
+  height: 80px;
+  background-color: rgb(240, 240, 240);
+}
+.prograss li p {
+  width: 10px;
+  height: 0px;
+  position: relative;
+  background-color: black;
+  z-index: 10;
+}
+.con2 {
+  align-content: center;
+}
+.con2 ul {
+  margin-inline: 10%;
+  width: 80%;
+  height: 80%;
+  display: flex;
+  gap: 3%;
+  perspective: none;
+}
+.con2 li {
+  width: calc(100% / 4 - 3%);
+  height: 100%;
+  background-color: beige;
+}
+.con3 {
+  justify-items: center;
+  align-content: center;
+}
+.con3 > div {
+  width: 80%;
+  height: 80%;
+  background-color: antiquewhite;
+}

@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Movie Search</title>
+    <style>
+      .movieCon {
+        box-shadow: 1px 1px 5px black;
+        width: 530px;
+        padding: 20px;
+        border-radius: 20px;
+      }
+      input[type="text"] {
+        padding: 10px;
+        margin-right: 10px;
+      }
+      .searchBtn {
+        padding: 8px 15px;
+        cursor: pointer;
+      }
+      #results-container {
+        margin-top: 20px;
+        border: 7px solid #81b63bd5;
+        padding: 10px;
+        width: 500px;
+        height: 650px;
+        border-radius: 10px;
+        overflow-y: auto;
+      }
+      .movie-item {
+        margin-bottom: 20px;
+        padding: 10px;
+        border: 4px solid #6a9b2ad5;
+        height: calc(100% - 30px);
+        border-radius: 7px;
+        overflow-y: auto;
+      }
+      .movie-item::-webkit-scrollbar {
+        width: 0px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="movieCon">
+      <h1>Movie Search</h1>
+      <div>
+        <input type="text" id="search-query" placeholder="무슨 영화 떙김?" />
+        <button onclick="searchMovies()" class="searchBtn">Search</button>
+      </div>
+      <div id="results-container"></div>
+    </div>
+    <script>
+      const apiKey = "f710f4911d740be4e790af0963540a1a";
+      const searchBaseUrl = "https://api.themoviedb.org/3/search/movie";
+      const resultsContainer = document.getElementById("results-container");
+
+      async function searchMovies() {
+        const query = document.getElementById("search-query").value;
+        //prevent emty erea
+        if (!query) {
+          resultsContainer.innerHTML =
+            "<p>입력 란에 영화 제목을 입력해주세요.</p>";
+          return;
+        }
+        //must! had to use! encodeURIComponent
+        const apiUrl = `${searchBaseUrl}?api_key=${apiKey}&query=${encodeURIComponent(
+          query
+        )}`;
+
+        try {
+          const response = await fetch(apiUrl);
+          const data = await response.json();
+
+          resultsContainer.innerHTML = "";
+
+          if (data.results && data.results.length > 0) {
+            data.results.forEach((e) => {
+              const movieDiv = document.createElement("div");
+              movieDiv.classList.add("movie-item");
+              movieDiv.innerHTML = `
+                            <h1>${e.title} (${
+                e.release_date ? e.release_date.substring(0, 4) : "미상"
+              })</h1>
+                            <p>${
+                              e.overview || "아직 제가 이 영화를 못봤어요!"
+                            }</p>
+                            ${
+                              e.poster_path
+                                ? `<img src="https://image.tmdb.org/t/p/w200${e.poster_path}" alt="Poster">`
+                                : "<p>포스터 그리도록 노력할께요</p>"
+                            }
+                        `;
+              resultsContainer.appendChild(movieDiv);
+            });
+          } else {
+            resultsContainer.innerHTML =
+              "<p>No movies found matching your search.</p>";
+          }
+        } catch (error) {
+          console.error("Error fetching data:", error);
+          resultsContainer.innerHTML =
+            "<p>An error occurred while fetching data.</p>";
+        }
+      }
+    </script>
+  </body>
+</html>

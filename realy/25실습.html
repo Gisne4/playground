@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <script src="js/jquery-3.7.1.min.js"></script>
+    <style>
+      * {
+        margin: 0px;
+        padding: 0px;
+      }
+      li {
+        list-style: none;
+      }
+      .big {
+        display: flex;
+        position: relative;
+      }
+      .big li {
+        position: absolute;
+        left: 0px;
+        top: 0px;
+      }
+      .small {
+        display: flex;
+        gap: 20px;
+      }
+      .small li {
+      }
+      .small li img {
+        width: 200px;
+      }
+    </style>
+  </head>
+  <body>
+    <ul class="big">
+      <li><img src="img/pic1.jpg" alt="" /></li>
+      <li><img src="img/pic2.jpg" alt="" /></li>
+      <li><img src="img/pic3.jpg" alt="" /></li>
+      <li><img src="img/pic4.jpg" alt="" /></li>
+    </ul>
+    <ul class="small">
+      <li><img src="img/pic1.jpg" alt="" /></li>
+      <li><img src="img/pic2.jpg" alt="" /></li>
+      <li><img src="img/pic3.jpg" alt="" /></li>
+      <li><img src="img/pic4.jpg" alt="" /></li>
+    </ul>
+  </body>
+</html>

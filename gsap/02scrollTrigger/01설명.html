@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.7/dist/gsap.min.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.7/dist/ScrollTrigger.min.js"></script>
+    <style>
+      body {
+        height: 3000px;
+      }
+      .box1 {
+        width: 100px;
+        height: 100px;
+        background-color: orange;
+        margin: 100vh auto 0px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="box1"></div>
+    <script>
+      gsap.registerPlugin(ScrollTrigger);
+
+      gsap.to(".box1", {
+        x: 300,
+        duration: 2,
+        scrollTrigger: {
+          trigger: ".box1",
+          start: "top 80%",
+          markers: true,
+        },
+      });
+    </script>
+  </body>
+</html>
+<!--
+scrollTrigger는 gsap 플러그인으로
+스크롤을 기준으로 애니메이션을 트리거 할 수 있다는 말
+트리거가 실행하다
+
+- trigger :: 애니메이션을 시작할 요소 지정
+- start, end :: 스크롤 시작, 끝("top center") ->요소의 top부분, 브라우저의 center
+- scrub :: 스크롤에 맞춰 애니메이션을 부드럽게. 숫자를 클수록 부드러움 , 1,2,3
+- pin :: 해당 요소를 스크롤 중에 고정
+- markers :: true를 start, end가 보임
+
+
+-->

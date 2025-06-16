@@ -1,0 +1,339 @@
+* {
+  margin: 0px;
+  padding: 0px;
+}
+@font-face {
+  font-family: "Pretendard-Regular";
+  src: url("https://fastly.jsdelivr.net/gh/Project-Noonnu/noonfonts_2107@1.1/Pretendard-Regular.woff")
+    format("woff");
+  font-weight: 400;
+  font-style: normal;
+}
+body {
+  font-family: "Pretendard-Regular";
+}
+ul {
+  list-style: none;
+}
+::-webkit-scrollbar {
+  width: 0px;
+  height: 0px;
+}
+.con1 {
+  width: 100%;
+  position: relative;
+}
+.con1 ul {
+  position: relative;
+  list-style: none;
+  height: 400px;
+}
+.con1 li {
+  position: absolute;
+}
+
+.con1 li:nth-child(2),
+.con1 li:nth-child(3),
+.con1 li:nth-child(4) {
+  display: none;
+}
+.con2 .con2_container2 {
+  display: flex;
+  width: 100%;
+  height: 100px;
+  list-style: none;
+  background-color: antiquewhite;
+  box-shadow: slategray 0px 10px 10px;
+}
+.con2 li {
+  text-align: center;
+  width: calc(100% / 4);
+  height: 50px;
+}
+.con2 li button {
+  margin-top: 30px;
+  border: 3px solid rgb(112, 59, 59);
+  border-radius: 10px;
+  background-color: burlywood;
+}
+
+.con2 li button a:hover {
+  background-color: rgb(85, 60, 28);
+  color: blanchedalmond;
+}
+.con2 li button a {
+  text-decoration: none;
+  color: brown;
+  font-weight: 700;
+  display: block;
+  padding-block: 5px;
+  padding-inline: 30px;
+}
+.con2 .con2_container ul {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  list-style: none;
+}
+.con2 .con2_container ul li {
+  position: absolute;
+  width: 80%;
+  margin-inline: 10%;
+  top: 10px;
+}
+
+.con2 .con2_container ul li:nth-child(2),
+.con2 .con2_container ul li:nth-child(3),
+.con2 .con2_container ul li:nth-child(4) {
+  display: none;
+}
+
+.con3 {
+  width: 100%;
+  height: 100vh;
+  background-color: rgb(175, 169, 160);
+  position: relative;
+}
+.con3 .dada {
+  position: relative;
+  top: 50%;
+}
+.con3 input {
+  width: 500px;
+  height: 100px;
+  border-radius: 80px;
+  border: 3px solid black;
+  padding-left: 200px;
+  font-size: 40px;
+}
+.con3_bu {
+  text-indent: 100%;
+  overflow: hidden;
+  text-wrap: nowrap;
+  border: unset;
+}
+.bu_1 {
+  position: absolute;
+  left: 550px;
+  top: 30px;
+  height: 50px;
+  width: 50px;
+  background-image: url(/img/nana.svg);
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+.bu_2 {
+  position: absolute;
+  left: 620px;
+  top: 30px;
+  height: 50px;
+  width: 50px;
+  background-image: url(/img/dada.svg);
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+
+.con3 .nana {
+  width: 100%;
+  height: 100vh;
+  background-color: rgba(221, 17, 17, 0.267);
+  position: relative;
+  top: -106px;
+  display: none;
+}
+.con3 .nana img {
+  position: relative;
+  top: 40%;
+  left: 20%;
+}
+.con3 .kaka {
+  position: absolute;
+  width: 150px;
+  height: 106px;
+  border-right: 3px solid;
+  justify-items: center;
+}
+.con3 .kaka button {
+  display: block;
+  padding: 40px;
+  font-size: 20px;
+  border: unset;
+  background-color: transparent;
+}
+.mama {
+  height: 150px;
+  width: 100px;
+  margin-top: 30px;
+  text-align: center;
+  overflow-x: hidden;
+  background-color: rgb(55, 128, 103);
+  display: none;
+}
+
+.mama ul li {
+  margin-bottom: 40px;
+}
+.con4 {
+  position: fixed;
+  right: 0px;
+  top: 0px;
+  width: fit-content;
+  height: 100vh;
+  background-color: rgb(202, 214, 224);
+}
+.con4 ul {
+  margin-top: 40px;
+  list-style: none;
+  display: grid;
+  gap: 30px;
+}
+.con4 ul li {
+  font-size: 30px;
+  margin-inline: 30px;
+  height: 40px;
+  display: flex;
+  flex-wrap: nowrap;
+}
+.con4 ul li span {
+  display: none;
+}
+.con5 {
+  width: 100%;
+  height: 100vh;
+}
+.con5 li {
+  width: 80%;
+  background-color: grey;
+  border-radius: 20px;
+  padding-inline: 5%;
+  height: 60px;
+  overflow: hidden;
+  margin-bottom: 30px;
+  font-size: 16px;
+}
+.con5 h1 {
+  display: flex;
+  height: 60px;
+  justify-content: space-between;
+  align-items: center;
+}
+.yellow {
+  color: rgb(255, 225, 0);
+}
+.con5 p {
+  margin-left: 50px;
+  padding-block: 20px;
+}
+.con6 {
+  position: fixed;
+  top: 0px;
+  left: 0px;
+  width: 100%;
+  background-color: beige;
+}
+
+.con6 li ul li {
+  padding-block: 10px;
+  display: none;
+}
+.con6 ul li ul li:first-child {
+  color: white;
+  background-color: rgb(40, 40, 168);
+  width: 20vw;
+  font-size: 40px;
+  margin: 0px;
+  display: block;
+}
+.con6 ul {
+  display: flex;
+  justify-content: center;
+}
+.con6 ul li ul {
+  border-right: 1px solid rgba(34, 31, 31, 0.514);
+  width: fit-content;
+  display: grid;
+  width: 100%;
+  text-align: center;
+}
+.con6 ul li ul:first-child {
+  border-left: 1px solid rgba(34, 31, 31, 0.514);
+}
+.con6 h1 {
+  position: absolute;
+  right: 10px;
+  top: 10px;
+}
+.con7 {
+  font-size: 120px;
+  width: 70%;
+  justify-items: center;
+  height: 50vh;
+}
+.con7 ul {
+  position: relative;
+}
+
+.con7 ul li {
+  position: absolute;
+  display: none;
+}
+.con7 ul li:first-child {
+  display: block;
+}
+.con8 ul {
+  display: flex;
+  width: 180vw;
+  margin-inline: 10vw;
+  gap: 10vw;
+}
+.con8 li {
+  position: relative;
+  width: 20vw;
+  display: flex;
+}
+.con8 li img {
+  position: relative;
+  width: 20vw;
+}
+.con8 li img:last-child {
+  left: -20vw;
+  display: none;
+}
+.con9 {
+  justify-items: center;
+  background-color: aqua;
+  width: 50%;
+  margin-inline: 25%;
+  aspect-ratio: 1 / 1;
+  align-content: center;
+  position: relative;
+}
+.con9 h1 {
+  width: fit-content;
+}
+.con10 {
+  width: 20px;
+  aspect-ratio: 1 / 1;
+  background-color: chartreuse;
+  margin: 0px auto;
+  margin-block: 100px;
+  position: relative;
+}
+.con10 .line1 {
+  width: 90%;
+  height: 4px;
+  border-radius: 2px;
+  background-color: black;
+  position: absolute;
+  top: 2px;
+  left: 1px;
+}
+.con10 .line2 {
+  width: 90%;
+  height: 4px;
+  border-radius: 2px;
+  background-color: black;
+  position: absolute;
+  bottom: 2px;
+  left: 1px;
+}

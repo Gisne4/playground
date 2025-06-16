@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.7/dist/gsap.min.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.7/dist/ScrollTrigger.min.js"></script>
+    <style>
+      * {
+        margin: 0px;
+        padding: 0px;
+      }
+      li {
+        list-style: none;
+      }
+      section {
+        height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+      .con01 h2 {
+        font-size: 140px;
+        text-transform: uppercase;
+        line-height: 1;
+      }
+      .con01 span {
+        display: block;
+        -webkit-text-stroke: 2px orange;
+        color: transparent;
+      }
+
+      /*con02*/
+      .con02 {
+        position: relative;
+        overflow: hidden;
+        border: 2px solid red;
+        height: 1500px;
+      }
+      .con02 .circle {
+        position: absolute;
+        /*
+        width: 2000px;
+        height: 2000px;
+        */
+        background-color: #222;
+        border-radius: 50%;
+        top: 40%;
+        left: 50%;
+        transform: translateX(-50%);
+      }
+      .con02 .text {
+        position: absolute;
+        color: #fff;
+        left: 50%;
+        top: 50%;
+        transform: translateX(-50%);
+        text-align: center;
+        border: 2px solid blue;
+      }
+      .con02 .text li {
+        font-size: 60px;
+        font-weight: bold;
+        line-height: 1;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <section class="con01">
+        <h2><span>gsap</span>scrolltrigger</h2>
+      </section>
+      <section class="con02">
+        <div class="circle">
+          <ul class="text">
+            <li>Lorem Ipsum</li>
+            <li>What is Lorem Ipsum?</li>
+            <li>Why do we use it?</li>
+            <li>Where does it come from?</li>
+          </ul>
+        </div>
+      </section>
+    </div>
+    <script>
+      gsap.registerPlugin(ScrollTrigger);
+      gsap
+        .timeline({
+          scrollTrigger: {
+            trigger: ".con02",
+            start: "0% 50%",
+            end: "30% 0%",
+            scrub: 2,
+            /* markers: true,*/
+          },
+        })
+        .fromTo(
+          ".circle",
+          { width: 0, height: 0, duration: 10, top: "3%" },
+          { width: "2500px", height: "2500px", duration: 10, top: "40%" }
+        );
+
+      //.con02 .text
+
+      gsap
+        .timeline({
+          scrollTrigger: {
+            trigger: ".con02 .text",
+            start: "0% 80%",
+            end: "100% 50%",
+            scrub: 2,
+            markers: true,
+          },
+        })
+        .fromTo(
+          ".text",
+          { top: "50%", opacity: 0, duration: 10 },
+          { top: "10%", opacity: 1, duration: 10 }
+        );
+    </script>
+  </body>
+</html>

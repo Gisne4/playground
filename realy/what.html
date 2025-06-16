@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Download Linked Resources (Client-Side)</title>
+    <style>
+      body {
+        font-family: sans-serif;
+      }
+      label {
+        display: block;
+        margin-bottom: 5px;
+      }
+      input[type="text"] {
+        width: 80%;
+        padding: 8px;
+        margin-bottom: 10px;
+      }
+      button {
+        padding: 10px 15px;
+        cursor: pointer;
+      }
+      #downloadStatus {
+        margin-top: 10px;
+        font-weight: bold;
+      }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  </head>
+  <body>
+    <h1>Download Linked Resources (Client-Side - Limited)</h1>
+    <p>
+      Enter the URL of the target webpage (best for resources on the same
+      domain):
+    </p>
+    <label for="targetURL">Target URL:</label>
+    <input type="text" id="targetURL" size="80" />
+    <button onclick="fetchAndZipResources()">Fetch and Zip Resources</button>
+
+    <div id="downloadStatus"></div>
+
+    <script>
+      async function fetchAndZipResources() {
+        const targetURL = document.getElementById("targetURL").value;
+        const downloadStatusDiv = document.getElementById("downloadStatus");
+        downloadStatusDiv.textContent = "Fetching links...";
+
+        if (!targetURL) {
+          downloadStatusDiv.textContent = "Please enter a target URL.";
+          return;
+        }
+
+        try {
+          const response = await fetch(targetURL);
+          if (!response.ok) {
+            downloadStatusDiv.textContent = `Error fetching page: ${response.statusText}`;
+            return;
+          }
+          const htmlContent = await response.text();
+          const parser = new DOMParser();
+          const doc = parser.parseFromString(htmlContent, "text/html");
+          const links = doc.querySelectorAll(
+            'a[href], img[src], script[src], link[rel="stylesheet"][href], video[src], audio[src], source[src]'
+          );
+
+          const zip = new JSZip();
+          zip.file("index.html", htmlContent);
+          downloadStatusDiv.textContent = "Downloading resources...";
+
+          const promises = [];
+          for (const element of links) {
+            let url =
+              element.getAttribute("href") || element.getAttribute("src");
+            if (
+              url &&
+              !url.startsWith("#") &&
+              !url.startsWith("mailto:") &&
+              !url.startsWith("tel:")
+            ) {
+              if (!url.startsWith("http") && !url.startsWith("//")) {
+                url = new URL(url, targetURL).href;
+              }
+              promises.push(
+                fetchResourceAndAddToZip(url, zip, downloadStatusDiv)
+              );
+            }
+          }
+
+          await Promise.all(promises);
+          downloadStatusDiv.textContent = "Creating ZIP file...";
+
+          zip.generateAsync({ type: "blob" }).then(function (blob) {
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = "website_resources.zip";
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            downloadStatusDiv.textContent = "Download complete!";
+          });
+        } catch (error) {
+          downloadStatusDiv.textContent = `An error occurred: ${error}`;
+        }
+      }
+
+      async function fetchResourceAndAddToZip(url, zip, statusDiv) {
+        try {
+          const response = await fetch(url);
+          if (!response.ok) {
+            console.warn(`Failed to fetch: ${url} - ${response.statusText}`);
+            return;
+          }
+          const blob = await response.blob();
+          const filename = url.split("/").pop();
+          zip.file(filename, blob);
+          statusDiv.textContent = `Downloading: ${filename}...`;
+        } catch (error) {
+          console.warn(`Error fetching ${url}: ${error}`);
+        }
+      }
+    </script>
+  </body>
+</html>

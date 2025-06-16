@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Horizontal Scroll Page with GSAP</title>
+    <style>
+      /* Reset and base styles */
+      body {
+        margin: 0;
+        padding: 0;
+        font-family: "Inter", sans-serif; /* Using Inter for consistency */
+        overflow: hidden; /* Prevent default vertical scrollbar as GSAP handles it */
+        background-color: #f0f0f0;
+      }
+
+      /* Main container that will be pinned */
+      .horizontal-container {
+        position: relative; /* Needed for absolute positioning of wrapper */
+        width: 100vw;
+        height: 100vh;
+      }
+
+      /* Wrapper that holds all panels and will be horizontally animated */
+      .horizontal-wrapper {
+        position: absolute;
+        top: 0;
+        left: 0;
+        display: flex; /* Arranges panels horizontally */
+        /* width will be set dynamically by JS based on number of panels */
+        height: 100%;
+      }
+
+      /* Individual content panels */
+      .panel {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        width: 100vw; /* Each panel takes full viewport width */
+        height: 100vh; /* Each panel takes full viewport height */
+        color: white;
+        font-size: 2.5em;
+        text-align: center;
+        opacity: 0.9;
+        transition: opacity 0.3s ease, transform 0.3s ease; /* Smooth hover effects */
+        transform: translateX(0); /* Initial state */
+        /* Ensure rounded corners for panels if desired, for now using background colors */
+        border-radius: 1rem; /* Added for visual appeal */
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Subtle shadow */
+        margin: 0 0.5rem; /* Small margin between panels for visual separation */
+        flex-shrink: 0; /* Important: prevents panels from shrinking */
+      }
+
+      .panel:first-child {
+        margin-left: 0; /* No margin on the first panel */
+      }
+
+      .panel:last-child {
+        margin-right: 0; /* No margin on the last panel */
+      }
+
+      .panel:hover {
+        opacity: 1;
+        transform: scale(
+          1.01
+        ); /* Slightly smaller scale on hover to fit better */
+      }
+
+      .panel h2 {
+        font-size: 4em;
+        margin-bottom: 0.5em;
+        text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.4);
+      }
+
+      .panel p {
+        font-size: 1.3em;
+        padding: 0 15vw;
+        line-height: 1.7;
+        text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+      }
+
+      /* Panel specific background colors */
+      .panel.one {
+        background-color: #6ab7ff; /* Blue */
+      }
+      .panel.two {
+        background-color: #ff7851; /* Orange */
+      }
+      .panel.three {
+        background-color: #88ef88; /* Green */
+      }
+      .panel.four {
+        background-color: #fdd047; /* Yellow */
+      }
+
+      /* Navigation dots for direct panel access */
+      .navigation {
+        position: fixed;
+        bottom: 30px;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        gap: 15px;
+        z-index: 10; /* Ensure dots are above panels */
+        background-color: rgba(
+          255,
+          255,
+          255,
+          0.3
+        ); /* Semi-transparent background for dots */
+        padding: 0.75rem 1.25rem;
+        border-radius: 2rem;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+      }
+
+      .nav-dot {
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background-color: rgba(0, 0, 0, 0.2);
+        cursor: pointer;
+        transition: background-color 0.3s ease, transform 0.2s ease;
+      }
+
+      .nav-dot.active {
+        background-color: rgba(0, 0, 0, 0.8);
+        transform: scale(1.2);
+      }
+
+      .nav-dot:hover {
+        background-color: rgba(0, 0, 0, 0.5);
+        transform: scale(1.1);
+      }
+
+      /* Hide default scrollbars (for better control with ScrollTrigger) */
+      *::-webkit-scrollbar {
+        display: none;
+      }
+
+      html {
+        -ms-overflow-style: none; /* IE and Edge */
+        scrollbar-width: none; /* Firefox */
+      }
+    </style>
+  </head>
+  <body>
+    <div class="horizontal-container">
+      <div class="horizontal-wrapper">
+        <div class="panel one">
+          <h2>Welcome to Modern Korea</h2>
+          <p>
+            Scroll horizontally to explore the vibrant landscapes and rich
+            culture.
+          </p>
+        </div>
+        <div class="panel two">
+          <h2>A Land of Contrasts</h2>
+          <p>
+            From bustling cities to serene countryside, experience the dynamic
+            energy.
+          </p>
+        </div>
+        <div class="panel three">
+          <h2>Tradition and Innovation</h2>
+          <p>
+            Discover the harmony of ancient heritage and cutting-edge
+            technology.
+          </p>
+        </div>
+        <div class="panel four">
+          <h2>Your Journey Begins</h2>
+          <p>Embark on a visual adventure through the heart of Korea.</p>
+        </div>
+      </div>
+    </div>
+
+    <nav class="navigation">
+      <div class="nav-dot active"></div>
+      <div class="nav-dot"></div>
+      <div class="nav-dot"></div>
+      <div class="nav-dot"></div>
+    </nav>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.9.1/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.9.1/ScrollTrigger.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.9.1/ScrollToPlugin.min.js"></script>
+
+    <script>
+      // Ensure GSAP and ScrollTrigger are registered
+      gsap.registerPlugin(ScrollTrigger, ScrollToPlugin); // Register ScrollToPlugin here
+
+      document.addEventListener("DOMContentLoaded", () => {
+        const container = document.querySelector(".horizontal-container");
+        const wrapper = document.querySelector(".horizontal-wrapper");
+        const panels = gsap.utils.toArray(".panel");
+        const navDots = gsap.utils.toArray(".nav-dot");
+
+        // Basic error handling for missing elements
+        if (
+          !container ||
+          !wrapper ||
+          panels.length === 0 ||
+          navDots.length === 0
+        ) {
+          console.error(
+            "Critical elements not found. Check HTML structure and class names."
+          );
+          return;
+        }
+
+        // Calculate the total width needed for the wrapper to hold all panels side-by-side
+        // Each panel is 100vw, so total width is panels.length * window.innerWidth
+        // We also account for the margin between panels if any.
+        const panelMargin =
+          parseFloat(getComputedStyle(panels[0]).marginRight) +
+          parseFloat(getComputedStyle(panels[0]).marginLeft);
+        const totalWidth =
+          panels.length * window.innerWidth + (panels.length - 1) * panelMargin;
+
+        // Set the initial width of the wrapper to accommodate all panels horizontally
+        gsap.set(wrapper, { width: totalWidth, x: 0 });
+
+        // Function to update the active navigation dot
+        function updateActiveDot(index) {
+          navDots.forEach((dot) => dot.classList.remove("active"));
+          if (navDots[index]) {
+            // Ensure the dot exists before adding class
+            navDots[index].classList.add("active");
+          }
+        }
+
+        let isScrolling = false; // Flag to prevent multiple scroll animations from conflicting
+        let currentIndex = 0; // Keep track of the currently active panel index
+
+        // Create the main GSAP timeline for the horizontal scroll effect
+        const masterTimeline = gsap.timeline({
+          scrollTrigger: {
+            trigger: container, // The element that triggers the scroll effect
+            start: "top top", // When the top of the trigger hits the top of the viewport
+            end: () => `+=${totalWidth - window.innerWidth}`, // End when we've scrolled past the entire horizontal content
+            pin: true, // Pin the container so it stays in view while scrolling horizontally
+            scrub: 0.8, // Smoothly link scroll position to animation progress (0.8 makes it a bit "sticky")
+            snap: 1 / (panels.length - 1), // Snap to each panel's position
+            onUpdate: (self) => {
+              // Calculate the current horizontal position based on scroll progress
+              // self.progress is a value from 0 to 1
+              // We move the wrapper by the negative of the progress multiplied by the scrollable distance
+              const currentX =
+                -self.progress * (totalWidth - window.innerWidth);
+              gsap.to(wrapper, {
+                x: currentX,
+                ease: "none", // No easing for the direct scrubbed movement
+                duration: 0.5, // Duration for the GSAP.to, but scrub overrides this for main animation
+              });
+
+              // Determine the active panel based on scroll progress
+              const activeIndex = Math.round(
+                self.progress * (panels.length - 1)
+              );
+              if (activeIndex !== currentIndex) {
+                currentIndex = activeIndex;
+                updateActiveDot(activeIndex);
+              }
+            },
+            anticipatePin: true, // Helps with smoother pinning at the start/end
+            immediateRender: true, // Renders the initial state immediately
+          },
+        });
+
+        // This is the actual animation that the ScrollTrigger controls
+        masterTimeline.to(wrapper, {
+          x: () => `-${totalWidth - window.innerWidth}`, // Animate wrapper's x position to the far left
+          ease: "none", // Linear movement
+        });
+
+        // Add click listeners to navigation dots
+        navDots.forEach((dot, index) => {
+          dot.addEventListener("click", () => {
+            if (isScrolling) return; // Prevent clicks while an animation is in progress
+            isScrolling = true;
+
+            // Calculate the scroll position for the clicked panel
+            // Use GSAP's ScrollToPlugin to scroll the window to the equivalent vertical position
+            // This will then trigger the ScrollTrigger to move the horizontal wrapper
+            gsap.to(window, {
+              scrollTo: {
+                y:
+                  masterTimeline.scrollTrigger.start +
+                  (masterTimeline.scrollTrigger.end -
+                    masterTimeline.scrollTrigger.start) *
+                    (index / (panels.length - 1)),
+                autoKill: false, // Don't kill the scroll animation if user interacts
+              },
+              duration: 0.7,
+              ease: "power2.inOut",
+              onComplete: () => {
+                isScrolling = false;
+                // updateActiveDot(index); // This is handled by onUpdate of ScrollTrigger
+                // currentIndex = index; // This is handled by onUpdate of ScrollTrigger
+              },
+            });
+          });
+        });
+
+        // Initialize the active dot on page load
+        updateActiveDot(0);
+
+        // Handle window resize to recalculate totalWidth and update ScrollTrigger
+        window.addEventListener("resize", () => {
+          // Kill existing ScrollTrigger to re-initialize
+          if (masterTimeline.scrollTrigger) {
+            masterTimeline.scrollTrigger.kill();
+          }
+
+          // Recalculate total width
+          const newPanelMargin =
+            parseFloat(getComputedStyle(panels[0]).marginRight) +
+            parseFloat(getComputedStyle(panels[0]).marginLeft);
+          const newTotalWidth =
+            panels.length * window.innerWidth +
+            (panels.length - 1) * newPanelMargin;
+
+          // Re-set wrapper width
+          gsap.set(wrapper, { width: newTotalWidth });
+
+          // Re-create the ScrollTrigger
+          masterTimeline.clear(); // Clear previous animations from timeline
+          masterTimeline.scrollTrigger = ScrollTrigger.create({
+            trigger: container,
+            start: "top top",
+            end: () => `+=${newTotalWidth - window.innerWidth}`,
+            pin: true,
+            scrub: 0.8,
+            snap: 1 / (panels.length - 1),
+            onUpdate: (self) => {
+              const currentX =
+                -self.progress * (newTotalWidth - window.innerWidth);
+              gsap.to(wrapper, {
+                x: currentX,
+                ease: "none",
+                duration: 0.5,
+              });
+              const activeIndex = Math.round(
+                self.progress * (panels.length - 1)
+              );
+              if (activeIndex !== currentIndex) {
+                currentIndex = activeIndex;
+                updateActiveDot(activeIndex);
+              }
+            },
+            anticipatePin: true,
+            immediateRender: true,
+          });
+
+          masterTimeline.to(wrapper, {
+            x: () => `-${newTotalWidth - window.innerWidth}`,
+            ease: "none",
+          });
+
+          // Ensure the current panel is in view after resize
+          gsap.to(window, {
+            scrollTo: {
+              y:
+                masterTimeline.scrollTrigger.start +
+                (masterTimeline.scrollTrigger.end -
+                  masterTimeline.scrollTrigger.start) *
+                  (currentIndex / (panels.length - 1)),
+              autoKill: false,
+            },
+            duration: 0.1, // Quick adjustment
+          });
+        });
+      });
+    </script>
+  </body>
+</html>

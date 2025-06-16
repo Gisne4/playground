@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Movie DB Inspired</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/swiper@8/swiper-bundle.min.css"
+    />
+    <style>
+      body {
+        font-family: "Inter", sans-serif;
+        margin: 0;
+        background-color: #111;
+        color: #fff;
+      }
+      .container {
+        width: 95%;
+        max-width: 1200px;
+        margin: 0 auto;
+      }
+      .visual {
+        height: 400px;
+        margin-bottom: 30px;
+        position: relative;
+        overflow: hidden; /* Ensure slider doesn't overflow */
+      }
+      .visual .swiper {
+        width: 100%;
+        height: 100%;
+      }
+      .visual .swiper-slide {
+        background-size: cover;
+        background-position: center;
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+        padding-left: 50px;
+      }
+      .visual .swiper-slide-content {
+        max-width: 500px;
+        background-color: rgba(0, 0, 0, 0.7);
+        padding: 20px;
+        border-radius: 10px;
+      }
+      .visual .swiper-slide-title {
+        font-size: 2em;
+        font-weight: bold;
+        margin-bottom: 10px;
+      }
+      .visual .swiper-slide-overview {
+        font-size: 1.1em;
+        line-height: 1.5;
+      }
+      .visual .swiper-pagination {
+        position: absolute;
+        bottom: 10px;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        gap: 10px;
+      }
+      .visual .swiper-pagination-bullet {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: #fff;
+        opacity: 0.8;
+        cursor: pointer;
+      }
+      .visual .swiper-pagination-bullet-active {
+        opacity: 1;
+        background: #ffc300;
+      }
+
+      .con1 {
+        margin-bottom: 30px;
+        padding: 20px;
+        background-color: #1a1a1a;
+        border-radius: 10px;
+      }
+      .con1 h2 {
+        font-size: 1.8em;
+        margin-bottom: 20px;
+        color: #ffc300;
+      }
+      .con1 input[type="text"] {
+        padding: 12px 15px;
+        width: 70%;
+        border: 1px solid #444;
+        border-radius: 5px;
+        margin-right: 10px;
+        background-color: #222;
+        color: #eee;
+        font-size: 1em;
+      }
+      .con1 button {
+        padding: 12px 20px;
+        background-color: #ffc300;
+        color: #111;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 1em;
+        transition: background-color 0.3s ease;
+      }
+      .con1 button:hover {
+        background-color: #e5b100;
+      }
+
+      .con2,
+      .con3,
+      .con4 {
+        margin-bottom: 30px;
+        padding: 20px;
+        background-color: #1a1a1a;
+        border-radius: 10px;
+      }
+      .con2 h2,
+      .con3 h2,
+      .con4 h2 {
+        font-size: 1.8em;
+        margin-bottom: 20px;
+        color: #ffc300;
+      }
+      .movie-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 20px;
+      }
+      .movie-list .movie-item {
+        background-color: #222;
+        padding: 15px;
+        border-radius: 10px;
+        text-align: center;
+        transition: transform 0.2s ease;
+      }
+      .movie-list .movie-item:hover {
+        transform: scale(1.05);
+      }
+      .movie-list .movie-item img {
+        width: 100%;
+        border-radius: 8px;
+        margin-bottom: 10px;
+      }
+      .movie-list .movie-item h3 {
+        font-size: 1.2em;
+        margin-bottom: 5px;
+        color: #eee;
+      }
+      .movie-list .movie-item p {
+        font-size: 0.9em;
+        color: #ccc;
+      }
+
+      .con4 {
+        background-color: #111;
+        padding: 0;
+        margin-bottom: 0;
+      }
+      .con4 h2 {
+        color: #fff;
+        padding-left: 20px;
+        font-size: 1.8em;
+        margin-bottom: 20px;
+      }
+      .con4 .ads {
+        height: 200px;
+        background-color: #333;
+        border-radius: 10px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        color: #fff;
+        margin: 20px;
+        text-align: center;
+        font-size: 1.2em;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="visual">
+        <div class="swiper">
+          <div class="swiper-wrapper"></div>
+          <div class="swiper-pagination"></div>
+        </div>
+      </div>
+      <div class="con1">
+        <h2>Search Movies</h2>
+        <div>
+          <input
+            type="text"
+            id="search-query"
+            placeholder="Enter movie title"
+          />
+          <button onclick="searchMovies()">Search</button>
+        </div>
+        <div id="results-container" class="movie-list"></div>
+      </div>
+      <div class="con2">
+        <h2>Popular Movies</h2>
+        <div id="popular-container" class="movie-list"></div>
+      </div>
+      <div class="con3">
+        <h2>Upcoming Movies</h2>
+        <div id="upcoming-container" class="movie-list"></div>
+      </div>
+      <div class="con4">
+        <h2>Advertisement</h2>
+        <div class="ads">Your Advertisement Space</div>
+      </div>
+    </div>
+
+    <script src="https://unpkg.com/swiper@8/swiper-bundle.min.js"></script>
+    <script>
+      const apiKey = "f710f4911d740be4e790af0963540a1a";
+      const searchBaseUrl = "https://api.themoviedb.org/3/search/movie";
+      const popularBaseUrl = "https://api.themoviedb.org/3/movie/popular";
+      const topRatedBaseUrl = "https://api.themoviedb.org/3/movie/top_rated";
+      const upcomingBaseUrl = "https://api.themoviedb.org/3/movie/upcoming";
+      const imageBaseUrl = "https://image.tmdb.org/t/p/w500";
+      const resultsContainer = document.getElementById("results-container");
+      const popularContainer = document.getElementById("popular-container");
+      const upcomingContainer = document.getElementById("upcoming-container");
+      const swiperWrapper = document.querySelector(".swiper-wrapper");
+
+      async function fetchMovies(url, container, isSlider = false) {
+        try {
+          const response = await fetch(url);
+          const data = await response.json();
+
+          if (isSlider) {
+            swiperWrapper.innerHTML = "";
+          } else {
+            container.innerHTML = "";
+          }
+
+          if (data.results && data.results.length > 0) {
+            data.results.forEach((movie) => {
+              const movieDiv = document.createElement("div");
+              movieDiv.classList.add("movie-item");
+              if (isSlider) {
+                movieDiv.classList.add("swiper-slide");
+                movieDiv.style.backgroundImage = `url(${imageBaseUrl}${movie.backdrop_path})`;
+                movieDiv.style.backgroundSize = "cover";
+                movieDiv.style.backgroundPosition = "center";
+
+                const slideContent = document.createElement("div");
+                slideContent.classList.add("swiper-slide-content");
+                slideContent.innerHTML = `
+                                <h3 class="swiper-slide-title">${movie.title}</h3>
+                                <p class="swiper-slide-overview">${movie.overview}</p>
+                            `;
+                movieDiv.appendChild(slideContent);
+                swiperWrapper.appendChild(movieDiv);
+              } else {
+                movieDiv.innerHTML = `
+                                <img src="${imageBaseUrl}${movie.poster_path}" alt="Poster">
+                                <h3>${movie.title}</h3>
+                                <p>Release: ${movie.release_date}</p>
+                            `;
+                container.appendChild(movieDiv);
+              }
+            });
+            if (isSlider) {
+              initializeSwiper();
+            }
+          } else {
+            container.innerHTML = "<p>No movies found.</p>";
+          }
+        } catch (error) {
+          console.error("Error fetching data:", error);
+          container.innerHTML = "<p>An error occurred while fetching data.</p>";
+        }
+      }
+
+      async function searchMovies() {
+        const query = document.getElementById("search-query").value;
+        if (!query) {
+          resultsContainer.innerHTML = "<p>Please enter a movie title.</p>";
+          return;
+        }
+
+        const apiUrl = `${searchBaseUrl}?api_key=${apiKey}&query=${encodeURIComponent(
+          query
+        )}`;
+
+        try {
+          const response = await fetch(apiUrl);
+          const data = await response.json();
+
+          resultsContainer.innerHTML = "";
+
+          if (data.results && data.results.length > 0) {
+            data.results.forEach((movie) => {
+              const movieDiv = document.createElement("div");
+              movieDiv.classList.add("movie-item");
+              movieDiv.innerHTML = `
+                            <img src="${imageBaseUrl}${movie.poster_path}" alt="Poster">
+                            <h3>${movie.title}</h3>
+                            <p>Release: ${movie.release_date}</p>
+                            <p>${movie.overview}</p>
+                        `;
+              resultsContainer.appendChild(movieDiv);
+            });
+          } else {
+            resultsContainer.innerHTML =
+              "<p>No movies found matching your search.</p>";
+          }
+        } catch (error) {
+          console.error("Error fetching data:", error);
+          resultsContainer.innerHTML =
+            "<p>An error occurred while fetching data.</p>";
+        }
+      }
+
+      function initializeSwiper() {
+        new Swiper(".swiper", {
+          slidesPerView: 1,
+          spaceBetween: 30,
+          loop: true,
+          autoplay: {
+            delay: 5000,
+            disableOnInteraction: false,
+          },
+          pagination: {
+            el: ".swiper-pagination",
+            clickable: true,
+          },
+        });
+      }
+
+      fetchMovies(
+        `${topRatedBaseUrl}?api_key=${apiKey}&language=en-US&page=1`,
+        swiperWrapper,
+        true
+      );
+      fetchMovies(
+        `${popularBaseUrl}?api_key=${apiKey}&language=en-US&page=1`,
+        popularContainer
+      );
+      fetchMovies(
+        `${upcomingBaseUrl}?api_key=${apiKey}&language=en-US&page=1`,
+        upcomingContainer
+      );
+    </script>
+  </body>
+</html>

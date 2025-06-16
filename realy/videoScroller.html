@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Scroll Video Scrub</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/ScrollSmoother.min.js"></script>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body,
+      html {
+        height: 100%;
+        font-family: sans-serif;
+        background: #111;
+        color: #fff;
+        overflow-x: hidden;
+      }
+
+      .viewport-wrapper {
+        width: 100%;
+        height: 100%;
+      }
+
+      .content-scroll {
+        position: relative;
+        width: 100%;
+      }
+
+      .spacer {
+        height: 100vh;
+        background: #000;
+      }
+
+      .video-scrub-section {
+        position: relative;
+        width: 100%;
+        height: 100vh;
+        background: #000;
+      }
+
+      .video-scrub-section video {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+        pointer-events: none;
+      }
+
+      .overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+      }
+
+      .overlay-item {
+        position: absolute;
+        bottom: 10%;
+        left: 10%;
+        font-size: 2rem;
+        font-weight: bold;
+        opacity: 0;
+        transform: translateY(50px);
+        transition: all 0.5s ease;
+      }
+    </style>
+  </head>
+  <body class="viewport-wrapper">
+    <div class="content-scroll">
+      <section id="video_scrub_01" class="video-scrub-section">
+        <video
+          src="video/main_video_haha.mp4"
+          preload="metadata"
+          playsinline
+          muted
+        ></video>
+
+        <div class="overlay">
+          <div class="overlay-item" data-time="0">Scene 1: Intro</div>
+          <div class="overlay-item" data-time="1">Scene 2: The Idea</div>
+          <div class="overlay-item" data-time="2">Scene 3: The Build</div>
+          <div class="overlay-item" data-time="3">Scene 4: The Launch</div>
+        </div>
+      </section>
+
+      <div class="spacer"></div>
+    </div>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        "use strict";
+
+        gsap.registerPlugin(ScrollTrigger, ScrollSmoother);
+
+        // ScrollTrigger.config({
+        //   limitCallbacks: true,
+        //   ignoreMobileResize: true,
+        // });
+
+        // const isTouchDevice = () => {
+        //   return (
+        //     "ontouchstart" in window ||
+        //     navigator.maxTouchPoints > 0 ||
+        //     navigator.msMaxTouchPoints > 0
+        //   );
+        // };
+
+        // if (isTouchDevice()) {
+        //   document.body.classList.add("normalize-scroll");
+        // } else {
+        ScrollSmoother.create({
+          content: ".content-scroll",
+          wrapper: ".viewport-wrapper",
+          smooth: 2,
+          normalizeScroll: true,
+          preventDefault: false,
+        });
+        // }
+
+        const video = document.querySelector("#video_scrub_01 video");
+        const overlayItems = gsap.utils.toArray(
+          "#video_scrub_01 .overlay-item"
+        );
+        const totalDuration = 4;
+        const scrubEnd = overlayItems.length;
+
+        video.addEventListener("loadedmetadata", () => {
+          if (!isFinite(video.duration) || isNaN(video.duration)) return;
+          const duration = video.duration;
+
+          gsap.to(video, {
+            currentTime: duration,
+            ease: "none",
+            scrollTrigger: {
+              trigger: "#video_scrub_01",
+              start: "top top",
+              end: `+=${window.innerHeight * scrubEnd}`,
+              scrub: true,
+              pin: true,
+              anticipatePin: 1,
+            },
+          });
+
+          overlayItems.forEach((item, index) => {
+            const triggerOffset = index * window.innerHeight;
+            gsap.fromTo(
+              item,
+              { autoAlpha: 0, y: 100 },
+              {
+                autoAlpha: 1,
+                y: 0,
+                ease: "power2.out",
+                scrollTrigger: {
+                  trigger: item,
+                  start: `top center+=100`,
+                  end: `bottom center-=100`,
+                  toggleActions: "play reverse play reverse",
+                  scrub: true,
+                },
+              }
+            );
+          });
+        });
+
+        const observer = new IntersectionObserver(
+          (entries) => {
+            entries.forEach((entry) => {
+              if (entry.isIntersecting) {
+                if (video.readyState < 2) {
+                  video.load();
+                }
+              } else {
+                video.pause();
+              }
+            });
+          },
+          { threshold: 0.1 }
+        );
+      });
+    </script>
+  </body>
+</html>

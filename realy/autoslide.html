@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
+      integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    />
+    <style>
+      * {
+        margin: 0px;
+        padding: 0px;
+        box-sizing: border-box;
+      }
+      li {
+        list-style: none;
+      }
+      .slider {
+        width: 500px;
+        height: 400px;
+        margin: 50px auto;
+        position: relative;
+        overflow: hidden;
+      }
+
+      /*panel*/
+      .panel {
+        height: 100%;
+        display: flex;
+        transition: transform 0.8s ease-in-out;
+        transform: translateX(0);
+      }
+
+      /*panel li*/
+      .panel li {
+        height: 100%;
+        background-repeat: no-repeat;
+        background-size: cover;
+        background-position: center;
+        flex-shrink: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 20px;
+        color: rgb(255, 233, 233);
+        text-shadow: 2px 2px 10px rgba(0, 0, 0, 0.747);
+      }
+      .panel .panel1 {
+        background-image: url(img/pic1.jpg);
+      }
+      .panel .panel2 {
+        background-image: url(img/pic2.jpg);
+      }
+      .panel .panel3 {
+        background-image: url(img/pic3.jpg);
+      }
+      .panel .panel4 {
+        background-image: url(img/pic4.jpg);
+      }
+
+      .navi {
+        display: flex;
+        gap: 10px;
+        position: absolute;
+        left: 50%;
+        bottom: 30px;
+        transform: translateX(-50%);
+      }
+      .navi li {
+        width: 30px;
+        height: 5px;
+        background-color: #fff;
+        cursor: pointer;
+        border-radius: 2px;
+      }
+
+      .navi .on {
+        background-color: red;
+      }
+
+      .left,
+      .right {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 25px;
+        color: #fff;
+        background: rgba(0, 0, 0, 0.3);
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        cursor: pointer;
+        user-select: none;
+        transition: background 0.3s ease;
+      }
+      .left:hover,
+      .right:hover {
+        background: rgba(0, 0, 0, 0.733);
+      }
+      .left {
+        left: 10px;
+      }
+      .right {
+        right: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="slider">
+      <ul class="panel">
+        <li class="panel1">panel1</li>
+        <li class="panel2">panel2</li>
+        <li class="panel3">panel3</li>
+        <li class="panel4">panel4</li>
+        <li class="panel1">panel1</li>
+        <li class="panel2">panel2</li>
+        <li class="panel3">panel3</li>
+        <li class="panel4">panel4</li>
+      </ul>
+      <ul class="navi"></ul>
+      <div class="left"><i class="fa-solid fa-chevron-left"></i></div>
+      <div class="right"><i class="fa-solid fa-chevron-right"></i></div>
+    </div>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const 큰상자 = document.querySelector(".slider");
+        const 움직이는_상자 = document.querySelector(".panel");
+        const 네비게이션_바 = document.querySelector(".navi");
+        const 상자안_사진들 = document.querySelectorAll(".panel li");
+        const 왼쪽이 = document.querySelector(".left");
+        const 오른이 = document.querySelector(".right");
+        const 사진이_몇개더라 = 상자안_사진들.length;
+
+        let panelIndex = 0;
+        let slideInterval;
+        const slideSpeed = 5000;
+
+        initiate();
+        function initiate() {
+          움직이는_상자.style.width = `${사진이_몇개더라 * 100}%`;
+          상자안_사진들.forEach((아이템_상자들) => {
+            아이템_상자들.style.width = `calc(100% / ${사진이_몇개더라})`;
+            const 우리_이쁜_리스트_상자들 = document.createElement("li");
+            우리_이쁜_리스트_상자들.innerHTML =
+              "text indent 는 글씨가 들어가도 마음데로 ";
+            우리_이쁜_리스트_상자들.style.textIndent = `100%`;
+            우리_이쁜_리스트_상자들.style.overflow = `hidden`;
+            네비게이션_바.appendChild(우리_이쁜_리스트_상자들);
+          });
+        }
+
+        const naviItems = document.querySelectorAll(".navi li");
+
+        function showSlide(index) {
+          움직이는_상자.style.transform = `translateX(-${
+            index * (100 / 사진이_몇개더라)
+          }%)`;
+          changeClass(naviItems, index);
+          panelIndex = index;
+        }
+
+        function nextSlide() {
+          const nextIndex = (panelIndex + 1) % 사진이_몇개더라;
+          showSlide(nextIndex);
+        }
+
+        function prevSlide() {
+          const prevIndex =
+            (panelIndex - 1 + 사진이_몇개더라) % 사진이_몇개더라;
+          showSlide(prevIndex);
+        }
+
+        function startAutoSlide() {
+          slideInterval = setInterval(nextSlide, slideSpeed);
+        }
+
+        function stopAutoSlide() {
+          clearInterval(slideInterval);
+        }
+
+        naviItems.forEach((item, index) => {
+          item.addEventListener("click", function () {
+            showSlide(index);
+            stopAutoSlide();
+            startAutoSlide();
+          });
+        });
+        function changeClass(element, index) {
+          element.forEach((item) => item.classList.remove("on"));
+          element[index].classList.add("on");
+        }
+        왼쪽이.addEventListener("click", () => {
+          prevSlide();
+          stopAutoSlide();
+          startAutoSlide();
+        });
+
+        오른이.addEventListener("click", () => {
+          nextSlide();
+          stopAutoSlide();
+          startAutoSlide();
+        });
+
+        startAutoSlide();
+
+        큰상자.addEventListener("mouseenter", stopAutoSlide);
+        큰상자.addEventListener("mouseleave", startAutoSlide);
+
+        showSlide(0);
+      });
+    </script>
+  </body>
+</html>

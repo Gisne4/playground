@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GSAP ScrollTo Plugin Example</title>
+    <style>
+      body {
+        margin: 0;
+        font-family: sans-serif;
+        background-color: #f0f0f0;
+        overflow-x: hidden;
+      }
+
+      section {
+        height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 2em;
+        color: #333;
+        text-align: center;
+        position: relative; /* For absolute positioning of buttons */
+      }
+
+      .nav-buttons {
+        position: fixed;
+        top: 20px;
+        left: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .nav-buttons button {
+        padding: 10px 15px;
+        font-size: 1em;
+        cursor: pointer;
+      }
+
+      .scrub-text-section {
+        background-color: #eee;
+      }
+
+      .scrub-text {
+        opacity: 0;
+        transform: translateX(-500px) rotate(-5deg);
+      }
+
+      .rotate-box-section {
+        background-color: #ddd;
+      }
+
+      .rotate-box {
+        width: 100px;
+        height: 100px;
+        background-color: #007bff;
+        color: white;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        border-radius: 8px;
+        transform: scale(0.8);
+      }
+
+      .fade-in-section {
+        background-color: #ccc;
+      }
+
+      .fade-in {
+        opacity: 0;
+        transform: translateY(50px);
+      }
+
+      .fade-in-ul-section {
+        background-color: #bbb;
+      }
+
+      .fade-in-ul {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+
+      .fade-in-ul ul {
+        list-style: none;
+        padding: 0;
+      }
+
+      .fade-in-ul li {
+        margin: 10px 0;
+      }
+
+      .background-change-section {
+        background-color: #6c757d; /* Initial background */
+      }
+
+      .background-change model-viewer {
+        /* You might need to style your model-viewer specifically */
+        width: 300px;
+        height: 300px;
+        background-color: inherit; /* Inherit background for the transition */
+      }
+
+      .yeeSheepDucks-section {
+        background-color: #f8f9fa; /* Initial background */
+      }
+
+      .yeeSheepDucks {
+        padding: 20px;
+        border-radius: 8px;
+      }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollToPlugin.min.js"></script>
+  </head>
+  <body>
+    <div class="nav-buttons">
+      <button onclick="scrollToSection('.home-section')">Home</button>
+      <button onclick="scrollToSection('.scrub-text-section')">
+        Scrub Text
+      </button>
+      <button onclick="scrollToSection('.rotate-box-section')">
+        Rotate Box
+      </button>
+      <button onclick="scrollToSection('.fade-in-section')">Fade In</button>
+      <button onclick="scrollToSection('.fade-in-ul-section')">
+        Fade In UL
+      </button>
+      <button onclick="scrollToSection('.background-change-section')">
+        Background Change
+      </button>
+      <button onclick="scrollToSection('.yeeSheepDucks-section')">
+        Yee Sheep Ducks
+      </button>
+      <button onclick="scrollToSection('.last-section')">Last Section</button>
+    </div>
+
+    <section class="home-section">
+      <h1>GSAP ScrollTo Plugin Example</h1>
+    </section>
+
+    <section class="scrub-text-section">
+      <h2 class="scrub-text">Text Scrubbing Animation</h2>
+    </section>
+
+    <section class="rotate-box-section">
+      <div class="rotate-box">Rotate Me!</div>
+    </section>
+
+    <section class="fade-in-section">
+      <div class="fade-in">Fade In Element</div>
+    </section>
+
+    <section class="fade-in-ul-section">
+      <div class="fade-in-ul">
+        <ul>
+          <li>Item 1</li>
+          <li>Item 2</li>
+          <li>Item 3</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="background-change-section background-change">
+      <model-viewer src="your-3d-model.glb" alt="A 3D model"></model-viewer>
+      <h2>Background Change Section</h2>
+    </section>
+
+    <section class="yeeSheepDucks-section yeeSheepDucks">
+      <h2>Yee Sheep Ducks Background</h2>
+      <p>This section's background will change.</p>
+    </section>
+
+    <section class="last-section">
+      <h2>The End</h2>
+    </section>
+
+    <script>
+      gsap.registerPlugin(ScrollTrigger, ScrollToPlugin);
+
+      document.addEventListener("DOMContentLoaded", () => {
+        // Text scrolling animation
+        gsap.to(".scrub-text", {
+          scrollTrigger: {
+            trigger: ".scrub-text",
+            start: "top 70%",
+            end: "top 50%",
+            scrub: true,
+          },
+          opacity: 1,
+          x: 0,
+          rotation: 0,
+        });
+
+        //rotate!!
+        gsap.to(".rotate-box", {
+          scrollTrigger: {
+            trigger: ".rotate-box",
+            start: "top 60%",
+            end: "top 10%",
+            scrub: true,
+          },
+          rotation: 360,
+          scale: 1.5,
+          transformOrigin: "center center",
+        });
+
+        gsap.to(".fade-in", {
+          scrollTrigger: {
+            trigger: ".fade-in",
+            start: "top 60%",
+            end: "top 20%",
+            scrub: true,
+          },
+          opacity: 1,
+          y: 0, //transform : translateY(0)
+        });
+
+        gsap.to(".fade-in-ul", {
+          scrollTrigger: {
+            trigger: ".fade-in-ul",
+            start: "top 80%",
+            end: "top 50%",
+            scrub: true,
+          },
+          opacity: 1,
+          y: 0, //transform : translateY(0)
+        });
+
+        gsap.to(".background-change model-viewer", {
+          scrollTrigger: {
+            trigger: ".background-change ",
+            start: "top 60%",
+            end: "top 10%",
+            scrub: true,
+          },
+          backgroundColor: "#1e90ff",
+          immediateRender: false,
+        });
+
+        gsap.to(".yeeSheepDucks", {
+          scrollTrigger: {
+            trigger: ".yeeSheepDucks",
+            start: "top 30%",
+            end: "top 0%",
+            scrub: true,
+          },
+          backgroundColor: "#8928d4",
+          immediateRender: false,
+        });
+      });
+
+      function scrollToSection(selector) {
+        gsap.to(window, {
+          duration: 1,
+          scrollTo: selector,
+          ease: "power2.inOut",
+        });
+      }
+    </script>
+  </body>
+</html>

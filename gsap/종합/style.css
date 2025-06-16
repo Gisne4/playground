@@ -1,0 +1,439 @@
+* {
+  margin: 0px;
+  padding: 0px;
+}
+li {
+  list-style: none;
+}
+a {
+  color: inherit;
+  text-decoration: inherit;
+}
+
+section {
+  width: 100%;
+  height: 100vh;
+}
+
+#header {
+  width: 100%;
+  height: 100vh;
+  background-color: #000;
+  color: #fff;
+}
+
+header {
+  height: 100px;
+  background-color: rgba(0, 0, 0, 1);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 2rem 4rem;
+  box-sizing: border-box;
+  color: #fff;
+}
+
+header h1 {
+  width: 100px;
+  height: 50px;
+}
+
+header h1 a {
+  display: block;
+}
+.gnb ul {
+  display: flex;
+  gap: 20px;
+}
+
+.gnb .char {
+  position: relative;
+  display: inline-block;
+  color: transparent;
+  overflow: hidden;
+}
+.gnb .char:before,
+.gnb .char:after {
+  position: absolute;
+  left: 0px;
+  top: 0px;
+  content: attr(data-char);
+  color: #fff;
+  /* opacity: 0.6; */
+  transition: 0.3s;
+  transition-delay: calc(60ms * var(--char-index));
+}
+
+.gnb .char::before {
+  transform: translateY(100%);
+  /* color: red; */
+}
+.gnb li a:hover .char::before {
+  transform: translateY(0%);
+  /* opacity: 1; */
+}
+.gnb li a:hover .char::after {
+  transform: translateY(-100%);
+}
+
+/*menuOpen*/
+header .menuOpen {
+  display: none;
+}
+
+/*mainText*/
+#header .mainText {
+  font-size: 100px;
+  font-weight: bold;
+  line-height: 1.2;
+  margin: 60px 0px 150px 60px;
+  display: inline-block;
+}
+#header .mainText p {
+  overflow: hidden;
+}
+
+/*subText*/
+#header .subText {
+  margin-left: 60px;
+  font-size: 30px;
+}
+/* .subText span {
+  font-weight: bold;
+} */
+
+.typing-container {
+  font-size: 35px;
+  font-weight: 400;
+
+  margin: 50px;
+  width: 450px;
+  word-break: keep-all;
+}
+
+#cursor {
+  border-left: 2px solid #fff; /* 커서 스타일 */
+  animation: blink 0.7s infinite;
+  display: inline-block;
+  margin-left: 2px;
+  height: 35px; /* 폰트 크기와 동일하게 설정 */
+  vertical-align: middle;
+}
+
+@keyframes blink {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+/*animation*/
+#header.motion .mainText {
+  transform: translate3d(0, 0, 0) skewY(0deg);
+  overflow: hidden;
+}
+#header.motion .mainText p {
+  animation: textAni 1.8s;
+}
+
+#header.motion .mainText p:nth-child(2) {
+  animation-duration: 1.7s;
+}
+#header.motion .mainText p:nth-child(3) {
+  animation-duration: 1.5s;
+}
+
+@keyframes textAni {
+  0% {
+    opacity: 0;
+  }
+  40% {
+    opacity: 0;
+    transform: translate3d(0, -90px, 0) skewY(-10deg);
+    transform-origin: top left;
+  }
+}
+
+@keyframes textani2 {
+  0% {
+    opacity: 0;
+  }
+  30% {
+    opacity: 0;
+  }
+}
+
+#header.motion .subText {
+  animation: textani2 2.3s;
+}
+
+.woman {
+  position: absolute;
+  right: 10%;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.woman img {
+  width: 600px;
+}
+
+/*con02*/
+/*con02*/
+.con02 {
+  position: relative;
+  /* top: -60vh; */
+  overflow: hidden;
+
+  height: 1500px;
+}
+.con02 .circle {
+  position: absolute;
+  background-color: #000;
+  border-radius: 50%;
+  top: 40%;
+  left: 50%;
+  transform: translateX(-50%);
+}
+.con02 .text {
+  position: absolute;
+  color: #fff;
+  left: 50%;
+  top: 20%;
+  transform: translateX(-50%);
+  text-align: center;
+  opacity: 0;
+  /* visibility: hidden; */
+  /* border: 2px solid blue; */
+}
+.con02 .text li {
+  font-size: 60px;
+
+  line-height: 1.3;
+}
+.con02 .text li:first-child {
+  margin-bottom: 50px;
+}
+.con02 .text li span {
+  font-weight: bold;
+  color: orange;
+}
+
+/*con03*/
+section.con03 {
+  height: 400vh;
+}
+.con03 .title {
+  width: 100%;
+  height: 100vh;
+  text-align: center;
+  font-size: 170px;
+  line-height: 0.9;
+  padding-top: 30vh;
+  box-sizing: border-box;
+}
+.con03 .work {
+  font-family: "Cormorant Infant", serif;
+  font-style: italic;
+  font-size: 220px;
+}
+
+/*workList*/
+
+.con03 .workList {
+  width: 70%;
+  margin: 0px auto;
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+.con03 .workList li {
+  width: 45%;
+  margin-top: 200px;
+}
+.con03 .workList li:nth-child(2n) {
+  margin-top: 0px;
+}
+.con03 .workList img {
+  width: 100%;
+  height: 500px;
+  object-fit: cover;
+}
+
+.con03 .textBox h3 {
+  font-size: 35px;
+  font-weight: normal;
+  margin: 20px 0px 5px;
+}
+.con03 .textBox .info {
+  display: flex;
+  justify-content: space-between;
+  color: #888;
+}
+
+.con03 .imgBox {
+  position: relative;
+}
+.con03 .imgBox::before {
+  width: 160px;
+  height: 160px;
+  content: "";
+  border: 1px solid #fff;
+  border-radius: 50%;
+  background: url(img/arrow.png) no-repeat center;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%) rotate(-45deg);
+  z-index: 1;
+  transition: 0.5s;
+  opacity: 0;
+}
+.con03 .imgBox::after {
+  content: "";
+  width: 0px;
+  height: 0px;
+  background: #fff url(img/more2.png) no-repeat center;
+  border-radius: 50%;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+
+  animation: spin 10s infinite linear;
+}
+@keyframes spin {
+  0% {
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
+  100% {
+    transform: translate(-50%, -50%) rotate(360deg);
+  }
+}
+
+/*hover*/
+
+.con03 a:hover .imgBox::before {
+  opacity: 1;
+}
+
+.con03 a:hover .imgBox::after {
+  width: 160px;
+  height: 160px;
+}
+.con03 a:hover .imgBox img {
+  filter: brightness(50%);
+}
+
+/*con04*/
+.con04 {
+  position: relative;
+}
+.con04 .textWrap {
+  width: 70%;
+  position: absolute;
+  /* background-color: blue; */
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  /* border: 1px solid red; */
+  z-index: 2;
+  color: #fff;
+}
+.con04 .title {
+  font-size: 18px;
+}
+.con04 .textWrap li {
+  font-size: 60px;
+  line-height: 1.3;
+}
+.con04 .textWrap li.en2 {
+  padding-left: 8px;
+}
+
+/*readmore*/
+
+.con04 .btnWrap {
+  position: absolute;
+  /* right: 50%; 임시로 보이게 만듦. 나중에는 right:-50%로 설정정*/
+
+  right: 50%;
+  top: 60%;
+  z-index: 3;
+}
+.con04 .btnWrap a {
+  display: block;
+  width: 170px;
+  height: 170px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  position: relative;
+  box-sizing: border-box;
+  transition: 0.5s;
+}
+.con04 .btnWrap a img {
+  width: 15%;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+.con04 .btnWrap a img:nth-child(2) {
+  opacity: 0; /*검정색 화살표 보이지 않게 함*/
+}
+.con04 .btnWrap a::before {
+  content: "";
+  /* width: 100%;
+        height: 100%; */
+
+  /*안보이게 하기 위해서 0으로 설정 */
+  width: 0px;
+  height: 0px;
+
+  border-radius: 50%;
+  background: #fff url(img/more2.png) no-repeat center/158px;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  animation: spin 10s infinite linear;
+  transition: 0.4s;
+}
+@keyframes spin {
+  0% {
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
+  100% {
+    transform: translate(-50%, -50%) rotate(360deg);
+  }
+}
+.con04 .btnWrap a:hover {
+  border-color: transparent;
+}
+.con04 .btnWrap a:hover img:nth-child(2) {
+  opacity: 1;
+}
+.con04 .btnWrap a:hover::before {
+  width: 100%;
+  height: 100%;
+}
+
+/*simplyScroll*/
+.simply-scroll .simply-scroll-clip {
+  overflow: hidden;
+  transform: rotate(5deg) translate(0%, 400px) scale(1.1);
+
+  opacity: 1;
+}
+.simply-scroll .simply-scroll-clip .simply-scroll-list li {
+  float: left;
+  width: 400px;
+  filter: brightness(50%);
+}
+.simply-scroll .simply-scroll-clip .simply-scroll-list li img {
+  width: 100%;
+}

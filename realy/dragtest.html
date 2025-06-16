@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Draggable Text Color Change</title>
+    <style>
+      #draggableText {
+        cursor: grab; /* Indicate it's draggable */
+      }
+    </style>
+  </head>
+  <body>
+    <p id="draggableText" draggable="true">Drag this text!</p>
+
+    <script>
+      const draggableText = document.getElementById("draggableText");
+
+      draggableText.addEventListener("dragstart", (event) => {
+        // Optional: You can perform actions when the drag starts
+        console.log("Drag started");
+      });
+
+      draggableText.addEventListener("drag", (event) => {
+        // Change the color while dragging
+        draggableText.style.color = "blue"; // Or any color you prefer
+      });
+
+      draggableText.addEventListener("dragend", (event) => {
+        // Reset the color when dragging ends
+        draggableText.style.color = "black"; // Or the original color
+        console.log("Drag ended");
+      });
+    </script>
+  </body>
+</html>

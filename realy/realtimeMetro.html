@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>서울역 실시간 지하철 도착 정보</title>
+    <style>
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        margin: 20px;
+        background-color: #f4f7f6;
+        color: #333;
+      }
+      h1 {
+        color: #2c3e50;
+        text-align: center;
+        margin-bottom: 30px;
+      }
+      .container {
+        max-width: 800px;
+        margin: 0 auto;
+        background-color: #fff;
+        padding: 25px;
+        border-radius: 8px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+      }
+      .loading-message {
+        text-align: center;
+        font-style: italic;
+        color: #666;
+      }
+      .subway-line {
+        border-bottom: 1px solid #eee;
+        padding: 15px 0;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+      }
+      .subway-line:last-child {
+        border-bottom: none;
+      }
+      .line-info {
+        flex-grow: 1;
+      }
+      .line-name {
+        font-weight: bold;
+        color: #34495e;
+        font-size: 1.1em;
+      }
+      .train-details {
+        font-size: 0.9em;
+        color: #555;
+        line-height: 1.4;
+      }
+      .arrival-msg {
+        background-color: #e8f5e9;
+        padding: 5px 10px;
+        border-radius: 4px;
+        font-weight: bold;
+        color: #2e7d32;
+      }
+      .status-msg {
+        background-color: #f0f4c3;
+        padding: 5px 10px;
+        border-radius: 4px;
+        font-weight: bold;
+        color: #fbc02d;
+      }
+      .error-message {
+        color: #d32f2f;
+        text-align: center;
+        padding: 20px;
+        background-color: #ffebee;
+        border-radius: 5px;
+        border: 1px solid #ef9a9a;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>서울역 실시간 지하철 도착 정보</h1>
+      <div id="subwayInfo">
+        <p class="loading-message">실시간 지하철 도착 정보를 불러오는 중...</p>
+      </div>
+    </div>
+
+    <script>
+      // Your API Key
+      const API_KEY = "456a50567a646b7239334f6d716b4f";
+      const STATION_NAME = "서울"; // The station name we are interested in
+
+      // CORRECTED API ENDPOINT based on your provided sample structure
+      // The URL pattern is:
+      // http://swopenapi.seoul.go.kr/api/subway/{KEY}/xml/{SERVICE_NAME}/{START_INDEX}/{END_INDEX}/{STATION_NAME}
+      // For 'realtimeStationArrival'
+      // We'll fetch 0 to 20 records for a broader view.
+      const API_ENDPOINT = `http://swopenapi.seoul.go.kr/api/subway/${API_KEY}/xml/realtimeStationArrival/0/20/${encodeURIComponent(
+        STATION_NAME
+      )}`;
+
+      async function fetchSubwayData() {
+        try {
+          const response = await fetch(API_ENDPOINT);
+
+          if (!response.ok) {
+            // Check for specific API error messages from Seoul Open Data Plaza
+            const errorText = await response.text();
+            console.error("API error response:", errorText);
+            throw new Error(
+              `HTTP error! Status: ${
+                response.status
+              }. API message: ${errorText.substring(0, 100)}...`
+            ); // Show partial error text
+          }
+
+          const xmlText = await response.text();
+          console.log("Raw XML Response:", xmlText); // Log raw XML for debugging
+          displaySubwayInfo(xmlText);
+        } catch (error) {
+          console.error("Error fetching subway data:", error);
+          document.getElementById("subwayInfo").innerHTML = `
+                    <p class="error-message">데이터를 불러오는 데 실패했습니다. <br>네트워크 연결을 확인하거나 API 키와 엔드포인트 URL을 다시 확인해 주세요.<br>오류: ${error.message}</p>
+                `;
+        }
+      }
+
+      function displaySubwayInfo(xmlString) {
+        const parser = new DOMParser();
+        const xmlDoc = parser.parseFromString(xmlString, "text/xml");
+        const subwayInfoDiv = document.getElementById("subwayInfo");
+        subwayInfoDiv.innerHTML = ""; // Clear loading message
+
+        // Check if there's a RESULT code indicating an API error
+        const resultCode = xmlDoc.getElementsByTagName("code")[0]?.textContent;
+        const developerMessage =
+          xmlDoc.getElementsByTagName("developerMessage")[0]?.textContent;
+
+        if (resultCode && resultCode !== "INFO-000") {
+          subwayInfoDiv.innerHTML = `
+                    <p class="error-message">API 오류 발생: ${resultCode}<br>
+                    ${developerMessage || "알 수 없는 오류"}</p>
+                `;
+          console.error(
+            "API returned an error code:",
+            resultCode,
+            developerMessage
+          );
+          return;
+        }
+
+        const rows = xmlDoc.getElementsByTagName("row");
+
+        if (rows.length === 0) {
+          subwayInfoDiv.innerHTML =
+            '<p class="loading-message">현재 도착 정보가 없습니다.</p>';
+          return;
+        }
+
+        for (let i = 0; i < rows.length; i++) {
+          const row = rows[i];
+          const trainLineNm =
+            row.getElementsByTagName("trainLineNm")[0]?.textContent ||
+            "정보 없음";
+          const arvlMsg2 =
+            row.getElementsByTagName("arvlMsg2")[0]?.textContent || "정보 없음"; // Current status message
+          const arvlMsg3 =
+            row.getElementsByTagName("arvlMsg3")[0]?.textContent || ""; // Previous/Current Station
+          const subwayId = row.getElementsByTagName("subwayId")[0]?.textContent;
+          const btrainNo = row.getElementsByTagName("btrainNo")[0]?.textContent;
+          const recptnDt = row.getElementsByTagName("recptnDt")[0]?.textContent; // Reception Date/Time
+          const updnLine = row.getElementsByTagName("updnLine")[0]?.textContent; // Up/Down line
+
+          let lineNameDisplay = trainLineNm;
+          // Enhance display with common line names
+          if (subwayId === "1001") lineNameDisplay = `1호선 (${trainLineNm})`;
+          if (subwayId === "1002") lineNameDisplay = `2호선 (${trainLineNm})`;
+          if (subwayId === "1003") lineNameDisplay = `3호선 (${trainLineNm})`;
+          if (subwayId === "1004") lineNameDisplay = `4호선 (${trainLineNm})`;
+          if (subwayId === "1005") lineNameDisplay = `5호선 (${trainLineNm})`;
+          if (subwayId === "1006") lineNameDisplay = `6호선 (${trainLineNm})`;
+          if (subwayId === "1007") lineNameDisplay = `7호선 (${trainLineNm})`;
+          if (subwayId === "1008") lineNameDisplay = `8호선 (${trainLineNm})`;
+          if (subwayId === "1009") lineNameDisplay = `9호선 (${trainLineNm})`;
+          if (subwayId === "1063")
+            lineNameDisplay = `경의중앙선 (${trainLineNm})`;
+          if (subwayId === "1065")
+            lineNameDisplay = `공항철도 (${trainLineNm})`;
+          if (subwayId === "1075") lineNameDisplay = `분당선 (${trainLineNm})`; // Example for other lines
+          if (subwayId === "1077")
+            lineNameDisplay = `신분당선 (${trainLineNm})`; // Example for other lines
+
+          const subwayLineDiv = document.createElement("div");
+          subwayLineDiv.classList.add("subway-line");
+          subwayLineDiv.innerHTML = `
+                    <div class="line-info">
+                        <div class="line-name">${lineNameDisplay}</div>
+                        <div class="train-details">
+                            방면: ${updnLine || "정보 없음"}<br>
+                            ${arvlMsg3 ? `(${arvlMsg3}역 기준)` : ""}<br>
+                            열차 번호: ${btrainNo || "N/A"}<br>
+                            ${
+                              recptnDt
+                                ? `(수신 시각: ${recptnDt.substring(11, 16)})`
+                                : ""
+                            }
+                        </div>
+                    </div>
+                    <div class="${
+                      arvlMsg2.includes("도착") ? "arrival-msg" : "status-msg"
+                    }">${arvlMsg2}</div>
+                `;
+          subwayInfoDiv.appendChild(subwayLineDiv);
+        }
+      }
+
+      // Fetch data when the page loads
+      document.addEventListener("DOMContentLoaded", fetchSubwayData);
+    </script>
+  </body>
+</html>

@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GSAP Scroll Trigger Clip-Path Animation</title>
+    <style>
+      body {
+        margin: 0;
+        overflow-x: hidden;
+      }
+      .scroller {
+        height: 500vh;
+        background-color: #f0f0f0;
+      }
+      .box1 {
+        position: fixed;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        background-image: url("https://cdn.pixabay.com/photo/2019/09/17/07/37/earth-4482770_1280.jpg");
+        background-position: center;
+        background-repeat: no-repeat;
+        background-size: cover;
+        width: 100vw;
+        height: 100vh;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="scroller">
+      <div class="box1"></div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+    <script>
+      const box = document.querySelector(".box1");
+      gsap.to(box, {
+        scrollTrigger: {
+          trigger: ".scroller",
+          start: "top top",
+          end: "25% top",
+          scrub: 1,
+        },
+        clipPath: "polygon(20% 0%, 80% 0%, 100% 100%, 0% 100% )",
+      });
+      gsap.to(box, {
+        scrollTrigger: {
+          trigger: ".scroller",
+          start: "25% top",
+          end: "50% top",
+          scrub: 1,
+        },
+        clipPath:
+          "polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50% )",
+      });
+
+      gsap.to(box, {
+        scrollTrigger: {
+          trigger: ".scroller",
+          start: "50% top",
+          end: "75% top",
+          scrub: 1,
+        },
+        clipPath:
+          "polygon(30% 0%, 70% 0%, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0% 70%, 0% 30% )",
+      });
+
+      gsap.to(box, {
+        scrollTrigger: {
+          trigger: ".scroller",
+          start: "75% top",
+          end: "bottom bottom",
+          scrub: 1,
+        },
+        clipPath:
+          "polygon(50% 0%, 80% 10%, 100% 35%, 100% 70%, 80% 90%, 50% 100%, 20% 90%, 0% 70%, 0% 35%, 20% 10% )",
+      });
+    </script>
+  </body>
+</html>

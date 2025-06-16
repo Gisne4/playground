@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.7/dist/gsap.min.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.7/dist/ScrollTrigger.min.js"></script>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Cormorant+Infant:ital,wght@0,300..700;1,300..700&family=Roboto:ital,wght@0,100..900;1,100..900&display=swap");
+      body {
+        font-family: "Roboto", sans-serif;
+        overflow-x: hidden;
+      }
+      * {
+        margin: 0px;
+        padding: 0px;
+      }
+      li {
+        list-style: none;
+      }
+      a {
+        color: inherit;
+        text-decoration: inherit;
+      }
+      section {
+        width: 100%;
+        height: 100vh;
+      }
+      .con02 {
+        border: 1px solid #333;
+        box-sizing: border-box;
+      }
+      .con02 .title {
+        width: 100%;
+        height: 100%;
+        text-align: center;
+        font-size: 170px;
+        line-height: 0.9;
+        padding-top: 30vh;
+        box-sizing: border-box;
+      }
+      .con02 .work {
+        font-family: "Cormorant Infant", serif;
+        font-style: italic;
+        font-size: 220px;
+      }
+
+      /*workList*/
+
+      .con02 .workList {
+        width: 70%;
+        margin: 0px auto;
+        display: flex;
+        justify-content: space-between;
+        flex-wrap: wrap;
+      }
+      .con02 .workList li {
+        width: 45%;
+        margin-top: 200px;
+      }
+      .con02 .workList li:nth-child(2n) {
+        margin-top: 0px;
+      }
+      .con02 .workList img {
+        width: 100%;
+        height: 500px;
+        object-fit: cover;
+      }
+
+      .con02 .textBox h3 {
+        font-size: 35px;
+        font-weight: normal;
+        margin: 20px 0px 5px;
+      }
+      .con02 .textBox .info {
+        display: flex;
+        justify-content: space-between;
+        color: #888;
+      }
+
+      .con02 .imgBox {
+        position: relative;
+      }
+      .con02 .imgBox::before {
+        width: 160px;
+        height: 160px;
+        content: "";
+        border: 1px solid #fff;
+        border-radius: 50%;
+        background: url(img/arrow.png) no-repeat center;
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%) rotate(-45deg);
+        z-index: 1;
+        transition: 0.5s;
+        opacity: 0;
+      }
+      .con02 .imgBox::after {
+        content: "";
+        width: 0px;
+        height: 0px;
+        background: #fff url(img/more2.png) no-repeat center;
+        border-radius: 50%;
+        position: absolute;
+        left: 50%;
+        top: 50%;
+
+        animation: spin 10s infinite linear;
+      }
+      @keyframes spin {
+        0% {
+          transform: translate(-50%, -50%) rotate(0deg);
+        }
+        100% {
+          transform: translate(-50%, -50%) rotate(360deg);
+        }
+      }
+
+      /*hover*/
+
+      .con02 a:hover .imgBox::before {
+        opacity: 1;
+      }
+
+      .con02 a:hover .imgBox::after {
+        width: 160px;
+        height: 160px;
+      }
+      .con02 a:hover .imgBox img {
+        filter: brightness(50%);
+      }
+    </style>
+  </head>
+  <body>
+    <section></section>
+    <section class="con02">
+      <div class="title">
+        <p class="my">My</p>
+        <p class="work">Work</p>
+      </div>
+      <ul class="workList">
+        <li>
+          <a href="#">
+            <div class="imgBox">
+              <img src="img/pic1.jpg" alt="" />
+            </div>
+            <div class="textBox">
+              <h3>Site name</h3>
+              <div class="info">
+                <p>UI/UX Design</p>
+                <p>2025</p>
+              </div>
+            </div>
+          </a>
+        </li>
+        <li>
+          <a href="#">
+            <div class="imgBox">
+              <img src="img/pic2.jpg" alt="" />
+            </div>
+            <div class="textBox">
+              <h3>Site name</h3>
+              <div class="info">
+                <p>UI/UX Design</p>
+                <p>2025</p>
+              </div>
+            </div>
+          </a>
+        </li>
+        <li>
+          <a href="#">
+            <div class="imgBox">
+              <img src="img/pic3.jpg" alt="" />
+            </div>
+            <div class="textBox">
+              <h3>Site name</h3>
+              <div class="info">
+                <p>UI/UX Design</p>
+                <p>2025</p>
+              </div>
+            </div>
+          </a>
+        </li>
+        <li>
+          <a href="#">
+            <div class="imgBox">
+              <img src="img/pic4.jpg" alt="" />
+            </div>
+            <div class="textBox">
+              <h3>Site name</h3>
+              <div class="info">
+                <p>UI/UX Design</p>
+                <p>2025</p>
+              </div>
+            </div>
+          </a>
+        </li>
+        <li>
+          <a href="#">
+            <div class="imgBox">
+              <img src="img/img_5terre.jpg" alt="" />
+            </div>
+            <div class="textBox">
+              <h3>Site name</h3>
+              <div class="info">
+                <p>UI/UX Design</p>
+                <p>2025</p>
+              </div>
+            </div>
+          </a>
+        </li>
+        <li>
+          <a href="#">
+            <div class="imgBox">
+              <img src="img/img_manarola.jpg" alt="" />
+            </div>
+            <div class="textBox">
+              <h3>Site name</h3>
+              <div class="info">
+                <p>UI/UX Design</p>
+                <p>2025</p>
+              </div>
+            </div>
+          </a>
+        </li>
+      </ul>
+    </section>
+    <section></section>
+    <section></section>
+    <section></section>
+    <script>
+      gsap
+        .timeline({
+          scrollTrigger: {
+            trigger: ".con02",
+            start: "0% 100%",
+            end: "0% 20%",
+            scrub: 2,
+            // markers: true,
+          },
+        })
+        .fromTo(
+          ".con02 .my",
+          { x: "-100%" },
+          { x: "0%", ease: "none", duration: 5 },
+          0
+        )
+        .fromTo(
+          ".con02 .work",
+          { x: "100%" },
+          { x: "0%", ease: "none", duration: 5 },
+          0
+        );
+      //body 배경색 검정, 글자색 흰색,  title고정
+      gsap
+        .timeline({
+          scrollTrigger: {
+            trigger: ".workList",
+            start: "0% 100%",
+            end: "0% 100%",
+            scrub: 2,
+            // markers: true,
+          },
+        })
+        .to(
+          "body",
+          { backgroundColor: "#000", color: "#fff", ease: "none", duration: 5 },
+          0
+        )
+        .to(
+          ".con02 .title",
+          {
+            position: "fixed",
+            left: 0,
+            top: 0,
+            width: "100%",
+            ease: "none",
+            duration: 5,
+          },
+          0
+        );
+
+      //workList 끝날때  title글자가 화면 밖으로 사라지도록
+
+      gsap
+        .timeline({
+          scrollTrigger: {
+            trigger: ".workList",
+            start: "100% 50%",
+            end: "100% 0%",
+            scrub: 2,
+            markers: true,
+          },
+        })
+        .to(
+          ".con02 .my",
+
+          { x: "-100%", ease: "none", duration: 5 },
+          0
+        )
+        .to(
+          ".con02 .work",
+
+          { x: "100%", ease: "none", duration: 5 },
+          0
+        );
+    </script>
+  </body>
+</html>

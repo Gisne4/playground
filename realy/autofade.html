@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
+      integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    />
+    <style>
+      * {
+        margin: 0px;
+        padding: 0px;
+      }
+      li {
+        list-style: none;
+      }
+      .slider {
+        width: 500px;
+        height: 400px;
+        margin: 50px auto;
+        position: relative;
+      }
+
+      /*panel*/
+      .panel {
+        width: 100%;
+        height: 100%;
+      }
+
+      /*panel li*/
+      .panel li {
+        width: 100%;
+        height: 100%;
+        background-repeat: no-repeat;
+        background-size: cover;
+        background-position: center;
+        position: absolute;
+        left: 0px;
+        top: 0px;
+        opacity: 0;
+        transition: opacity 0.5s ease-in-out;
+      }
+      .panel li.on {
+        opacity: 1;
+      }
+      .panel .panel1 {
+        background-image: url(img/pic1.jpg);
+      }
+      .panel .panel2 {
+        background-image: url(img/pic2.jpg);
+      }
+      .panel .panel3 {
+        background-image: url(img/pic3.jpg);
+      }
+      .panel .panel4 {
+        background-image: url(img/pic4.jpg);
+      }
+
+      /*navi*/
+      .navi {
+        display: flex;
+        gap: 10px;
+        position: absolute;
+        left: 50%;
+        bottom: 30px;
+        transform: translateX(-50%);
+      }
+      .navi li {
+        width: 30px;
+        height: 5px;
+        background-color: #fff;
+        cursor: pointer;
+      }
+
+      .navi .on {
+        background-color: red;
+      }
+      /*화살표*/
+      .left,
+      .right {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 25px;
+      }
+      .left {
+        left: 10px;
+      }
+      .right {
+        right: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="slider">
+      <ul class="panel">
+        <li class="panel1 on">panel1</li>
+        <li class="panel2">panel2</li>
+        <li class="panel3">panel3</li>
+        <li class="panel4">panel4</li>
+      </ul>
+      <ul class="navi">
+        <li class="on"></li>
+        <li></li>
+        <li></li>
+        <li></li>
+      </ul>
+      <div class="left"><i class="fa-solid fa-chevron-left"></i></div>
+      <div class="right"><i class="fa-solid fa-chevron-right"></i></div>
+    </div>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const slider = document.querySelector(".slider");
+        const panel = document.querySelector(".panel");
+        const panelItems = document.querySelectorAll(".panel li");
+        const naviItems = document.querySelectorAll(".navi li");
+        const leftArrow = document.querySelector(".left");
+        const rightArrow = document.querySelector(".right");
+        const slideCount = panelItems.length;
+        let panelIndex = 0;
+        let fadeInterval;
+        function changeClass(element, index) {
+          element.forEach((item) => item.classList.remove("on"));
+          element[index].classList.add("on");
+        }
+        function showSlide(index) {
+          changeClass(panelItems, index);
+          changeClass(naviItems, index);
+          panelIndex = index;
+        }
+
+        function nextSlide() {
+          const nextIndex = (panelIndex + 1) % slideCount;
+          showSlide(nextIndex);
+        }
+        function prevSlide() {
+          const prevIndex = (panelIndex - 1 + slideCount) % slideCount;
+          showSlide(prevIndex);
+        }
+        function startAutoSlide() {
+          fadeInterval = setInterval(nextSlide, 3000);
+        }
+        function stopAutoSlide() {
+          clearInterval(fadeInterval);
+        }
+        naviItems.forEach((item, index) => {
+          item.addEventListener("click", function () {
+            showSlide(index);
+            stopAutoSlide();
+            startAutoSlide();
+          });
+        });
+        leftArrow.addEventListener("click", () => {
+          prevSlide();
+          stopAutoSlide();
+          startAutoSlide();
+        });
+        rightArrow.addEventListener("click", () => {
+          nextSlide();
+          stopAutoSlide();
+          startAutoSlide();
+        });
+        startAutoSlide();
+        slider.addEventListener("mouseenter", stopAutoSlide);
+        slider.addEventListener("mouseleave", startAutoSlide);
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GSAP scroll dmfd</title>
+    <!--이거 진심 태일 윈드 광고 아님-->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      body {
+        font-family: sans-serif;
+        margin: 0;
+      }
+
+      .trigger-section {
+        min-height: 150vh;
+        padding-top: 20vh;
+        padding-bottom: 20vh;
+        background-color: #f0f4f8;
+      }
+      .con01 {
+        max-width: 1000px;
+        margin: 0 auto;
+        padding: 2rem;
+        overflow: hidden;
+        background-color: #ffffff;
+        border-radius: 12px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+      }
+      .card-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.5rem;
+      }
+      .card {
+        background-color: #6366f1;
+        color: white;
+        padding: 1.5rem;
+        border-radius: 8px;
+        min-height: 150px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+        font-size: 1.1rem;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+      }
+
+      .card:nth-child(2) {
+        background-color: #661c41;
+      }
+      .card:nth-child(3) {
+        background-color: #3adaa4;
+      }
+      .card:nth-child(4) {
+        background-color: #7e550e;
+      }
+      .card:nth-child(5) {
+        background-color: #152847;
+      }
+    </style>
+  </head>
+  <body class="bg-gray-100">
+    <div class="h-screen flex items-center justify-center bg-gray-200">
+      <h1 class="text-4xl font-bold text-gray-700">마우스 스크롤</h1>
+    </div>
+
+    <section class="trigger-section">
+      <div class="con01">
+        <h1
+          class="text-5xl font-bold text-gray-800 text-center"
+          style="margin-bottom: 40px"
+        >
+          사실 별 상관없음
+        </h1>
+        <ul class="card-list">
+          <li class="card">일번</li>
+          <li class="card">이번</li>
+          <li class="card">삼번</li>
+          <li class="card">사번</li>
+          <li class="card">오번</li>
+        </ul>
+      </div>
+    </section>
+
+    <div class="h-screen flex items-center justify-center bg-gray-300">
+      <h1 class="text-4xl font-bold text-gray-700">다시 올려봐</h1>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        gsap.registerPlugin(ScrollTrigger);
+
+        const cards = gsap.utils.toArray(".con01 .card");
+
+        gsap
+          .timeline({
+            scrollTrigger: {
+              trigger: ".con01",
+              start: "top 80%",
+              end: "bottom bottom",
+              scrub: 2,
+              toggleActions: "play none none none",
+            },
+          })
+
+          .fromTo(
+            cards,
+            {
+              y: 200,
+              opacity: 0,
+            },
+            {
+              y: 0,
+              opacity: 1,
+              stagger: 0.5,
+              duration: 0.8,
+              ease: "power2.out",
+            }
+          );
+      });
+    </script>
+  </body>
+</html>
+```

@@ -1,0 +1,43 @@
+* {
+  margin: 0px;
+  padding: 0px;
+}
+.main,
+.show {
+  width: 80%;
+  margin-inline: 10%;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1em;
+  margin-block: 10%;
+}
+.main button,
+.show button {
+  padding-block: 2em;
+  width: 10em;
+}
+.con1 {
+  font-size: 20px;
+  width: 80%;
+  margin: 10%;
+}
+.con1 strong {
+  font-size: 50px;
+}
+.con1 h2 {
+  border-bottom: 1px solid black;
+  margin-bottom: 20px;
+}
+@media (max-width: 760px) {
+  .main,
+  .show {
+    display: grid;
+    justify-content: center;
+  }
+  .main button,
+  .show button {
+    margin-block: 4em;
+    display: block;
+    padding-inline: 10em;
+  }
+}

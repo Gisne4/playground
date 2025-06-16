@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>horizontal</title>
+    <style>
+      * {
+        margin: 0px;
+        padding: 0px;
+      }
+      *::-webkit-scrollbar {
+        width: 0px;
+        height: 0px;
+      }
+      .dada {
+        height: 100vh;
+        width: 100vw;
+        text-align: center;
+        align-content: center;
+      }
+      .tata {
+        height: 100vh;
+        width: 100%;
+        overflow-x: auto;
+      }
+      .tataUL {
+        height: 100vh;
+        list-style: none;
+        display: flex;
+        flex-wrap: nowrap;
+      }
+      .tataUL li {
+        height: 100vh;
+        width: 100vw;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="dada">
+      <h1>뭔말일까나</h1>
+      <h6>
+        Lorem ipsum dolor sit amet consectetur adipisicing elit. Dicta fugit
+        animi maiores non repudiandae eligendi incidunt facilis vitae
+        praesentium reiciendis provident libero officiis facere, dolorum aperiam
+        pariatur nostrum voluptatibus molestias.
+      </h6>
+    </div>
+    <div class="tata">
+      <ul class="tataUL"></ul>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.9.1/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.9.1/ScrollTrigger.min.js"></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const tata = document.querySelector(".tata");
+        const 타타 = document.querySelector(".tataUL");
+
+        //랜덤으로 리스트 10~1개 만듬
+        const 랜덤임 = Math.floor(Math.random() * 10 + 1);
+        for (let index = 0; index < 랜덤임; index++) {
+          const 진심임 = document.createElement("li");
+          타타.appendChild(진심임);
+        }
+        //우리 타타 유엘 넓이 정해줌
+        const ㅁ = document.querySelectorAll(".tataUL li");
+        타타.style.width = ㅁ.length * 100 + "vw";
+
+        //우리 타타 리스트 색깔 입혀줌
+        ㅁ.forEach((element) => {
+          element.style.backgroundColor = `#${Math.floor(
+            Math.random() * 16777215
+          ).toString(16)}`;
+        });
+
+        //우리 타타 한테 Horizontal scroll snap animation 맹글어줌임
+        gsap.to(ㅁ, {
+          xPercent: -100 * (ㅁ.length - 1),
+          ease: "none",
+          scrollTrigger: {
+            trigger: tata,
+            pin: true,
+            scrub: 1,
+            snap: 1 / (ㅁ.length - 1),
+            end: () => "+=" + 타타.offsetWidth,
+          },
+        });
+      });
+    </script>
+  </body>
+</html>

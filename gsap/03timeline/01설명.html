@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.7/dist/gsap.min.js"></script>
+    <style>
+      div {
+        width: 100px;
+        height: 100px;
+        margin: 30px;
+      }
+      .box1 {
+        background-color: red;
+      }
+      .box2 {
+        background-color: green;
+      }
+      .box3 {
+        background-color: blue;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="box1"></div>
+    <div class="box2"></div>
+    <div class="box3"></div>
+    <script>
+      let t1 = gsap.timeline();
+      t1.to(".box1", { x: 200, duration: 1 })
+        .to(".box2", { x: 200, duration: 1 })
+        .to(".box3", { x: 200, duration: 1 });
+    </script>
+  </body>
+</html>
+<!--
+gsap.timeline()  은 여러 애니메이션을 순서대로 또는 동시에 움직임을 제어할 수 있는 기능
+애니메이션을 시간 순서 또는 지연을 설정해서 순차적으로 움직임을 구현할 수 있음
+
+let t1 = gsap.timeline(); 
+ 
+-->

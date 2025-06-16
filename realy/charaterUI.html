@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>나의 스탯창 (2x2 UI - Phaser)</title>
+    <style>
+      body {
+        margin: 0;
+        background-color: #222;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+      }
+      canvas {
+        display: block;
+        border: 2px solid #555;
+        box-shadow: 4px 4px 0 #333;
+        border-radius: 5px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="phaser-container"></div>
+    <script src="//cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.js"></script>
+    <script>
+      const characterData = {
+        name: "Link",
+        title: "Hero of Time",
+        level: "99",
+        exp: "9999 / 9999",
+        stats: {
+          하트: "20",
+          힘: "95",
+          민첩성: "92",
+          지혜: "88",
+          운: "75",
+        },
+        skills: {
+          "마스터 소드": "모든 악을 물리치는 성스러운 검술",
+          "방패 막기": "모든 공격을 완벽하게 방어",
+          "활 쏘기": "정확하고 강력한 원거리 공격",
+          "폭탄 던지기": "장애물 파괴 및 적에게 강력한 피해",
+          "갈고리 사슬": "먼 거리 이동 및 아이템 획득",
+          "시간의 노래": "시간을 조종하는 신비한 멜로디",
+        },
+        projects: [
+          {
+            title: "가논 토벌",
+            log: "마왕 가논을 쓰러뜨려 하이랄을 구원함",
+            failureLog: "과거 여러 번 패배했지만, 용기와 지혜로 극복",
+          },
+          {
+            title: "마스터 소드 획득",
+            log: "시련을 극복하고 악을 봉인하는 검을 얻음",
+            failureLog: "초반에는 검의 힘을 제대로 다루지 못함",
+          },
+          {
+            title: "세 개의 정령석 모으기",
+            log: "데크 나무, 고론, 조라 족의 정령석을 모아 신전의 문을 염",
+            failureLog: "각 종족의 시련과 갈등을 해결하는 데 어려움",
+          },
+        ],
+        failureLogs: [
+          "가논의 강력한 힘에 여러 번 속수무책으로 당함 (배운 점: 빈틈을 노리고 약점을 공략하는 것이 중요)",
+          "봉인된 던전의 퍼즐을 풀지 못해 오랜 시간 헤맴 (배운 점: 주변 환경을 꼼꼼히 살피고 힌트를 놓치지 않아야 함)",
+          "강력한 중간 보스들의 패턴을 파악하지 못해 고전 (배운 점: 적의 움직임을 관찰하고 공격 타이밍을 익히는 것이 필수)",
+          "시간의 오카리나를 제대로 연주하지 못해 시간의 흐름을 제어하는 데 실패 (배운 점: 악보를 정확히 암기하고 리듬감을 익혀야 함)",
+        ],
+      };
+
+      class StatScene extends Phaser.Scene {
+        constructor() {
+          super("StatScene");
+          this.skillDetails = {};
+        }
+
+        preload() {
+          // Removed custom font loading
+        }
+
+        create() {
+          const width = this.sys.game.config.width;
+          const height = this.sys.game.config.height;
+          const padding = 30;
+          const panelWidth = (width - 3 * padding) / 2;
+          const panelHeight = (height - 3 * padding) / 2;
+          const goldColor = 0xffd700;
+          const textColor = 0xf0ead6;
+          const shadowColor = 0x000000;
+          const panelBgColor = 0x333333;
+          const panelBorderColor = 0x555555;
+          const buttonBaseColor = 0x444444;
+          const buttonHoverColor = 0x666666;
+
+          const addPanel = (x, y, w, h, title) => {
+            this.add
+              .rectangle(x, y, w, h, panelBgColor)
+              .setOrigin(0)
+              .setStrokeStyle(2, panelBorderColor);
+            if (title) {
+              this.add.text(x + 10, y + 10, title, {
+                fontFamily: "Arial",
+                fontSize: "16px",
+                fill: "#" + goldColor.toString(16).padStart(6, "0"),
+              });
+            }
+          };
+
+          const addShadowText = (x, y, text, size, color) => {
+            this.add.text(x + 1, y + 1, text, {
+              fontFamily: "Arial",
+              fontSize: `${size}px`,
+              fill: "#" + shadowColor.toString(16).padStart(6, "0"),
+            });
+            return this.add.text(x, y, text, {
+              fontFamily: "Arial",
+              fontSize: `${size}px`,
+              fill: "#" + color.toString(16).padStart(6, "0"),
+            });
+          };
+
+          const addText = (x, y, text, size, color) => {
+            return this.add.text(x, y, text, {
+              fontFamily: "Arial",
+              fontSize: `${size}px`,
+              fill: "#" + color.toString(16).padStart(6, "0"),
+            });
+          };
+
+          // Top-Left Panel: Character Info
+          let x = padding;
+          let y = padding;
+          addPanel(x, y, panelWidth, panelHeight, "정보");
+          addShadowText(x + 20, y + 40, characterData.name, 20, goldColor);
+          addText(x + 20, y + 65, characterData.title, 14, textColor);
+          addText(
+            x + 20,
+            y + 85,
+            `레벨: ${characterData.level}`,
+            14,
+            textColor
+          );
+          addText(
+            x + 20,
+            y + 105,
+            `경험치: ${characterData.exp}`,
+            14,
+            textColor
+          );
+
+          // Top-Right Panel: Stats
+          x = padding + panelWidth + padding;
+          y = padding;
+          addPanel(x, y, panelWidth, panelHeight, "스탯");
+          let statY = y + 40;
+          for (const stat in characterData.stats) {
+            addText(
+              x + 20,
+              statY,
+              `${stat}: ${characterData.stats[stat]}`,
+              14,
+              textColor
+            );
+            statY += 20;
+            if (statY > y + panelHeight - 30) break;
+          }
+
+          // Bottom-Left Panel: Skills
+          x = padding;
+          y = padding + panelHeight + padding;
+          addPanel(x, y, panelWidth, panelHeight, "스킬");
+          let skillY = y + 40;
+          for (const skill in characterData.skills) {
+            const skillText = addText(x + 20, skillY, skill, 14, textColor);
+            const detailsText = this.add
+              .text(x + 20, skillY + 20, characterData.skills[skill], {
+                fontFamily: "Arial",
+                fontSize: "10px",
+                fill: "#ddd",
+                wordWrap: { width: panelWidth - 40 },
+              })
+              .setAlpha(0);
+            const button = this.add
+              .rectangle(
+                x + panelWidth - 50,
+                skillY + 10,
+                70,
+                20,
+                buttonBaseColor
+              )
+              .setOrigin(0.5)
+              .setInteractive()
+              .on("pointerover", () => button.setFillStyle(buttonHoverColor))
+              .on("pointerout", () => button.setFillStyle(buttonBaseColor))
+              .on("pointerdown", () => {
+                detailsText.setAlpha(detailsText.alpha === 0 ? 1 : 0);
+              });
+            const buttonLabel = addText(
+              x + panelWidth - 50 - 20,
+              skillY + 4,
+              "[상세]",
+              12,
+              textColor
+            ).setOrigin(0.5);
+            this.skillDetails[skill] = detailsText;
+            skillY += 40 + (detailsText.height > 0 ? detailsText.height : 0);
+            if (skillY > y + panelHeight - 30) break;
+          }
+
+          // Bottom-Right Panel: 최근 활동
+          x = padding + panelWidth + padding;
+          y = padding + panelHeight + padding;
+          addPanel(x, y, panelWidth, panelHeight, "최근 활동");
+          let logY = y + 40;
+          addText(x + 20, logY, "최근 프로젝트:", 14, goldColor);
+          logY += 20;
+          for (let i = 0; i < Math.min(characterData.projects.length, 3); i++) {
+            addText(
+              x + 30,
+              logY,
+              `- ${characterData.projects[i].title.substring(0, 25)}`,
+              12,
+              textColor
+            );
+            logY += 16;
+          }
+          logY += 10;
+          addText(x + 20, logY, "최근 실패:", 14, goldColor);
+          logY += 20;
+          for (
+            let i = 0;
+            i < Math.min(characterData.failureLogs.length, 2);
+            i++
+          ) {
+            addText(
+              x + 30,
+              logY,
+              `- ${characterData.failureLogs[i].substring(0, 35)}...`,
+              12,
+              textColor
+            );
+            logY += 16;
+          }
+        }
+      }
+
+      const config = {
+        type: Phaser.AUTO,
+        width: 800,
+        height: 600,
+        parent: "phaser-container",
+        scene: StatScene,
+        backgroundColor: "#222222",
+        pixelArt: true,
+        font: {
+          google: {
+            families: ["Press Start 2P"], // Consider keeping this or finding a gothic web font
+          },
+        },
+      };
+
+      const game = new Phaser.Game(config);
+    </script>
+  </body>
+</html>

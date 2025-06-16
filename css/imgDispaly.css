@@ -1,0 +1,43 @@
+* {
+  margin: 0px;
+  padding: 0px;
+}
+
+.visual {
+  width: 50%;
+
+  padding-bottom: 300px;
+}
+
+.visual img {
+  display: none;
+  height: 300px;
+}
+.visual .img1 {
+  display: block;
+}
+.visual ul {
+  list-style: none;
+}
+.visual li {
+  position: absolute;
+  left: 50%;
+  transform: translate(-50%);
+}
+.visual2 {
+  display: block;
+  margin-inline: 40%;
+  width: 20%;
+  margin-top: 40px;
+}
+.visual2 ul {
+  list-style: none;
+  display: flex;
+  gap: 5px;
+}
+.visual2 li {
+  width: calc(100% / 3);
+}
+.visual2 img {
+  width: 100%;
+}

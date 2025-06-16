@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vito.AI API Demo</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+        background-color: #f8f8f8;
+        color: #333;
+      }
+      h1,
+      h2 {
+        color: #2c3e50;
+        border-bottom: 2px solid #3498db;
+        padding-bottom: 5px;
+        margin-top: 30px;
+      }
+      label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: bold;
+      }
+      input[type="text"],
+      input[type="file"] {
+        width: calc(100% - 22px);
+        padding: 10px;
+        margin-bottom: 15px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        box-sizing: border-box;
+      }
+      button {
+        background-color: #3498db;
+        color: white;
+        padding: 12px 20px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 16px;
+        transition: background-color 0.3s ease;
+        margin-right: 10px;
+      }
+      button:hover {
+        background-color: #2980b9;
+      }
+      pre {
+        background-color: #eee;
+        padding: 15px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        white-space: pre-wrap;
+        word-break: break-all;
+        margin-top: 15px;
+        font-size: 0.9em;
+        line-height: 1.4;
+        max-height: 300px;
+        overflow-y: auto;
+      }
+      .error-message {
+        color: red;
+      }
+      .success-message {
+        color: green;
+      }
+      #jwtTokenCheatsheet {
+        font-size: 0.8em;
+        color: #555;
+        background-color: #e9e9e9;
+        padding: 8px;
+        border-radius: 4px;
+        margin-bottom: 15px;
+        word-break: break-all;
+      }
+    </style>
+  </head>
+  <body>
+    <h2>Vito.AI API MockUp</h2>
+
+    <div>
+      <label for="jwtTokenInput">Your JWT Token:</label><br />
+      <input type="text" id="jwtTokenInput" size="80" readonly /><br />
+      <div id="jwtTokenCheatsheet"></div>
+      <br />
+
+      <label for="audioFileInput">Select Audio File (.wav, .mp3, etc.):</label
+      ><br />
+      <input
+        type="file"
+        id="audioFileInput"
+        accept=".wav,.mp3,.flac,.ogg"
+      /><br /><br />
+
+      <button id="transcribeButton">Start Transcription</button>
+    </div>
+
+    <h2>Transcription Configuration:</h2>
+    <pre id="configOutput"></pre>
+
+    <h2>API Response:</h2>
+    <pre id="responseOutput"></pre>
+
+    <script>
+      // --- API Configuration ---
+      const YOUR_CLIENT_ID = "FT-FusjqCt_L2ltC8irX";
+      const YOUR_CLIENT_SECRET = "w6WX6NlEY1MRG6xb0tqA6LtDlCIZHygpyGFZteA3";
+
+      // Transcription configuration object
+      const transcriptionConfig = {
+        use_diarization: true,
+        diarization: {
+          spk_count: 2,
+        },
+        use_itn: false,
+        use_disfluency_filter: false,
+        use_profanity_filter: false,
+        use_paragraph_splitter: true,
+        paragraph_splitter: {
+          max: 50,
+        },
+      };
+
+      // Display the transcription config object in the HTML
+      document.getElementById("configOutput").textContent = JSON.stringify(
+        transcriptionConfig,
+        null,
+        2
+      );
+
+      // --- Authentication Function ---
+      async function authenticateVitoAI(clientId, clientSecret) {
+        const url = "https://openapi.vito.ai/v1/authenticate";
+        const formData = new URLSearchParams();
+        formData.append("client_id", clientId);
+        formData.append("client_secret", clientSecret);
+
+        const jwtTokenInput = document.getElementById("jwtTokenInput");
+        const jwtTokenCheatsheet =
+          document.getElementById("jwtTokenCheatsheet");
+
+        jwtTokenInput.value = "Authenticating...";
+        jwtTokenCheatsheet.textContent = "Attempting to get JWT token...";
+        jwtTokenCheatsheet.className = "";
+
+        try {
+          const response = await fetch(url, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/x-www-form-urlencoded",
+            },
+            body: formData,
+          });
+
+          if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(
+              `HTTP error! status: ${response.status}, message: ${errorText}`
+            );
+          }
+
+          const data = await response.json();
+          console.log("Authentication successful:", data);
+
+          jwtTokenInput.value = data.access_token;
+          jwtTokenCheatsheet.textContent = `Token received: ${data.access_token.substring(
+            0,
+            30
+          )}...`;
+          jwtTokenCheatsheet.className = "success-message";
+
+          return data.access_token;
+        } catch (error) {
+          console.error("Authentication failed:", error);
+          jwtTokenInput.value = "Authentication Failed!";
+          jwtTokenCheatsheet.textContent = `Authentication failed: ${
+            error.message || error
+          }`;
+          jwtTokenCheatsheet.className = "error-message";
+          throw error;
+        }
+      }
+
+      // --- Transcription Function ---
+      async function transcribeAudio() {
+        const jwtToken = document.getElementById("jwtTokenInput").value.trim();
+        const audioFile = document.getElementById("audioFileInput").files[0];
+        const responseOutput = document.getElementById("responseOutput");
+
+        responseOutput.textContent = "Processing transcription request...";
+        responseOutput.className = "";
+
+        if (
+          !jwtToken ||
+          jwtToken === "Authenticating..." ||
+          jwtToken === "Authentication Failed!"
+        ) {
+          responseOutput.textContent =
+            "Error: JWT token is not available. Please wait for authentication or refresh.";
+          responseOutput.className = "error-message";
+          return;
+        }
+
+        if (!audioFile) {
+          responseOutput.textContent = "Error: Please select an audio file.";
+          responseOutput.className = "error-message";
+          return;
+        }
+
+        const url = "https://openapi.vito.ai/v1/transcribe";
+        const formData = new FormData();
+        formData.append("config", JSON.stringify(transcriptionConfig));
+        formData.append("file", audioFile);
+
+        try {
+          const response = await fetch(url, {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${jwtToken}`,
+            },
+            body: formData,
+          });
+
+          if (!response.ok) {
+            const errorDetails = await response.text();
+            throw new Error(
+              `HTTP error! status: ${response.status}, details: ${errorDetails}`
+            );
+          }
+
+          const data = await response.json();
+          console.log("Transcription Response:", data);
+
+          responseOutput.textContent = JSON.stringify(data, null, 2);
+          responseOutput.className = "success-message";
+
+          if (data.job_id) {
+            responseOutput.textContent +=
+              `\n\nTranscription job submitted. Job ID: ${data.job_id}\n` +
+              `Note: This demo does not include polling logic to get the final transcription result.`;
+          }
+        } catch (error) {
+          console.error("Transcription failed:", error);
+          responseOutput.textContent = `Transcription failed: ${
+            error.message || error
+          }`;
+          responseOutput.className = "error-message";
+        }
+      }
+
+      // --- Initialize on Page Load ---
+      document.addEventListener("DOMContentLoaded", () => {
+        authenticateVitoAI(YOUR_CLIENT_ID, YOUR_CLIENT_SECRET)
+          .then((token) => {
+            console.log("Page loaded and authenticated successfully.");
+          })
+          .catch((error) => {
+            console.error("Auto-authentication on load failed:", error);
+          });
+        document
+          .getElementById("transcribeButton")
+          .addEventListener("click", transcribeAudio);
+      });
+    </script>
+  </body>
+</html>

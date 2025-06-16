@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <script src="/js/jquery-3.7.1.min.js"></script>
+    <script src="Live2D/dist/autoload.js"></script>
+    <style>
+      * {
+        margin: 0px;
+        padding: 0px;
+      }
+      .dadacon2 {
+        text-align: center;
+      }
+      .dadacon2 h1 {
+        border-bottom: 2px solid black;
+      }
+      .dadacon2 div {
+        overflow: hidden;
+      }
+      .dadacon2 ul {
+        display: flex;
+        margin: 100px auto;
+        width: 100%;
+        gap: 6.8vw;
+        list-style: none;
+      }
+      .dadacon2 ul li {
+        width: 20vw;
+        height: 10vw;
+      }
+      .dadacon2 ul li img {
+        width: 20vw;
+        height: 10vw;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="dadacon2">
+      <h1>메뉴</h1>
+      <div>
+        <ul>
+          <li>
+            <img src="/img/pic1.jpg" alt="" />
+          </li>
+          <li>
+            <img src="/img/pic1.jpg" alt="" />
+          </li>
+          <li>
+            <img src="/img/pic1.jpg" alt="" />
+          </li>
+          <li>
+            <img src="/img/pic1.jpg" alt="" />
+          </li>
+          <li>
+            <img src="/img/pic1.jpg" alt="" />
+          </li>
+          <li>
+            <img src="/img/pic1.jpg" alt="" />
+          </li>
+          <li>
+            <img src="/img/pic1.jpg" alt="" />
+          </li>
+        </ul>
+      </div>
+    </div>
+    <script>
+      var hi = 0;
+      setInterval(function () {
+        $(".dadacon2 ul li").css({
+          transform: "translate(-" + 26.8 * hi + "vw, 0px)",
+          transition: "1s",
+        });
+        hi++;
+        var lal = $(".dadacon2 ul li").eq(hi).index();
+        $(".dadacon2 ul li img").css({
+          transform: "scale(1)",
+          transition: "1s",
+          "clip-path": "none",
+        });
+        if (hi == lal) {
+          $(".dadacon2 ul li img").eq(hi).css({
+            transform: "scale(1.5)",
+            transition: "1s",
+            "border-radius": "100%",
+          });
+          lal++;
+          $(".dadacon2 ul li img").eq(lal).css({
+            transform: "scale(1.5)",
+            "clip-path":
+              "polygon(10vw 0px,16vw 1.5vw, 20vw 5vw,16vw 8.5vw, 10vw 10vw,4vw 8.5vw, 0 5vw,4vw 1.5vw)",
+            transition: "1s",
+          });
+        }
+        if (hi == 5) {
+          hi = 0;
+        }
+      }, 2000);
+    </script>
+  </body>
+</html>

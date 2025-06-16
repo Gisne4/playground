@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CSS Animation Effects</title>
+    <!-- Removed Tailwind CSS CDN -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      /* Global reset for padding and margin */
+      * {
+        padding: 0;
+        margin: 0;
+        box-sizing: border-box;
+      }
+
+      /* Body styles for full viewport height, centering content, and background */
+      body {
+        display: flex;
+        min-height: 100vh; /* Equivalent to min-h-screen */
+        justify-content: center; /* Equivalent to justify-center */
+        align-items: center; /* Equivalent to items-center */
+        background: #000; /* Equivalent to bg-black */
+        padding: 1rem; /* Equivalent to p-4 */
+        font-family: "Inter", sans-serif; /* Apply Inter font */
+      }
+
+      /* Container styles for positioning and reflection effect */
+      .container {
+        position: relative; /* Equivalent to relative */
+        display: flex; /* Equivalent to flex */
+        justify-content: center; /* Equivalent to justify-center */
+        align-items: center; /* Equivalent to items-center */
+        width: 100%; /* Equivalent to w-full */
+        -webkit-box-reflect: below 2px linear-gradient(transparent, #0005); /* Webkit specific reflection effect */
+      }
+
+      /* Box styles for size, border-radius, overflow, and animation */
+      .container .box {
+        /* Base sizing for mobile devices (equivalent to w-[150px] h-[150px]) */
+        width: 250px;
+        height: 250px;
+        border-radius: 0.5rem; /* Equivalent to rounded-lg */
+        overflow: hidden; /* Equivalent to overflow-hidden */
+        flex-shrink: 0;
+        /* Background gradient for the animated pattern */
+        background: linear-gradient(
+          45deg,
+          #00f376 10%,
+          transparent 10%,
+          transparent 50%,
+          #00f376 50%,
+          #00f376 60%,
+          transparent 60%,
+          transparent 100%
+        );
+        /* Size of the background pattern */
+        background-size: 40px 40px;
+        /* Initial rotation based on CSS variable */
+        transform: rotate(calc(var(--i) * 90deg));
+        /* Animation for moving the background pattern */
+        animation: animate 0.3s linear infinite;
+      }
+
+      /* Media query for medium screens (tablets), equivalent to md: */
+      @media (min-width: 768px) {
+        .container .box {
+          width: 400px;
+          height: 400px;
+        }
+      }
+
+      /* Media query for large screens (desktops), equivalent to lg: */
+      @media (min-width: 1024px) {
+        .container .box {
+          width: 600px;
+          height: 600px;
+        }
+      }
+
+      /* Keyframes for the animation */
+      @keyframes animate {
+        0% {
+          background-position: 0; /* Starting position of the background */
+        }
+        100% {
+          background-position: 40px; /* Ending position of the background, moving it by its size */
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <!-- Box 1 with a variable '--i' for rotation -->
+      <div class="box" style="--i: 1"></div>
+      <!-- Box 2 with a variable '--i' for rotation -->
+      <div class="box" style="--i: 2"></div>
+    </div>
+  </body>
+</html>

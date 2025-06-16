@@ -1,0 +1,109 @@
+* {
+  margin: 0px;
+  padding: 0px;
+}
+ul {
+  list-style: none;
+}
+a {
+  text-decoration: none;
+  color: inherit;
+}
+.header {
+  position: fixed;
+  width: 90%;
+  padding-inline: 5%;
+  display: flex;
+  justify-content: space-between;
+  border-bottom: 1px white solid;
+  padding-block: 20px;
+  z-index: 10;
+}
+.header ul {
+  display: flex;
+  width: 70%;
+  justify-content: center;
+  align-items: center;
+}
+.header ul li {
+  width: calc(100% / 5);
+  height: 100%;
+}
+.header ul li a {
+  align-content: center;
+  display: inline-block;
+  height: 100%;
+  width: 100%;
+  color: white;
+  font-weight: 800;
+}
+.visual {
+  height: 100vh;
+  width: 100%;
+  position: relative;
+}
+.visual .vwrap,
+.visual .mowrap {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+}
+.visual .vwrap li,
+.visual .mowrap li {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+}
+.mowrap {
+  display: none;
+}
+.vwrap li:nth-child(2),
+.vwrap li:nth-child(3),
+.vwrap li:nth-child(4),
+.mowrap li:nth-child(2),
+.mowrap li:nth-child(3),
+.mowrap li:nth-child(4) {
+  display: none;
+}
+.visual .vwrap img,
+.visual .mowrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: left;
+}
+.navi_bar {
+  position: absolute;
+  bottom: 10%;
+  left: 50px;
+  color: white;
+  width: 90%;
+}
+.navi_bar h1 {
+  font-size: clamp(16px, 2vw, 20px);
+  height: 50px;
+}
+.prograss_con {
+  width: calc(40%);
+  height: 3px;
+  background-color: gray;
+  position: absolute;
+  bottom: -30px;
+}
+.prograss {
+  width: calc(100% / 4);
+  height: 100%;
+  background-color: white;
+}
+.visual_btn {
+  position: absolute;
+  right: 30px;
+}
+@media (max-width: 800px) {
+  .vwrap {
+    display: none;
+  }
+  .mowrap {
+    display: block;
+  }
+}

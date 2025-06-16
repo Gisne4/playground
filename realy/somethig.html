@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Download Linked Resources</title>
+    <style>
+      body {
+        font-family: sans-serif;
+      }
+      label {
+        display: block;
+        margin-bottom: 5px;
+      }
+      input[type="text"] {
+        width: 80%;
+        padding: 8px;
+        margin-bottom: 10px;
+      }
+      button {
+        padding: 10px 15px;
+        cursor: pointer;
+      }
+      #downloadLinks a {
+        display: block;
+        margin-bottom: 5px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Download Linked Resources from a Target Page</h1>
+    <p>Enter the URL of the target webpage:</p>
+    <label for="targetURL">Target URL:</label>
+    <input type="text" id="targetURL" size="80" />
+    <button onclick="fetchAndDisplayLinks()">Get Linked Resources</button>
+
+    <div id="downloadLinks">
+      <h2>Download Links:</h2>
+      <p>
+        Click on the links below to download the resources (browser may handle
+        some directly).
+      </p>
+    </div>
+
+    <script>
+      async function fetchAndDisplayLinks() {
+        const targetURL = document.getElementById("targetURL").value;
+        const downloadLinksDiv = document.getElementById("downloadLinks");
+        downloadLinksDiv.innerHTML =
+          "<h2>Download Links:</h2><p>Fetching links...</p>";
+
+        if (!targetURL) {
+          downloadLinksDiv.innerHTML =
+            "<h2>Download Links:</h2><p>Please enter a target URL.</p>";
+          return;
+        }
+
+        try {
+          const response = await fetch(targetURL);
+          if (!response.ok) {
+            downloadLinksDiv.innerHTML = `<h2>Download Links:</h2><p>Error fetching page: ${response.statusText}</p>`;
+            return;
+          }
+          const htmlContent = await response.text();
+          const parser = new DOMParser();
+          const doc = parser.parseFromString(htmlContent, "text/html");
+          const links = doc.querySelectorAll(
+            'a[href], img[src], script[src], link[rel="stylesheet"][href], video[src], audio[src], source[src]'
+          );
+          let linksHTML = "";
+          for (const element of links) {
+            let url =
+              element.getAttribute("href") || element.getAttribute("src");
+            if (
+              url &&
+              !url.startsWith("#") &&
+              !url.startsWith("mailto:") &&
+              !url.startsWith("tel:")
+            ) {
+              // Basic URL normalization (handle relative paths)
+              if (!url.startsWith("http") && !url.startsWith("//")) {
+                url = new URL(url, targetURL).href;
+              }
+              linksHTML += `<a href="${url}" download="${url
+                .split("/")
+                .pop()}">${url.split("/").pop()}</a><br>`;
+            }
+          }
+          downloadLinksDiv.innerHTML = `<h2>Download Links:</h2>${
+            linksHTML || "<p>No linked resources found.</p>"
+          }`;
+        } catch (error) {
+          downloadLinksDiv.innerHTML = `<h2>Download Links:</h2><p>An error occurred: ${error}</p>`;
+        }
+      }
+    </script>
+  </body>
+</html>

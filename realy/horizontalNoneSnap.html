@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.5.1/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.5.1/ScrollTrigger.min.js"></script>
+    <style>
+      html,
+      body {
+        overflow-x: hidden;
+      }
+
+      /*
+body{-ms-overflow-style:none; }
+body::-webkit-scrollbar { display:none; }
+*/
+
+      body,
+      ul,
+      li {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+      }
+
+      .section {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 5rem;
+        font-weight: bold;
+        letter-spacing: -0.4rem;
+        box-sizing: border-box;
+        border: 10px solid black;
+        background-color: white;
+        position: relative;
+      }
+
+      .section-group--horizontal {
+        display: flex;
+      }
+
+      .section-group--horizontal > .section {
+        width: 100%;
+        flex-shrink: 0;
+      }
+
+      .section-group--horizontal-right {
+        flex-direction: row-reverse;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="section-group section-group--1">
+      <section class="section section--1">섹션1</section>
+      <section class="section section--2">섹션2</section>
+      <section class="section section--3">섹션3</section>
+      <section class="section section--4">섹션4</section>
+      <section class="section section--5">섹션5</section>
+    </div>
+
+    <div
+      class="section-group section-group--horizontal section-group--horizontal-right section-group--2"
+    >
+      <section class="section section--6">섹션6</section>
+      <section class="section section--7">섹션7</section>
+      <section class="section section--8">섹션8</section>
+      <section class="section section--9">섹션9</section>
+      <section class="section section--10">섹션10</section>
+    </div>
+
+    <div class="section-group section-group--3">
+      <section class="section section--11">섹션11</section>
+      <section class="section section--12">섹션12</section>
+      <section class="section section--13">섹션13</section>
+      <section class="section section--14">섹션14</section>
+      <section class="section section--15">섹션15</section>
+    </div>
+
+    <div
+      class="section-group section-group--horizontal section-group--horizontal-left section-group--4"
+    >
+      <section class="section section--6">섹션16</section>
+      <section class="section section--7">섹션17</section>
+      <section class="section section--8">섹션18</section>
+      <section class="section section--9">섹션19</section>
+      <section class="section section--10">섹션20</section>
+    </div>
+
+    <div class="section-group section-group--stack-up section-group--5">
+      <section class="section section--1">섹션21</section>
+      <section class="section section--2">섹션22</section>
+      <section class="section section--3">섹션23</section>
+      <section class="section section--4">섹션24</section>
+      <section class="section section--5">섹션25</section>
+    </div>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        gsap.registerPlugin(ScrollTrigger);
+
+        function SectionGroup__init() {
+          $(".section-group--horizontal-right").each(function (index, node) {
+            var $group = $(node);
+            var $section = $group.find(" > .section");
+
+            gsap.to($section, {
+              xPercent: 100 * ($section.length - 1),
+              ease: "none",
+              scrollTrigger: {
+                trigger: $group,
+                start: "top top",
+                end: "+=" + ($section.length - 1) + "00%",
+                pin: true,
+                scrub: true,
+              },
+            });
+          });
+
+          $(".section-group--horizontal-left").each(function (index, node) {
+            var $group = $(node);
+            var $section = $group.find(" > .section");
+
+            gsap.to($section, {
+              xPercent: -100 * ($section.length - 1),
+              ease: "none",
+              scrollTrigger: {
+                trigger: $group,
+                start: "top top",
+                end: "+=" + ($section.length - 1) + "00%",
+                pin: true,
+                scrub: true,
+              },
+            });
+          });
+
+          $(".section-group--stack-up").each(function (index, node) {
+            var $group = $(node);
+            var $section = $group.find(" > .section:not(:first-child)");
+
+            $section.each(function (index, node) {
+              var $sectionOne = $(node);
+
+              gsap.to($sectionOne, {
+                ease: "none",
+                scrollTrigger: {
+                  trigger: $sectionOne,
+                  start: "top 100%",
+                  end: "bottom 100%",
+                  pin: $sectionOne.prev(),
+                  pinSpacing: false,
+                  scrub: true,
+                },
+              });
+            });
+          });
+        }
+
+        SectionGroup__init();
+      });
+    </script>
+  </body>
+</html>

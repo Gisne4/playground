@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Smooth Scrolling with Locomotive Scroll & GSAP</title>
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/locomotive-scroll@latest/dist/locomotive-scroll.css"
+    />
+    <style>
+      body {
+        margin: 0;
+        overflow: hidden; /* Prevent default scrollbar */
+      }
+      [data-scroll-container] {
+        height: auto; /* Adjust based on content */
+        overflow: hidden; /* Hide scrollbar of the container */
+      }
+      .container {
+        /* Height will be dynamically set by JavaScript */
+      }
+      .section {
+        height: 100vh; /* Each section takes full viewport height */
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 2em;
+        color: white;
+        text-align: center;
+      }
+      .visual {
+        background-color: #3498db;
+      }
+      .con1 {
+        background-color: #e74c3c;
+      }
+      .con2 {
+        background-color: #2ecc71;
+      }
+      .con3 {
+        background-color: #f39c12;
+      }
+      .con4 {
+        background-color: #9b59b6;
+      }
+
+      /* Styles for the animations from the first code snippet */
+      .scrub-text {
+        opacity: 0;
+        transform: translateX(-100px); /* Initial position off-screen */
+      }
+      .image-wrapper {
+        width: 300px;
+        height: 200px;
+        overflow: hidden;
+      }
+      .image-wrapper img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transform: scale(1.5); /* Initial zoom level */
+      }
+      .pinned-section {
+        position: relative;
+        height: auto; /* Adjust based on content */
+      }
+      .pinned-content {
+        background-color: rgba(0, 0, 0, 0.8);
+        padding: 20px;
+      }
+      .rotate-box {
+        width: 100px;
+        height: 100px;
+        background-color: gold;
+        color: black;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        transform-origin: center center;
+      }
+      .fade-in {
+        opacity: 0;
+        transform: translateY(50px);
+      }
+      .horizontal-scroll {
+        overflow: hidden;
+      }
+      .horizontal-section {
+        display: inline-flex;
+        align-items: center;
+        padding: 0 50px;
+      }
+      .background-change {
+        background-color: #f0f0f0; /* Initial background color */
+        transition: background-color 0.3s ease; /* Optional smooth transition */
+      }
+    </style>
+  </head>
+  <body>
+    <div data-scroll-container>
+      <div class="container">
+        <div class="section visual background-change">Visual Section</div>
+
+        <div class="section con1 scrub-text" data-scroll data-scroll-speed="2">
+          This text will scrub
+        </div>
+
+        <div class="section con2 image-wrapper">
+          <img src="https://via.placeholder.com/300x200" alt="Zoom Image" />
+        </div>
+
+        <div class="section pinned-section">
+          <div class="pinned-content">This section will be pinned</div>
+          <div style="height: 300px; background-color: lightcoral">
+            Additional Content
+          </div>
+        </div>
+
+        <div class="section con3 rotate-box">Rotate Me</div>
+
+        <div class="section con4 fade-in" data-scroll data-scroll-delay="0.1">
+          Fade In
+        </div>
+
+        <div class="horizontal-scroll section" style="height: auto">
+          <div
+            class="horizontal-section"
+            style="background-color: lightblue; width: 500px; height: 80vh"
+          >
+            Section 1
+          </div>
+          <div
+            class="horizontal-section"
+            style="background-color: lightgreen; width: 500px; height: 80vh"
+          >
+            Section 2
+          </div>
+          <div
+            class="horizontal-section"
+            style="background-color: lightcoral; width: 500px; height: 80vh"
+          >
+            Section 3
+          </div>
+        </div>
+
+        <div class="section" style="background-color: #555; height: 200vh">
+          End of Content
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/locomotive-scroll@latest/dist/locomotive-scroll.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.9.1/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.9.1/ScrollTrigger.min.js"></script>
+    <script>
+      window.onload = function () {
+        setTimeout(() => {
+          locoScroll.scrollTo(0, { duration: 0, disableLerp: true });
+        }, 10);
+      };
+
+      gsap.registerPlugin(ScrollTrigger);
+
+      // Initialize Locomotive Scroll for smooth scrolling
+      const locoScroll = new LocomotiveScroll({
+        el: document.querySelector("[data-scroll-container]"),
+        smooth: true,
+      });
+
+      // Sync Locomotive Scroll with GSAP ScrollTrigger
+      locoScroll.on("scroll", ScrollTrigger.update);
+      ScrollTrigger.scrollerProxy("[data-scroll-container]", {
+        scrollTop(value) {
+          return arguments.length
+            ? locoScroll.scrollTo(value, 0, 0)
+            : locoScroll.scroll.instance.scroll.y;
+        },
+        getBoundingClientRect() {
+          return {
+            top: 0,
+            left: 0,
+            width: window.innerWidth,
+            height: window.innerHeight,
+          };
+        },
+        pinType: document.querySelector("[data-scroll-container]").style
+          .transform
+          ? "transform"
+          : "fixed",
+      });
+      ScrollTrigger.addEventListener("refresh", () => locoScroll.update());
+      ScrollTrigger.refresh();
+
+      // Text scrolling animation
+      gsap.to(".scrub-text", {
+        scrollTrigger: {
+          trigger: ".scrub-text",
+          scroller: "[data-scroll-container]",
+          start: "top 80%",
+          end: "top 20%",
+          scrub: true,
+        },
+        opacity: 1,
+        x: 500,
+        rotation: 10,
+      });
+
+      // Image zoom effect
+      gsap.to(".image-wrapper img", {
+        scrollTrigger: {
+          trigger: ".image-wrapper",
+          scroller: "[data-scroll-container]",
+          start: "top 60%",
+          end: "top 30%",
+          scrub: true,
+        },
+        scale: 1,
+      });
+
+      // Pinned section animation
+      gsap.to(".pinned-content", {
+        scrollTrigger: {
+          trigger: ".pinned-section",
+          scroller: "[data-scroll-container]",
+          start: "top top",
+          end: "+=500px",
+          pin: true,
+          scrub: true,
+        },
+      });
+      // Rotating box animation
+      gsap.to(".rotate-box", {
+        scrollTrigger: {
+          trigger: ".rotate-box",
+          scroller: "[data-scroll-container]",
+          start: "top 80%",
+          end: "top 10%",
+          scrub: true,
+        },
+        rotation: 360,
+        scale: 1.5,
+      });
+
+      // Fade-in effect animation
+      gsap.to(".fade-in", {
+        scrollTrigger: {
+          trigger: ".fade-in",
+          scroller: "[data-scroll-container]",
+          start: "top 80%",
+          end: "top 50%",
+          scrub: true,
+        },
+        opacity: 1,
+        y: 0,
+      });
+
+      // Horizontal scrolling effect
+      let sections = gsap.utils.toArray(".horizontal-section");
+      gsap.to(sections, {
+        xPercent: -100 * (sections.length - 1),
+        ease: "none",
+        scrollTrigger: {
+          trigger: ".horizontal-scroll",
+          scroller: "[data-scroll-container]",
+          pin: true,
+          scrub: 1,
+          snap: 1 / (sections.length - 1),
+          end: () =>
+            "+=" + document.querySelector(".horizontal-scroll").offsetWidth,
+        },
+      });
+
+      // Background color change effect on scroll
+      gsap.to(".background-change", {
+        scrollTrigger: {
+          trigger: ".background-change",
+          scroller: "[data-scroll-container]",
+          start: "top 80%",
+          end: "top 20%",
+          scrub: true,
+        },
+        backgroundColor: "#1e90ff",
+      });
+    </script>
+  </body>
+</html>

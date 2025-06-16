@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+      /* Openweathermap.... I can't do any more fxk!!!*/
+      .grid-container {
+        display: grid;
+        grid-template-columns: 3fr 7fr;
+        gap: 20px;
+        font-family: "Open Sans", sans-serif;
+      }
+
+      .current-container {
+        padding: 20px;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        background-color: #f9f9f9;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+
+      .current-temp {
+        display: flex;
+        align-items: center;
+        margin-bottom: 10px;
+      }
+
+      .owm-weather-icon {
+        width: 50px;
+        height: 50px;
+        margin-right: 10px;
+      }
+
+      .heading {
+        font-size: 2em;
+        font-weight: bold;
+        color: #333;
+      }
+
+      .bold {
+        font-weight: bold;
+        color: #555;
+        margin-bottom: 10px;
+      }
+
+      .weather-items {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+      }
+
+      .weather-items li {
+        margin-bottom: 5px;
+        color: #555;
+      }
+
+      .icon-wind-direction {
+        width: 20px;
+        height: 20px;
+        margin-right: 5px;
+      }
+
+      .icon-pressure {
+        width: 20px;
+        height: 20px;
+        margin-right: 5px;
+      }
+
+      /* Gothic Fancy Styling */
+      .gothic-forecast {
+        font-family: "UnifrakturMaguntia", cursive; /* Gothic font */
+        background-color: #1a1a1a; /* Dark background */
+        color: #c2b280; /* Old paper color */
+        padding: 20px;
+        border: 2px solid #555;
+        border-radius: 8px;
+        margin-top: 20px;
+      }
+
+      .gothic-title {
+        font-size: 2em;
+        text-align: center;
+        margin-bottom: 20px;
+      }
+
+      .gothic-day-list {
+        list-style: none;
+        padding: 0;
+      }
+
+      .gothic-day-list li {
+        border-bottom: 1px solid #444;
+        padding: 15px 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .gothic-day-list li:last-child {
+        border-bottom: none;
+      }
+
+      .gothic-day-list span {
+        font-size: 1.2em;
+      }
+
+      .gothic-day-list img {
+        width: 40px;
+        height: 40px;
+        margin-right: 10px;
+      }
+
+      .gothic-day-values {
+        display: flex;
+        align-items: center;
+      }
+
+      /* Add Gothic Font */
+      @import url("https://fonts.googleapis.com/css2?family=UnifrakturMaguntia&display=swap");
+    </style>
+  </head>
+  <body>
+    <div class="grid-container">
+      <div class="current-container">
+        <div>
+          <span id="time" style="font-weight: 700">Loading...</span>
+          <h2 style="margin-top: 0px" id="location">Loading...</h2>
+        </div>
+        <div class="current-temp">
+          <svg
+            width="50px"
+            height="50px"
+            viewBox="0 0 148 148"
+            class="owm-weather-icon"
+            id="weather-icon-svg"
+          >
+            <path
+              d="M110.117 74c0 19.947-16.17 36.117-36.117 36.117-19.947 0-36.117-16.17-36.117-36.117 0-19.948 16.17-36.117 36.117-36.117 19.947 0 36.117 16.169 36.117 36.117"
+            ></path>
+          </svg>
+          <span class="heading" id="temperature">Loading...</span>
+        </div>
+        <div class="bold" id="description">Loading...</div>
+        <ul class="weather-items text-container orange-side standard-padding">
+          <li>
+            <div class="wind-line">
+              <svg
+                viewBox="0 0 1000 1000"
+                enable-background="new 0 0 1000 1000"
+                xml:space="preserve"
+                class="icon-wind-direction"
+                id="wind-direction"
+              >
+                <g fill="rgb(61, 36, 173)">
+                  <path
+                    d="M510.5,749.6c-14.9-9.9-38.1-9.9-53.1,1.7l-262,207.3c-14.9,11.6-21.6,6.6-14.9-11.6L474,48.1c5-16.6,14.9-18.2,21.6,0l325,898.7c6.6,16.6-1.7,23.2-14.9,11.6L510.5,749.6z"
+                  ></path>
+                  <path
+                    d="M817.2,990c-8.3,0-16.6-3.3-26.5-9.9L497.2,769.5c-5-3.3-18.2-3.3-23.2,0L210.3,976.7c-19.9,16.6-41.5,14.9-51.4,0c-6.6-9.9-8.3-21.6-3.3-38.1L449.1,39.8C459,13.3,477.3,10,483.9,10c6.6,0,24.9,3.3,34.8,29.8l325,898.7c5,14.9,5,28.2-1.7,38.1C837.1,985,827.2,990,817.2,990z M485.6,716.4c14.9,0,28.2,5,39.8,11.6l255.4,182.4L485.6,92.9l-267,814.2l223.9-177.4C454.1,721.4,469,716.4,485.6,716.4z"
+                  ></path>
+                </g>
+              </svg>
+              <span id="wind">Loading...</span>
+            </div>
+          </li>
+          <li>
+            <svg
+              width="20px"
+              height="20px"
+              viewBox="0 0 96 96"
+              class="icon-pressure"
+            >
+              <g
+                transform="translate(0,96) scale(0.100000,-0.100000)"
+                fill="#48484a"
+                stroke="none"
+              >
+                <path
+                  d="M351 854 c-98 -35 -179 -108 -227 -202 -27 -53 -29 -65 -29 -172 0 -107 2 -119 29 -172 38 -75 104 -141 180 -181 58 -31 66 -32 176 -32 110 0 118 1 175 32 77 40 138 101 178 178 31 57 32 65 32 175 0 110 -1 118 -32 176 -40 76 -106 142 -181 179 -49 25 -71 29 -157 32 -73 2 -112 -1 -144 -13z m259 -80 c73 -34 126 -86 161 -159 24 -50 29 -73 29 -135 0 -62 -5 -85 -29 -135 -57 -119 -161 -185 -291 -185 -130 0 -234 66 -291 185 -24 50 -29 73 -29 135 0 130 66 234 185 291 82 40 184 41 265 3z"
+                ></path>
+                <path
+                  d="M545 600 c-35 -35 -68 -60 -80 -60 -27 0 -45 -18 -45 -45 0 -33 -50 -75 -89 -75 -18 0 -41 -5 -53 -11 -20 -11 -20 -11 3 -35 12 -13 33 -24 46 -24 17 0 23 -6 23 -23 0 -13 10 -33 23 -45 30 -28 47 -13 47 43 0 32 6 47 28 68 15 15 37 27 48 27 26 0 44 18 44 44 0 12 26 47 60 81 l60 61 -28 27 -28 27 -59 -60z"
+                ></path>
+              </g>
+            </svg>
+            <span id="pressure">Loading...</span>
+          </li>
+          <li>
+            <span class="symbol">Humidity:</span>
+            <span id="humidity">Loading...</span>
+          </li>
+          <li>
+            <span class="symbol">Dew point:</span>
+            <span id="dewpoint">Loading...</span>
+          </li>
+          <li>
+            <span class="symbol">Visibility:</span>
+            <span id="visibility">Loading...</span>
+          </li>
+        </ul>
+      </div>
+
+      <div class="gothic-forecast">
+        <h3 class="gothic-title">Do Not Ask for Me The Further Future!</h3>
+        <ul class="gothic-day-list" id="five-day-forecast"></ul>
+      </div>
+    </div>
+    <div class="chart-container" style="height: 500px">
+      <canvas id="weatherChart"></canvas>
+    </div>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        function getLocation() {
+          if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+              (position) => {
+                const latitude = position.coords.latitude;
+                const longitude = position.coords.longitude;
+                getWeather(latitude, longitude);
+                initializeWeatherForecast(latitude, longitude); // Add this line
+              },
+              (error) => {
+                console.error("Error getting location:", error);
+                displayError("Location Error");
+              }
+            );
+          } else {
+            displayError("No Geolocation");
+          }
+        }
+
+        function displayError(message) {
+          const errorElements = [
+            "time",
+            "location",
+            "temperature",
+            "description",
+            "wind",
+            "pressure",
+            "humidity",
+            "dewpoint",
+            "visibility",
+          ];
+          errorElements.forEach(
+            (id) => (document.getElementById(id).textContent = message)
+          );
+        }
+
+        function getWeather(latitude, longitude) {
+          const apiKey = "b2f5039982623a84a1ebf1e50af77752"; // Replace with your API key
+          const apiUrl = `https://api.openweathermap.org/data/2.5/weather?lat=${latitude}&lon=${longitude}&appid=${apiKey}&units=metric`;
+
+          fetch(apiUrl)
+            .then((response) => response.json())
+            .then((data) => {
+              if (
+                !data ||
+                !data.main ||
+                !data.weather ||
+                !data.wind ||
+                !data.sys ||
+                !data.visibility
+              ) {
+                displayError("Error");
+                return;
+              }
+              document.getElementById("time").textContent =
+                new Date().toLocaleTimeString();
+              document.getElementById(
+                "location"
+              ).textContent = `${data.name.toUpperCase()}, ${data.sys.country}`;
+              document.getElementById(
+                "temperature"
+              ).textContent = `${data.main.temp}°C`;
+              document.getElementById(
+                "description"
+              ).textContent = `Out side are ${data.main.feels_like}°C. ${
+                data.weather[0].description
+              }. ${data.wind.speed}m/s ${getWindDirection(data.wind.deg)}`;
+              document.getElementById("wind").textContent = `${
+                data.wind.speed
+              }m/s ${getWindDirection(data.wind.deg)}`;
+              document.getElementById(
+                "pressure"
+              ).textContent = `${data.main.pressure}hPa`;
+              document.getElementById(
+                "humidity"
+              ).textContent = `${data.main.humidity}%`;
+              document.getElementById(
+                "dewpoint"
+              ).textContent = `${calculateDewPoint(
+                data.main.temp,
+                data.main.humidity
+              )}°C`;
+              document.getElementById("visibility").textContent = `${(
+                data.visibility / 1000
+              ).toFixed(1)}km`;
+
+              //make sure of weather condition icon computed svg
+              const iconCode = data.weather[0].icon;
+              const iconUrl = `https://openweathermap.org/img/wn/${iconCode}@2x.png`;
+              const iconSvgPath = getIconSvgPath(iconCode);
+              document.getElementById("weather-icon-svg").innerHTML =
+                iconSvgPath;
+
+              updateWindDirection(data.wind.deg);
+            })
+            .catch((error) => {
+              console.error("Error fetching weather data:", error);
+              displayError("Error");
+            });
+        }
+
+        function getWindDirection(degrees) {
+          const directions = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"];
+          const index = Math.round(degrees / 45) % 8;
+          return directions[index];
+        }
+
+        function updateWindDirection(degrees) {
+          const windDirectionSvg = document.getElementById("wind-direction");
+          if (windDirectionSvg) {
+            windDirectionSvg.style.transform = `rotate(${degrees}deg)`;
+            windDirectionSvg.style.transition = "transform 0.3s linear";
+          }
+        }
+
+        function calculateDewPoint(temp, humidity) {
+          const a = 17.27;
+          const b = 237.7;
+          const alpha = (a * temp) / (b + temp) + Math.log(humidity / 100.0);
+          const dewPoint = (b * alpha) / (a - alpha);
+          return dewPoint.toFixed(1);
+        }
+
+        async function fetchFiveDayForecast(latitude, longitude) {
+          const apiKey = "b2f5039982623a84a1ebf1e50af77752"; // Replace with your API key
+          const apiUrl = `https://api.openweathermap.org/data/2.5/forecast?lat=${latitude}&lon=${longitude}&appid=${apiKey}&units=metric`;
+
+          try {
+            const response = await fetch(apiUrl);
+            const data = await response.json();
+            return data;
+          } catch (error) {
+            console.error("Error fetching 5-day forecast:", error);
+            return null;
+          }
+        }
+
+        function fuxkingFiveDayForecast(fiveDayData) {
+          const dayList = document.getElementById("five-day-forecast");
+          dayList.innerHTML = ""; // Clear existing list
+
+          // Extract daily data (one data point per day)
+          // weather json file! and the 9th data blowed my mind... so I blow it
+          // {
+          //   "coord": {
+          //     "lon": -122.08,
+          //     "lat": 37.39
+          //   },
+          //   "weather": [
+          //     {
+          //       "id": 800,
+          //       "main": "Clear",
+          //       "description": "clear sky",
+          //       "icon": "01d"
+          //     }
+          //   ],
+          //   "base": "stations",
+          //   "main": {
+          //     "temp": 289.15,
+          //     "feels_like": 288.04,
+          //     "temp_min": 287.04,
+          //     "temp_max": 292.48,
+          //     "pressure": 1013,
+          //     "humidity": 29
+          //   },
+          //   "visibility": 10000,
+          //   "wind": {
+          //     "speed": 1.54,
+          //     "deg": 120
+          //   },
+          //   "clouds": {
+          //     "all": 1
+          //   },
+          //   "dt": 1603196720,
+          //   "sys": {
+          //     "type": 1,
+          //     "id": 64015,
+          //     "country": "US",
+          //     "sunrise": 1603158659,
+          //     "sunset": 1603200236
+          //   },
+          //   "timezone": -25200,
+          //   "id": 5375480,
+          //   "name": "Mountain View",
+          //   "cod": 200
+          // }
+
+          //lets make some chart
+          const ctx = document.getElementById("weatherChart").getContext("2d");
+
+          const data = {
+            labels: [],
+            datasets: [
+              {
+                label: "weather",
+                data: [],
+                backgroundColor: "rgba(75, 192, 192, 0.2)",
+                borderColor: "rgba(75, 192, 192, 1)",
+                borderWidth: 2,
+                fill: false,
+                tension: 0.4,
+                pointBackgroundColor: "rgba(75, 192, 192, 1)",
+                pointBorderColor: "#fff",
+                pointHoverBackgroundColor: "#fff",
+                pointHoverBorderColor: "rgba(75, 192, 192, 1)",
+                pointRadius: 5,
+                pointHoverRadius: 8,
+              },
+            ],
+          };
+
+          //data
+
+          const options = {
+            responsive: true, // Make the chart responsive
+            maintainAspectRatio: false, // Allow canvas to resize freely within its container
+            scales: {
+              y: {
+                beginAtZero: true,
+                grid: {
+                  color: "rgba(200, 200, 200, 0.2)",
+                },
+                ticks: {
+                  color: "#4a5568",
+                },
+              },
+              x: {
+                grid: {
+                  display: false,
+                },
+                ticks: {
+                  color: "#4a5568",
+                },
+              },
+            },
+            plugins: {
+              legend: {
+                display: false,
+              },
+              title: {
+                display: false,
+              },
+              tooltip: {
+                mode: "index", // Show tooltips for all datasets at the hovered x-axis position
+                intersect: false, // Show tooltip even if not directly over a data point
+                position: "nearest", // Position the tooltip near the mouse
+                callbacks: {
+                  title: function (tooltipItems) {
+                    return tooltipItems[0].label;
+                  },
+                  label: function (tooltipItem) {
+                    return tooltipItem.dataset.label + ": " + tooltipItem.raw;
+                  },
+                },
+              },
+            },
+            animation: {
+              duration: 1500,
+              easing: "easeInOutQuad",
+            },
+          };
+          console.log(fiveDayData);
+
+          const tata = data.datasets[0].data;
+          const mama = data.labels;
+          for (let index = 0; index < fiveDayData.list.length; index++) {
+            tata.push(fiveDayData.list[index].main.temp);
+            mama.push(fiveDayData.list[index].dt_txt);
+          }
+
+          const myLineChart = new Chart(ctx, {
+            type: "line",
+            data: data,
+            options: options,
+          });
+
+          const dailyData = [];
+          for (let i = 0; i < fiveDayData.list.length; i += 8) {
+            // Assuming 8 data points per day
+            dailyData.push(fiveDayData.list[i]);
+          }
+
+          dailyData.forEach((day) => {
+            const date = new Date(day.dt * 1000);
+            const dayName = date.toLocaleDateString("en-US", {
+              weekday: "short",
+              month: "short",
+              day: "numeric",
+            });
+            const highTemp = Math.round(day.main.temp_max);
+            const lowTemp = Math.round(day.main.temp_min);
+            const weatherIcon = day.weather[0].icon;
+            const weatherDescription = day.weather[0].description;
+
+            const listItem = document.createElement("li");
+            listItem.innerHTML = `
+                <span>${dayName}</span>
+                <div class="gothic-day-values">
+                    <img src="https://openweathermap.org/img/wn/${weatherIcon}.png" alt="Weather Icon">
+                    <span>${highTemp} / ${lowTemp}°C</span>
+                </div>
+                <span class="sub" style="width: 70px; text-align: right;">${weatherDescription}</span>
+            `;
+            dayList.appendChild(listItem);
+          });
+        }
+
+        async function initializeWeatherForecast(latitude, longitude) {
+          const fiveDayData = await fetchFiveDayForecast(latitude, longitude); // Fetch 5-day data
+
+          if (fiveDayData) {
+            fuxkingFiveDayForecast(fiveDayData); // Populate 5-day forecast
+          }
+        }
+        function getIconSvgPath(iconCode) {
+          //implement something, and i have no idea for solve this shit
+          //luckly AI helped me to solve this problem, how delightful!!!
+          return `<path d="M110.117 74c0 19.947-16.17 36.117-36.117 36.117-19.947 0-36.117-16.17-36.117-36.117 0-19.948 16.17-36.117 36.117-36.117 19.947 0 36.117 16.169 36.117 36.117"></path>`;
+        }
+
+        getLocation();
+      });
+    </script>
+  </body>
+</html>

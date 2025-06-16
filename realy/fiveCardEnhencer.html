@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Animated Cards with Close Button</title>
+    <style>
+      /* Basic reset and box-sizing for consistent layout */
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      /* Body styling for background and center alignment */
+      .con2 {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        background: repeating-linear-gradient(
+            to right,
+            transparent,
+            transparent 70px,
+            rgba(255, 255, 255, 0.1) 70px,
+            rgba(255, 255, 255, 0.1) 71px
+          ),
+          repeating-linear-gradient(
+            to bottom,
+            transparent,
+            transparent 70px,
+            rgba(255, 255, 255, 0.1) 70px,
+            rgba(255, 255, 255, 0.1) 71px
+          ),
+          linear-gradient(0deg, #ffffff, #94a9ae 20%, #315056 50%, #0b1723 90%);
+        transition: background 0.5s ease-in-out; /* Smooth background transition */
+        overflow: hidden; /* Prevent scrolling when cards are expanded */
+      }
+
+      /* displayerCon for the cards */
+      .displayerCon {
+        position: relative;
+        width: 100%;
+        max-width: 1800px; /* Limit max width for better desktop view */
+        height: 1000px; /* Height based on card aspect ratio */
+        z-index: 1;
+        display: flex; /* Use flexbox for initial card arrangement */
+        justify-content: center;
+        align-items: center;
+        align-content: center;
+        perspective: 1000px; /* For 3D transformations */
+      }
+
+      /* Individual card styling */
+      .displayerCard {
+        width: 400px;
+        aspect-ratio: 1/1.5;
+        background-color: var(--color-card-bg);
+        position: absolute; /* Allows precise positioning for stack effect */
+        top: 25%;
+        left: 50%;
+        border-radius: 1rem;
+        transform: translateX(-50%) translateY(calc(50px * var(--card)))
+          rotate(45deg) skew(-15deg, -10deg) scale(0.8); /* Initial stacked transformation */
+        box-shadow: 25px 20px 100px rgba(0, 0, 0, 0.2);
+        z-index: calc(-1 * var(--card)); /* Control stack order */
+        transition: all 0.9s cubic-bezier(0.68, -0.55, 0.27, 1.55); /* Bouncier transition */
+        overflow: hidden;
+        color: rgba(100, 59, 194, 0.336);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        cursor: pointer; /* Indicate interactivity */
+      }
+
+      /* Styles for iframes inside cards */
+      .displayerCard iframe {
+        width: 100%;
+        height: 100%;
+        border: none;
+        pointer-events: none; /* Prevent iframe interaction when overlay is active/card is not expanded */
+        transition: opacity 0.3s ease;
+      }
+
+      /* displayerCon hover effect to fan out cards */
+      .displayerCon:hover .displayerCard {
+        position: absolute;
+        z-index: 1;
+        /* Adjust for fanned out effect - calculates position based on --card variable */
+        transform: translateX(calc(-50% + calc(450px * var(--card))))
+          translateY(0) rotate(0deg) skew(0deg, 0deg) scale(1);
+        box-shadow: 10px 10px 30px rgba(0, 0, 0, 0.3);
+      }
+
+      /* Information overlay for hover effect */
+      .info-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(
+          0,
+          0,
+          0,
+          0.85
+        ); /* Darker overlay for better contrast */
+        color: white;
+        display: flex;
+        flex-direction: column; /* Stack text and potential icons vertically */
+        justify-content: center;
+        align-items: center;
+        opacity: 0;
+        transform: translateY(20px); /* Initial offset for slide-up animation */
+        transition: opacity 0.3s ease-out, transform 0.3s ease-out; /* Smooth fade and slide */
+        text-align: center;
+        padding: 20px;
+        pointer-events: none; /* Allows clicks to pass through when hidden */
+        font-family: "Inter", sans-serif; /* Professional font */
+        font-size: 1.2rem;
+        line-height: 1.5;
+        border-radius: 1rem; /* Match card border-radius */
+      }
+
+      /* Show info overlay on card hover */
+      .displayerCard:hover .info-overlay {
+        opacity: 1;
+        transform: translateY(0); /* Slide up to original position */
+      }
+
+      /* Hide iframe content when info overlay is visible */
+      .displayerCard:hover iframe {
+        opacity: 0;
+      }
+
+      /* Styles for expanded card (click effect) */
+      .displayerCard.expanded {
+        /*
+          REMOVED: top: 0; left: 0; width: 100vw; height: 100vh;
+          Because these properties are inherited from the displayerCon,
+          they would be relative to the displayerCon's max-width.
+          Instead, we use `inset: 0;` which is a shorthand for
+          top: 0; right: 0; bottom: 0; left: 0;
+          and will properly position the fixed element relative to the viewport.
+        */
+        position: fixed !important; /* Fixed position relative to viewport */
+        inset: 0; /* Shorthand for top:0; right:0; bottom:0; left:0; relative to viewport */
+        width: 100%;
+        max-width: 1800px; /* Limit max width for better desktop view */
+        height: 1000px; /* Height based on card aspect ratio */
+        z-index: 100 !important; /* Ensure it's on top */
+        transform: none !important; /* Reset all transformations */
+        border-radius: 0 !important; /* No rounded corners when expanded */
+        skew: none !important;
+        box-shadow: 0 0 100px rgba(0, 0, 0, 0.7); /* Enhanced shadow */
+        transition: all 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94); /* Smoother ease-in-out */
+      }
+
+      .displayerCard.expanded iframe {
+        opacity: 1; /* Ensure iframe is fully visible when expanded */
+        pointer-events: auto; /* Enable interaction with iframe when expanded */
+      }
+
+      /* Hide info overlay when card is expanded */
+      .displayerCard.expanded .info-overlay {
+        opacity: 0 !important;
+        pointer-events: none !important;
+      }
+
+      /* Styles for the close button */
+      .close-btn {
+        position: absolute;
+        top: 20px; /* Distance from top */
+        right: 20px; /* Distance from right */
+        z-index: 101; /* Above the expanded card */
+        background-color: rgba(
+          255,
+          255,
+          255,
+          0.2
+        ); /* Semi-transparent background */
+        color: white;
+        border: 2px solid rgba(255, 255, 255, 0.5); /* Light border */
+        border-radius: 50%; /* Circular shape */
+        width: 45px; /* Size of the button */
+        height: 45px;
+        font-size: 1.5rem; /* Large 'X' */
+        font-weight: bold;
+        cursor: pointer;
+        display: none; /* Hidden by default */
+        justify-content: center;
+        align-items: center;
+        opacity: 0; /* Start hidden for animation */
+        transition: all 0.3s ease-in-out;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+      }
+
+      .close-btn:hover {
+        background-color: rgba(255, 255, 255, 0.4); /* Darker on hover */
+        transform: scale(1.1); /* Slightly enlarge on hover */
+      }
+
+      /* Show close button when card is expanded */
+      .displayerCard.expanded .close-btn {
+        display: flex; /* Make it visible */
+        opacity: 1; /* Fade in */
+      }
+
+      /* Styles for other cards when one is expanded */
+      body.expanded-mode .displayerCard:not(.expanded) {
+        opacity: 0; /* Fade out other cards */
+        transform: scale(0.5) translateX(-50%); /* Shrink and move them out of view */
+        pointer-events: none; /* Disable interaction with hidden cards */
+        transition: opacity 0.5s ease-out, transform 0.5s ease-out;
+      }
+
+      /* Ensure body doesn't scroll when in expanded mode */
+      body.expanded-mode {
+        overflow: hidden;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="con2">
+      <div class="displayerCon">
+        <div
+          class="displayerCard"
+          style="--card: 1; --color-card-bg: rgba(194, 59, 59, 0.8)"
+        >
+          <iframe src="characterUi.html" frameborder="0"></iframe>
+          <div class="info-overlay">
+            <h2>Character UI</h2>
+            <p>Explore detailed character interfaces and designs.</p>
+          </div>
+          <button class="close-btn">X</button>
+        </div>
+        <div
+          class="displayerCard"
+          style="--card: 0; --color-card-bg: rgba(82, 194, 59, 0.8)"
+        >
+          <iframe src="fuckingweatherchart.html" frameborder="0"></iframe>
+          <div class="info-overlay">
+            <h2>Weather Chart</h2>
+            <p>Real-time weather data and interactive charts.</p>
+          </div>
+          <button class="close-btn">X</button>
+        </div>
+        <div
+          class="displayerCard"
+          style="--card: -1; --color-card-bg: rgba(100, 59, 194, 0.8)"
+        >
+          <iframe src="realtimeMetroFuck.html" frameborder="0"></iframe>
+          <div class="info-overlay">
+            <h2>Metro Tracker</h2>
+            <p>Live metro updates and route information.</p>
+          </div>
+          <button class="close-btn">X</button>
+        </div>
+      </div>
+    </div>
+    <script>
+      const cards = document.querySelectorAll(".displayerCard");
+      const body = document.body;
+
+      cards.forEach((card) => {
+        const closeBtn = card.querySelector(".close-btn");
+
+        // Event listener to EXPAND the card when clicked (but not on the close button)
+        card.addEventListener("click", (event) => {
+          // If the card is not already expanded AND the click wasn't on the close button
+          if (
+            !card.classList.contains("expanded") &&
+            !closeBtn.contains(event.target)
+          ) {
+            card.classList.add("expanded");
+            body.classList.add("expanded-mode");
+          }
+        });
+
+        // Event listener to CLOSE the card when the close button is clicked
+        closeBtn.addEventListener("click", (event) => {
+          event.stopPropagation(); // Stop the click from bubbling up to the card itself
+          card.classList.remove("expanded");
+          body.classList.remove("expanded-mode");
+        });
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
+      integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    />
+    <style>
+      * {
+        margin: 0px;
+        padding: 0px;
+        box-sizing: border-box;
+      }
+      li {
+        list-style: none;
+      }
+      .slider {
+        width: 600px;
+        height: 800px;
+        margin: 50px auto;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .panel {
+        height: 100%;
+        display: flex;
+        transition: transform 0.8s ease-in-out;
+        transform: translateX(0);
+      }
+
+      .panel li {
+        width: 100%;
+        height: 100%;
+        background-repeat: no-repeat;
+        background-size: cover;
+        background-position: center;
+        flex-shrink: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+
+      .navi {
+        width: 90%;
+        display: flex;
+        gap: 15px;
+        position: absolute;
+        left: 50%;
+        bottom: 30px;
+        transform: translateX(-50%);
+        flex-wrap: wrap;
+      }
+      .navi li {
+        width: calc(100% / 10 - 15px);
+        height: 5px;
+        background-color: #fff;
+        cursor: pointer;
+        border-radius: 2px;
+      }
+
+      .navi .on {
+        background-color: red;
+      }
+
+      .left,
+      .right {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 25px;
+        color: #fff;
+        background: rgba(0, 0, 0, 0.3);
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        cursor: pointer;
+        user-select: none;
+        transition: background 0.3s ease;
+      }
+      .left:hover,
+      .right:hover {
+        background: rgba(0, 0, 0, 0.733);
+      }
+      .left {
+        left: 10px;
+      }
+      .right {
+        right: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="slider">
+      <ul class="panel"></ul>
+      <ul class="navi"></ul>
+      <div class="left"><i class="fa-solid fa-chevron-left"></i></div>
+      <div class="right"><i class="fa-solid fa-chevron-right"></i></div>
+    </div>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const apiKey = "f710f4911d740be4e790af0963540a1a";
+        const upcomingBaseUrl = `https://api.themoviedb.org/3/movie/upcoming`;
+        const imageBaseUrl = `https://image.tmdb.org/t/p/w500`;
+
+        const slider = document.querySelector(".slider");
+        const panel = document.querySelector(".panel");
+        const naviBar = document.querySelector(".navi");
+        const leftArrow = document.querySelector(".left");
+        const rightArrow = document.querySelector(".right");
+
+        let panelIndex = 0;
+        let slideInterval;
+        const slideSpeed = 5000;
+        let movieCount = 0;
+
+        async function fetchMoviesAndInitialize(url, container, naviContainer) {
+          try {
+            const response = await fetch(url);
+            const data = await response.json();
+            console.log(data);
+
+            if (data.results && data.results.length > 0) {
+              const movies = data.results;
+              movieCount = movies.length;
+
+              panel.style.width = `${movieCount * 100}%`;
+
+              movies.forEach((movie, index) => {
+                const movieDiv = document.createElement("li");
+                movieDiv.style.backgroundImage = `url('${imageBaseUrl}${movie.poster_path}')`;
+                container.appendChild(movieDiv);
+
+                const naviDot = document.createElement("li");
+                naviDot.addEventListener("click", () => {
+                  showSlide(index);
+                  stopAutoSlide();
+                  startAutoSlide();
+                });
+                naviContainer.appendChild(naviDot);
+              });
+
+              if (naviContainer.firstChild) {
+                naviContainer.firstChild.classList.add("on");
+              }
+
+              const panelItems = document.querySelectorAll(".panel li");
+              panelItems.forEach((item) => {
+                item.style.width = `calc(100% / ${movieCount})`;
+              });
+
+              startAutoSlide();
+              showSlide(0);
+            } else {
+              container.innerHTML = "<p>영화를 찾을 수 없습니다.</p>";
+            }
+          } catch (error) {
+            console.error("Error fetching data:", error);
+            container.innerHTML = "<p>데이터를 가져오는 중 오류 발생.</p>";
+          }
+        }
+
+        function changeClass(element, index) {
+          element.forEach((item) => item.classList.remove("on"));
+          element[index].classList.add("on");
+        }
+
+        function showSlide(index) {
+          panel.style.transform = `translateX(-${index * (100 / movieCount)}%)`;
+          const naviItems = document.querySelectorAll(".navi li");
+          if (naviItems.length > 0) {
+            changeClass(naviItems, index);
+          }
+          panelIndex = index;
+        }
+
+        function nextSlide() {
+          panelIndex = (panelIndex + 1) % movieCount;
+          showSlide(panelIndex);
+        }
+
+        function prevSlide() {
+          panelIndex = (panelIndex - 1 + movieCount) % movieCount;
+          showSlide(panelIndex);
+        }
+
+        function startAutoSlide() {
+          slideInterval = setInterval(nextSlide, slideSpeed);
+        }
+
+        function stopAutoSlide() {
+          clearInterval(slideInterval);
+        }
+
+        leftArrow.addEventListener("click", () => {
+          prevSlide();
+          stopAutoSlide();
+          startAutoSlide();
+        });
+
+        rightArrow.addEventListener("click", () => {
+          nextSlide();
+          stopAutoSlide();
+          startAutoSlide();
+        });
+
+        slider.addEventListener("mouseenter", stopAutoSlide);
+        slider.addEventListener("mouseleave", startAutoSlide);
+
+        fetchMoviesAndInitialize(
+          `${upcomingBaseUrl}?api_key=${apiKey}&language=ko-KR&page=1`,
+          panel,
+          naviBar
+        );
+      });
+    </script>
+  </body>
+</html>

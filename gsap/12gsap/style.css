@@ -1,0 +1,88 @@
+@charset "UTF-8";
+
+* {
+  margin: 0px;
+  padding: 0px;
+}
+li {
+  list-style: none;
+}
+a {
+  color: inherit;
+  text-decoration: inherit;
+}
+
+.con01,
+.con03 {
+  width: 100%;
+  height: 100vh;
+  background-color: #222;
+}
+.con02 {
+  width: 100%;
+  height: 100vh;
+  background-color: #ccc;
+  padding-top: 100px;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.con02 .textBox {
+  width: 80%;
+  margin: 0px auto;
+}
+.con02 .textBox h2 {
+  font-size: 5vw;
+  color: orangered;
+  /* margin-bottom: 10px; */
+  letter-spacing: -5px;
+}
+.con02 .textBox p {
+  font-size: 1.5vw;
+}
+
+/*list*/
+.con02 .list {
+  display: flex;
+  margin: 100px 0px;
+}
+
+.con02 .list li {
+  width: 400px;
+  padding: 0px 30px;
+  box-sizing: border-box;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.con02 .list li::after {
+  content: "";
+  background: url(img/smile.png) no-repeat center/120px;
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  left: 0;
+  top: 0;
+  opacity: 0;
+  transition: 0.5s;
+}
+.con02 .list li img {
+  width: 100%;
+}
+.con02 .list li:hover img {
+  filter: brightness(60%);
+}
+
+.con02 .list li:hover::after {
+  opacity: 0.5;
+}
+
+.con02 .list li.a {
+  transform: rotate(5deg);
+}
+.con02 .list li.b {
+  transform: rotate(-5deg);
+}
+.con02 .list li.c {
+  transform: rotate(8deg);
+}

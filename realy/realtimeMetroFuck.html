@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Seoul Metro Info</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        font-family: "Inter", sans-serif;
+        background: linear-gradient(to bottom right, #75daec, #9755da);
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+        min-height: 100vh;
+        padding: 20px;
+        box-sizing: border-box;
+      }
+      .app-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width: 100%;
+        max-width: 1200px;
+        background-color: #ffffff;
+        border-radius: 12px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.26);
+        overflow: hidden;
+      }
+      .map-container {
+        position: relative;
+        width: 100%;
+        padding-bottom: 75%;
+        height: 0;
+        overflow: hidden;
+        border-bottom: 1px solid #e2e8f0;
+      }
+      .metro-map-image {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+      }
+      .station-hotspot {
+        position: absolute;
+        width: 20px;
+        height: 20px;
+        background-color: rgba(6, 91, 248, 0.3);
+        border-radius: 50%;
+        cursor: pointer;
+        transform: translate(-50%, -50%);
+        transition: background-color 0.2s ease-in-out;
+        z-index: 10;
+      }
+      .station-hotspot:hover {
+        background-color: rgba(255, 0, 0, 0.6);
+      }
+      .info-panel {
+        width: 100%;
+        padding: 24px;
+        background-color: #f8fafc;
+        border-top: 1px solid #e2e8f0;
+      }
+      .loading-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(255, 255, 255, 0.8);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+        border-radius: 12px;
+      }
+      .spinner {
+        border: 4px solid rgba(0, 0, 0, 0.1);
+        border-left-color: #3b82f6;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        animation: spin 1s linear infinite;
+      }
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+
+      @media (min-width: 768px) {
+        .app-container {
+          flex-direction: row;
+          align-items: flex-start;
+          max-width: 1400px;
+        }
+        .map-container {
+          width: 70%;
+          padding-bottom: 52.5%;
+          border-right: 1px solid #e2e8f0;
+          border-bottom: none;
+        }
+        .info-panel {
+          width: 30%;
+          padding: 32px;
+          border-top: none;
+        }
+      }
+    </style>
+  </head>
+  <body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
+    <div class="app-container rounded-xl shadow-lg">
+      <div class="map-container relative">
+        <img
+          id="metroMapImage"
+          src="https://www.sisul.or.kr/open_content/skydome/images/img_subway.png"
+          alt="Seoul Metro Map"
+          class="metro-map-image"
+        />
+      </div>
+
+      <div class="info-panel bg-white p-6 rounded-r-xl flex flex-col space-y-4">
+        <h2 class="text-2xl font-bold text-gray-800 mb-4">지하철 현 상황</h2>
+        <div id="stationDetails" class="text-gray-700">
+          <p class="text-gray-500">
+            지도에 있는 스팟을 클릭하여 정보를 보세요~!
+          </p>
+        </div>
+        <div
+          id="loadingIndicator"
+          class="hidden flex justify-center items-center py-4"
+        >
+          <div class="spinner"></div>
+          <span class="ml-3 text-blue-500">로딩중...</span>
+        </div>
+        <div
+          id="llmInfo"
+          class="mt-6 p-4 bg-blue-50 rounded-lg shadow-inner hidden"
+        >
+          <h3 class="text-lg font-semibold text-blue-700 mb-2">그거 아세요?</h3>
+          <p id="llmText" class="text-blue-800 text-sm italic"></p>
+        </div>
+      </div>
+    </div>
+
+    <script type="module">
+      window.onload = async () => {
+        setupMapHotspots();
+      };
+
+      const stations = [
+        {
+          id: "seoul_station",
+          name: "Seoul Station",
+          koreanName: "서울",
+          chineseName: "首尔站",
+          lines: [
+            "Line 1",
+            "Line 4",
+            "Airport Railroad",
+            "Gyeongui-Jungang Line",
+          ],
+          x: 48.0,
+          y: 44.0,
+        },
+        {
+          id: "city_hall",
+          name: "City Hall",
+          koreanName: "시청",
+          chineseName: "시청",
+          lines: ["Line 1", "Line 2"],
+          x: 48.0,
+          y: 39.0,
+        },
+        {
+          id: "jonggak",
+          name: "Jonggak",
+          koreanName: "종각",
+          chineseName: "종각",
+          lines: ["Line 1"],
+          x: 50.0,
+          y: 35.0,
+        },
+        {
+          id: "jongno3ga",
+          name: "Jongno 3-ga",
+          koreanName: "종로3가",
+          chineseName: "종로3가",
+          lines: ["Line 1", "Line 3", "Line 5"],
+          x: 53.0,
+          y: 33.0,
+        },
+        {
+          id: "dongdaemun",
+          name: "Dongdaemun",
+          koreanName: "동대문",
+          chineseName: "동대문",
+          lines: ["Line 1", "Line 4"],
+          x: 60.3,
+          y: 33.0,
+        },
+        {
+          id: "euljiro1ga",
+          name: "Euljiro 1-ga",
+          koreanName: "을지로입구",
+          chineseName: "을지로입구",
+          lines: ["Line 2"],
+          x: 51.0,
+          y: 38.8,
+        },
+        {
+          id: "euljiro3ga",
+          name: "Euljiro 3-ga",
+          koreanName: "을지로3가",
+          chineseName: "을지로3가",
+          lines: ["Line 2", "Line 3"],
+          x: 53.2,
+          y: 38.8,
+        },
+        {
+          id: "euljiro4ga",
+          name: "Euljiro 4-ga",
+          koreanName: "을지로4가",
+          chineseName: "을지로4가",
+          lines: ["Line 2", "Line 5"],
+          x: 56.5,
+          y: 38.8,
+        },
+        {
+          id: "dongdaemun_history",
+          name: "Dongdaemun History & Culture Park",
+          koreanName: "동대문역사문화공원",
+          chineseName: "동대문역사문화공원",
+          lines: ["Line 2", "Line 4", "Line 5"],
+          x: 60.3,
+          y: 38.8,
+        },
+        {
+          id: "myeongdong",
+          name: "Myeongdong",
+          koreanName: "명동",
+          chineseName: "명동",
+          lines: ["Line 4"],
+          x: 54.0,
+          y: 44.0,
+        },
+        {
+          id: "gangnam",
+          name: "Gangnam",
+          koreanName: "강남",
+          chineseName: "강남",
+          lines: ["Line 2", "Shinbundang Line"],
+          x: 61.1,
+          y: 68.2,
+        },
+        {
+          id: "jamsil",
+          name: "Jamsil",
+          koreanName: "잠실",
+          chineseName: "잠실",
+          lines: ["Line 2", "Line 8"],
+          x: 75.3,
+          y: 63.2,
+        },
+        {
+          id: "hongik_univ",
+          name: "Hongik University",
+          koreanName: "홍대입구",
+          chineseName: "홍대입구",
+          lines: ["Line 2", "Airport Railroad", "Gyeongui-Jungang Line"],
+          x: 33.0,
+          y: 36.0,
+        },
+        {
+          id: "gimpo_airport",
+          name: "Gimpo Airport",
+          koreanName: "김포공항",
+          chineseName: "김포공항",
+          lines: ["Line 5", "Line 9", "Airport Railroad"],
+          x: 16.9,
+          y: 33.8,
+        },
+        {
+          id: "sindorim",
+          name: "Sindorim",
+          koreanName: "신도림",
+          chineseName: "신도림",
+          lines: ["Line 1", "Line 2"],
+          x: 29.1,
+          y: 56.2,
+        },
+        {
+          id: "gangbyeon",
+          name: "Gangbyeon",
+          koreanName: "강변",
+          chineseName: "강변",
+          lines: ["Line 2"],
+          x: 75.2,
+          y: 54.4,
+        },
+        {
+          id: "sindang",
+          name: "Sindang",
+          koreanName: "신당",
+          chineseName: "신당",
+          lines: ["Line 2", "Line 6"],
+          x: 65.0,
+          y: 39.0,
+        },
+        {
+          id: "wangsimni",
+          name: "Wangsimni",
+          koreanName: "왕십리",
+          chineseName: "왕십리",
+          lines: ["Line 2", "Line 5", "Gyeongui-Jungang Line", "Bundang Line"],
+          x: 70,
+          y: 41.0,
+        },
+        {
+          id: "seongsu",
+          name: "Seongsu",
+          koreanName: "성수",
+          chineseName: "성수",
+          lines: ["Line 2"],
+          x: 75.3,
+          y: 48.0,
+        },
+        {
+          id: "konkuk_univ",
+          name: "Konkuk University",
+          koreanName: "건대입구",
+          chineseName: "건대입구",
+          lines: ["Line 2", "Line 7"],
+          x: 75.3,
+          y: 50.9,
+        },
+        {
+          id: "samseong",
+          name: "Samseong",
+          koreanName: "삼성",
+          chineseName: "삼성",
+          lines: ["Line 2"],
+          x: 68.2,
+          y: 68.1,
+        },
+        {
+          id: "jamsil_naru",
+          name: "Jamsilnaru",
+          koreanName: "잠실나루",
+          chineseName: "잠실나루",
+          lines: ["Line 2"],
+          x: 75.1,
+          y: 58.0,
+        },
+        {
+          id: "seolleung",
+          name: "Seolleung",
+          koreanName: "선릉",
+          chineseName: "선릉",
+          lines: ["Line 2", "Bundang Line"],
+          x: 65.7,
+          y: 68.2,
+        },
+        {
+          id: "sinsa",
+          name: "Sinsa",
+          koreanName: "신사",
+          chineseName: "신사",
+          lines: ["Line 3", "Shinbundang Line"],
+          x: 58.4,
+          y: 57.5,
+        },
+        {
+          id: "express_bus_terminal",
+          name: "Express Bus Terminal",
+          koreanName: "고속터미널",
+          chineseName: "고속터미널",
+          lines: ["Line 3", "Line 7", "Line 9"],
+          x: 58.4,
+          y: 62.0,
+        },
+        {
+          id: "sadang",
+          name: "Sadang",
+          koreanName: "사당",
+          chineseName: "사당",
+          lines: ["Line 2", "Line 4"],
+          x: 52.0,
+          y: 68.2,
+        },
+        {
+          id: "anyang",
+          name: "Anyang",
+          koreanName: "안양",
+          chineseName: "안양",
+          lines: ["Line 1"],
+          x: 31.1,
+          y: 75.8,
+        },
+        {
+          id: "suwon",
+          name: "Suwon",
+          koreanName: "수원",
+          chineseName: "수원",
+          lines: ["Line 1", "Bundang Line"],
+          x: 44.4,
+          y: 87.2,
+        },
+        {
+          id: "cheongnyangni",
+          name: "Cheongnyangni",
+          koreanName: "청량리",
+          chineseName: "청량리",
+          lines: ["Line 1", "Gyeongui-Jungang Line", "Gyeongchun Line"],
+          x: 73.4,
+          y: 33.0,
+        },
+        {
+          id: "dobongsan",
+          name: "Dobongsan",
+          koreanName: "도봉산",
+          chineseName: "도봉산",
+          lines: ["Line 1", "Line 7"],
+          x: 66.3,
+          y: 11.9,
+        },
+        {
+          id: "nowon",
+          name: "Nowon",
+          koreanName: "노원",
+          chineseName: "노원",
+          lines: ["Line 4", "Line 7"],
+          x: 72.5,
+          y: 18,
+        },
+      ];
+
+      const stationDetailsDiv = document.getElementById("stationDetails");
+      const loadingIndicator = document.getElementById("loadingIndicator");
+      const llmInfoDiv = document.getElementById("llmInfo");
+      const llmTextP = document.getElementById("llmText");
+      const mapContainer = document.querySelector(".map-container");
+
+      // --- Seoul Open Data Plaza API Keys ---
+      const SEOUL_API_KEYS = [
+        "66567a5550646b7231303775755a6c58",
+        "6478634c58646b7238354c66796463",
+        "5748467678646b723436707261434b",
+        "4343596363646b7235337454537843",
+        "456a50567a646b7239334f6d716b4f",
+      ];
+      let currentApiKeyIndex = 0;
+
+      // Map subwayId to readable line names
+      const subwayLineMap = {
+        1001: "1호선",
+        1002: "2호선",
+        1003: "3호선",
+        1004: "4호선",
+        1005: "5호선",
+        1006: "6호선",
+        1007: "7호선",
+        1008: "8호선",
+        1009: "9호선",
+        1061: "중앙선",
+        1063: "경의선",
+        1065: "공항철도",
+        1067: "경춘선",
+        1075: "수인분당선",
+        1077: "신분당선",
+      };
+
+      function getArrivalStatus(arvlCd) {
+        switch (arvlCd) {
+          case "0":
+            return "진입";
+          case "1":
+            return "도착";
+          case "2":
+            return "출발";
+          case "3":
+            return "전역출발";
+          case "4":
+            return "전역진입";
+          case "5":
+            return "전역도착";
+          case "99":
+            return "운행중";
+          default:
+            return "(Unknown)";
+        }
+      }
+
+      // --- Fetch Real-time Subway Data from Seoul API ---
+      async function fetchRealtimeSubwayData(stationKoreanName) {
+        const encodedStationName = encodeURIComponent(stationKoreanName);
+        let response = null;
+        let xmlText = null;
+        let errorOccurred = false;
+
+        for (let i = 0; i < SEOUL_API_KEYS.length; i++) {
+          const currentApiKey = SEOUL_API_KEYS[i];
+          const apiUrl = `http://swopenapi.seoul.go.kr/api/subway/${currentApiKey}/xml/realtimeStationArrival/0/6/${encodedStationName}`;
+
+          console.log(`Attempting fetch with API Key ${i + 1}: ${apiUrl}`);
+
+          try {
+            response = await fetch(apiUrl);
+            if (response.ok) {
+              xmlText = await response.text();
+              errorOccurred = false; // Reset error flag on successful fetch
+              break; // Exit loop on successful response
+            } else {
+              console.error(
+                `API Key ${i + 1} failed with status: ${response.status}`
+              );
+              errorOccurred = true;
+            }
+          } catch (error) {
+            console.error(`Network error with API Key ${i + 1}:`, error);
+            errorOccurred = true;
+          }
+        }
+
+        if (errorOccurred || !xmlText) {
+          return {
+            arrivals: [],
+            alerts: [
+              {
+                type: "error",
+                message:
+                  "모든 API 키 시도 실패 또는 네트워크 오류. (All API key attempts failed or network error.)",
+              },
+            ],
+          };
+        }
+
+        const parser = new DOMParser();
+        const xmlDoc = parser.parseFromString(xmlText, "application/xml");
+
+        const arrivals = [];
+        const errorMessageElement = xmlDoc.getElementsByTagName("message")[0];
+        const errorMessage = errorMessageElement
+          ? errorMessageElement.textContent
+          : null;
+
+        if (errorMessage && errorMessage.includes("KEY_ERROR")) {
+          console.error(
+            "Seoul API Key Error (after all retries):",
+            errorMessage
+          );
+          return {
+            arrivals: [],
+            alerts: [
+              {
+                type: "error",
+                message:
+                  "API 키 오류 또는 유효하지 않은 역 이름. (API Key error or invalid station name.)",
+              },
+            ],
+          };
+        }
+        if (errorMessage && errorMessage.includes("INFO-200")) {
+          return {
+            arrivals: [],
+            alerts: [
+              {
+                type: "info",
+                message:
+                  "현재 이 역에 대한 실시간 데이터가 없습니다. (No real-time data for this station at the moment.)",
+              },
+            ],
+          };
+        }
+
+        const rows = xmlDoc.getElementsByTagName("row");
+
+        if (rows.length === 0) {
+          return {
+            arrivals: [],
+            alerts: [
+              {
+                type: "info",
+                message:
+                  "현재 이 역에 대한 실시간 데이터가 없습니다. (No real-time data for this station at the moment.)",
+              },
+            ],
+          };
+        }
+
+        for (let i = 0; i < rows.length; i++) {
+          const row = rows[i];
+          const subwayId =
+            row.getElementsByTagName("subwayId")[0]?.textContent || "";
+          const trainLineNm =
+            row.getElementsByTagName("trainLineNm")[0]?.textContent || "N/A";
+          const arvlMsg2 =
+            row.getElementsByTagName("arvlMsg2")[0]?.textContent || "N/A";
+          const arvlMsg3 =
+            row.getElementsByTagName("arvlMsg3")[0]?.textContent || "";
+          const arvlCd =
+            row.getElementsByTagName("arvlCd")[0]?.textContent || "N/A";
+
+          const lineDisplayName = subwayLineMap[subwayId] || `Line ${subwayId}`;
+
+          let destination = arvlMsg3;
+          if (
+            !destination ||
+            destination === "N/A" ||
+            destination.trim() === ""
+          ) {
+            if (trainLineNm.includes("행")) {
+              destination = trainLineNm.split("행")[0] + "행";
+            } else if (trainLineNm.includes("방면")) {
+              destination = trainLineNm.split("방면")[0] + "방면";
+            } else if (trainLineNm.includes("-")) {
+              const parts = trainLineNm.split("-");
+              if (parts.length > 1) {
+                destination = parts[parts.length - 1].trim();
+              }
+            } else {
+              destination = trainLineNm;
+            }
+          }
+
+          arrivals.push({
+            line: lineDisplayName,
+            destination: destination,
+            time: arvlMsg2,
+            status: getArrivalStatus(arvlCd),
+          });
+        }
+        return { arrivals: arrivals, alerts: [] };
+      }
+
+      // --- Setup Hotspots ---
+      function setupMapHotspots() {
+        stations.forEach((station) => {
+          const hotspot = document.createElement("div");
+          hotspot.classList.add("station-hotspot");
+          hotspot.dataset.stationId = station.id;
+          hotspot.style.left = `${station.x}%`;
+          hotspot.style.top = `${station.y}%`;
+          hotspot.title = `${station.name} (${station.chineseName})`;
+          hotspot.addEventListener("click", () =>
+            displayStationInfo(station.id)
+          );
+          mapContainer.appendChild(hotspot);
+        });
+      }
+
+      // --- Display Station Information ---
+      async function displayStationInfo(stationId) {
+        stationDetailsDiv.innerHTML = "";
+        llmInfoDiv.classList.add("hidden");
+        loadingIndicator.classList.remove("hidden");
+
+        const station = stations.find((s) => s.id === stationId);
+
+        if (!station) {
+          stationDetailsDiv.innerHTML =
+            '<p class="text-red-500">Station not found.</p>';
+          loadingIndicator.classList.add("hidden");
+          return;
+        }
+
+        let htmlContent = `
+                <h3 class="text-xl font-semibold text-gray-900 mb-2">${
+                  station.name
+                } (${station.chineseName})</h3>
+                <p class="text-sm text-gray-600 mb-4">Lines: ${station.lines.join(
+                  ", "
+                )}</p>
+                <div class="space-y-3">
+            `;
+
+        const realTimeData = await fetchRealtimeSubwayData(station.koreanName);
+
+        if (
+          realTimeData &&
+          realTimeData.arrivals &&
+          realTimeData.arrivals.length > 0
+        ) {
+          htmlContent += `<h4 class="font-medium text-gray-800">도착 정보: (Upcoming Arrivals):</h4>`;
+          realTimeData.arrivals.forEach((arrival) => {
+            htmlContent += `
+                        <div class="flex items-center justify-between p-2 bg-white rounded-md shadow-sm">
+                            <span class="text-sm font-semibold whitespace-nowrap overflow-hidden text-ellipsis">${arrival.line} - ${arrival.destination}</span>
+                            <span class="text-sm text-blue-600 whitespace-nowrap overflow-hidden text-ellipsis">${arrival.time}</span>
+                        </div>
+                    `;
+          });
+        } else {
+          htmlContent += `<p class="text-sm text-gray-500">도착 정보 없음. (No upcoming arrivals reported.)</p>`;
+        }
+
+        if (
+          realTimeData &&
+          realTimeData.alerts &&
+          realTimeData.alerts.length > 0
+        ) {
+          htmlContent += `<h4 class="font-medium text-gray-800 mt-4">알림: (Alerts):</h4>`;
+          realTimeData.alerts.forEach((alert) => {
+            const alertColor =
+              alert.type === "warning"
+                ? "bg-yellow-100 text-yellow-800"
+                : alert.type === "error"
+                ? "bg-red-100 text-red-800"
+                : "bg-blue-100 text-blue-800";
+            htmlContent += `
+                        <div class="p-2 text-sm rounded-md ${alertColor}">
+                            <strong>${alert.type.toUpperCase()}:</strong> ${
+              alert.message
+            }
+                        </div>
+                    `;
+          });
+        } else {
+          htmlContent += `<p class="text-sm text-gray-500">다행이도 다른 알람은 없네요</p>`;
+        }
+
+        htmlContent += `</div>`;
+        stationDetailsDiv.innerHTML = htmlContent;
+        loadingIndicator.classList.add("hidden");
+
+        await fetchLlmInfo(station.name);
+      }
+
+      // --- LLM Integration Function ---
+      async function fetchLlmInfo(stationName) {
+        llmTextP.textContent =
+          "흥미로운 사실 생성 중... (Generating a fun fact...)";
+        llmInfoDiv.classList.remove("hidden");
+
+        try {
+          let chatHistory = [];
+          const prompt = `Provide a very short, interesting fact or historical tidbit about ${stationName} metro station in Seoul, South Korea. Keep it to one sentence in korean.`;
+          chatHistory.push({ role: "user", parts: [{ text: prompt }] });
+          const payload = { contents: chatHistory };
+          const apiKey = "AIzaSyDd1DkQLag7vD9WjYGTi9LQAjgXTRAkZjo";
+          const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+
+          const response = await fetch(apiUrl, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+
+          const result = await response.json();
+
+          if (
+            result.candidates &&
+            result.candidates.length > 0 &&
+            result.candidates[0].content &&
+            result.candidates[0].content.parts &&
+            result.candidates[0].content.parts.length > 0
+          ) {
+            const text = result.candidates[0].content.parts[0].text;
+            llmTextP.textContent = text;
+          } else {
+            llmTextP.textContent =
+              "추가 정보를 가져올 수 없습니다. (Could not retrieve additional info.)";
+            console.error("LLM response structure unexpected:", result);
+          }
+        } catch (error) {
+          llmTextP.textContent =
+            "추가 정보를 로드하지 못했습니다. (Failed to load additional info.)";
+          console.error("Error fetching LLM info:", error);
+        }
+      }
+    </script>
+  </body>
+</html>

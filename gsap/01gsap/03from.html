@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.7/dist/gsap.min.js"></script>
+    <style>
+      .box1 {
+        width: 100px;
+        height: 100px;
+        background-color: orange;
+        margin: 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="box1"></div>
+    <script>
+      gsap.from(".box1", { opacity: 0, x: -200, duration: 5 });
+    </script>
+  </body>
+</html>

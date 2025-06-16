@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Scroll Controlled Video Scrub</title>
+    <style>
+      html,
+      body {
+        padding: 0;
+        margin: 0;
+        height: 100%;
+        overflow: hidden;
+      }
+
+      .viewport-wrapper {
+        height: 100%;
+        overflow: hidden;
+      }
+
+      .content-scroll {
+        overflow: visible;
+      }
+
+      .section {
+        height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background-color: #111;
+        color: white;
+        font-size: 3rem;
+      }
+
+      .video-scrub-wrapper {
+        position: relative;
+        height: 100vh;
+        overflow: hidden;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+
+      .video-scrub-wrapper video {
+        width: 100%;
+        height: auto;
+        max-width: none;
+        object-fit: cover;
+      }
+
+      .overlay {
+        position: absolute;
+        z-index: 10;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 2rem;
+        pointer-events: none;
+      }
+
+      .normalize-scroll {
+        overflow: auto !important;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="viewport-wrapper">
+      <div class="content-scroll">
+        <section class="section">Intro Section</section>
+
+        <section id="video_scrub_01" class="video-scrub-wrapper">
+          <video
+            id="scrub-video"
+            src="video/main_video_haha.mp4"
+            preload="auto"
+            muted
+            playsinline
+          ></video>
+          <div class="overlay">Scroll to Scrub</div>
+        </section>
+
+        <section class="section">Outro Section</section>
+      </div>
+    </div>
+
+    <!-- GSAP and Plugins -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/ScrollSmoother.min.js"></script>
+    <script>
+      const utils = {
+        isTouch: () => "ontouchstart" in window || navigator.maxTouchPoints > 0,
+        addClass: (el, className) => el.classList.add(className),
+      };
+
+      gsap.registerPlugin(ScrollTrigger, ScrollSmoother);
+
+      ScrollTrigger.config({
+        limitCallbacks: true,
+        ignoreMobileResize: true,
+      });
+
+      const scroller = (() => {
+        if (
+          typeof gsap === "undefined" ||
+          typeof ScrollSmoother === "undefined" ||
+          utils.isTouch()
+        ) {
+          utils.addClass(document.body, "normalize-scroll");
+          return null;
+        }
+
+        return {
+          initialize: (
+            content = ".content-scroll",
+            wrapper = ".viewport-wrapper"
+          ) =>
+            ScrollSmoother.create({
+              content,
+              wrapper,
+              smooth: 2,
+              effects: false,
+              normalizeScroll: true,
+              preventDefault: true,
+            }),
+        };
+      })();
+
+      const gsapVideoScrub = {
+        initScrub: function (videoEl, containerEl, durationMultiplier = 3) {
+          if (!videoEl || !videoEl.duration || isNaN(videoEl.duration)) return;
+
+          videoEl.pause();
+          videoEl.currentTime = 0;
+
+          ScrollTrigger.create({
+            trigger: containerEl,
+            start: "top top",
+            end: `+=${videoEl.duration * 1000 * durationMultiplier}`,
+            scrub: true,
+            onUpdate: (self) => {
+              videoEl.currentTime = self.progress * videoEl.duration;
+            },
+          });
+        },
+      };
+
+      document.addEventListener("DOMContentLoaded", function () {
+        if (scroller) scroller.initialize();
+
+        const videoEl = document.querySelector("#scrub-video");
+        videoEl.addEventListener("loadedmetadata", () => {
+          gsapVideoScrub.initScrub(videoEl, "#video_scrub_01");
+        });
+      });
+    </script>
+  </body>
+</html>

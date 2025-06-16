@@ -1,0 +1,85 @@
+* {
+  margin: 0px;
+  padding: 0px;
+}
+body {
+  background-color: rgb(51, 41, 41);
+  color: rgb(245, 176, 176);
+  text-align: center;
+}
+ul {
+  list-style: none;
+}
+.main {
+  text-align: center;
+  width: 100%;
+}
+button {
+  border: none;
+}
+.main img {
+  width: 50%;
+}
+.hover {
+  position: fixed;
+  right: 10px;
+  bottom: 50px;
+}
+.hover button {
+  background-color: crimson;
+  color: aliceblue;
+  text-wrap: wrap;
+  width: 100px;
+  font-size: 20px;
+  font-weight: 900;
+  padding-block: 10px;
+  padding-inline: 10px;
+  border-radius: 0px 30px;
+}
+.box1 {
+  margin-top: 10%;
+  width: 100%;
+  position: relative;
+  text-align: center;
+  margin-block: 20%;
+}
+.box1 img {
+  display: block;
+  width: 100%;
+
+  height: fit-content;
+}
+.box1 button {
+  width: 10%;
+}
+
+.papa {
+  color: rgb(248, 233, 214);
+  text-shadow: 0px 2px 2px thistle;
+  position: absolute;
+  top: 50%;
+  left: 10%;
+  transform: translate(50% 50%);
+  display: none;
+}
+
+.box2 {
+  margin-block: 500px;
+  position: relative;
+}
+.box2 ul {
+  position: absolute;
+  left: 40%;
+  width: 20%;
+  padding-bottom: 10px;
+  background-color: black;
+}
+.box2 li {
+  margin-top: 10px;
+}
+.box2 button {
+  width: 50%;
+}
+#glob {
+  font-size: 50px;
+}

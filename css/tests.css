@@ -1,0 +1,23 @@
+* {
+  margin: 0px;
+  padding: 0px;
+}
+ul {
+  list-style: none;
+}
+.con1 {
+  height: 100px;
+}
+.wrap div {
+  border: 1px red solid;
+  padding: 10px;
+}
+/*바로 아래 child에 적용*/
+.wrap > div {
+  border: 1px red solid;
+  padding: 20px;
+}
+.on {
+  border: 1px black solid;
+  padding: 10px;
+}

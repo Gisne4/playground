@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Grok's Black Hole</title>
+    <link
+      href="https://fonts.googleapis.com/css?family=Dosis:200,400"
+      rel="stylesheet"
+      type="text/css"
+    />
+    <style>
+      /* Basic reset for margin and padding, hide overflow, and set background to black */
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+        background: #000;
+      }
+
+      /* Canvas styling to make it fill the entire viewport */
+      canvas {
+        display: block;
+        width: 100vw;
+        height: 100vh;
+      }
+
+      /* Styles for the links block, positioning it absolutely */
+      .links {
+        position: absolute;
+        list-style: none; /* Removes default list bullets */
+        width: 180px;
+        bottom: 40px;
+        right: 20px;
+        padding: 0;
+        margin: 0;
+      }
+
+      /* Styles for each list item in the links block */
+      .links li {
+        border-bottom: rgba(255, 255, 255, 0.1) 1px solid; /* Light, transparent bottom border */
+      }
+
+      /* Styles for the anchor tags within the list items */
+      .links li a {
+        transition: opacity 0.2s ease-out; /* Smooth opacity transition on hover */
+        -webkit-font-smoothing: subpixel-antialiased; /* Font rendering optimization for WebKit browsers */
+        font-family: "Dosis", sans-serif; /* Font family from Google Fonts */
+        text-transform: uppercase; /* Uppercase text */
+        text-align: right; /* Right-align text */
+        padding: 0.25em 0; /* Vertical padding */
+        letter-spacing: 2px; /* Letter spacing */
+        font-weight: 200; /* Light font weight */
+        font-size: 12px; /* Font size */
+        display: block; /* Makes the entire line clickable */
+        width: 100%; /* Occupies full width of the parent list item */
+        opacity: 0.4; /* Initial opacity (semi-transparent) */
+        color: #fff; /* White text color */
+        text-decoration: none; /* Remove underline from links */
+      }
+
+      /* Increased opacity on hover for links */
+      .links li a:hover {
+        opacity: 0.8;
+      }
+
+      /* Pseudo-element to add an '@' before the "who" link */
+      .links li .who:before {
+        opacity: 0.5;
+        content: "@";
+        float: left;
+      }
+
+      /* Pseudo-element to add '</>' before the "blog" link */
+      .links li .blog:before {
+        opacity: 0.5;
+        content: "</>";
+        float: left;
+      }
+
+      /* Modal styling for WebGL not supported message */
+      .modal {
+        display: none; /* Hidden by default */
+        position: fixed; /* Stay in place */
+        z-index: 1; /* Sit on top */
+        left: 0;
+        top: 0;
+        width: 100%; /* Full width */
+        height: 100%; /* Full height */
+        overflow: auto; /* Enable scroll if needed */
+        background-color: rgba(0, 0, 0, 0.4); /* Black w/ opacity */
+      }
+
+      .modal-content {
+        background-color: #fefefe;
+        margin: 15% auto; /* 15% from the top and centered */
+        padding: 20px;
+        border: 1px solid #888;
+        width: 80%; /* Could be more or less, depending on screen size */
+        max-width: 500px; /* Max width for larger screens */
+        text-align: center;
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        font-family: "Dosis", sans-serif;
+        color: #333;
+      }
+
+      .close-button {
+        color: #aaa;
+        float: right;
+        font-size: 28px;
+        font-weight: bold;
+      }
+
+      .close-button:hover,
+      .close-button:focus {
+        color: black;
+        text-decoration: none;
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="glcanvas"></canvas>
+
+    <!-- The Modal for WebGL unsupported message -->
+    <div id="webgl-modal" class="modal">
+      <div class="modal-content">
+        <span class="close-button">&times;</span>
+        <p>
+          Your browser does not support WebGL. Please try a different browser or
+          update your graphics drivers.
+        </p>
+      </div>
+    </div>
+
+    <script>
+      // Inspired by https://x.com/XorDev and https://x.com/lamps_apple
+      (function () {
+        const canvas = document.getElementById("glcanvas");
+        const gl = canvas.getContext("webgl");
+        const webglModal = document.getElementById("webgl-modal");
+        const closeButton = document.querySelector(".close-button");
+
+        // Function to show the modal
+        function showModal() {
+          webglModal.style.display = "block";
+        }
+
+        // Function to hide the modal
+        function hideModal() {
+          webglModal.style.display = "none";
+        }
+
+        // Event listener for the close button
+        closeButton.addEventListener("click", hideModal);
+
+        // Close the modal if the user clicks outside of it
+        window.addEventListener("click", (event) => {
+          if (event.target == webglModal) {
+            hideModal();
+          }
+        });
+
+        // Check for WebGL support
+        if (!gl) {
+          showModal(); // Show custom modal instead of alert
+          return;
+        }
+
+        // Vertex shader source code
+        // This shader simply passes through the position data.
+        const vsSource = `
+                attribute vec2 a_position;
+                void main() {
+                    gl_Position = vec4(a_position, 0.5, 1.0);
+                }
+            `;
+
+        // Fragment shader source code
+        // This shader creates the visual effect of the black hole.
+        // It combines a background layer and an animated foreground layer.
+        const fsSource = `
+                precision mediump float;
+                uniform float t; // Time uniform for animation
+                uniform vec2 r;  // Resolution uniform (width, height)
+
+                // Custom tanh function for vec2 since built-in tanh is unavailable in WebGL GLSL for vec2.
+                // This function calculates the hyperbolic tangent for each component of a vec2.
+                vec2 myTanh(vec2 x) {
+                    vec2 ex = exp(x);
+                    vec2 emx = exp(-x);
+                    return (ex - emx) / (ex + emx);
+                }
+
+                void main() {
+                    vec4 o_bg = vec4(0.0);   // Initialize background color
+                    vec4 o_anim = vec4(0.0); // Initialize animation color
+
+                    // ---------------------------
+                    // Background (Image) Layer calculations
+                    // ---------------------------
+                    {
+                        // Transform fragment coordinates to a normalized space, scaled by aspect ratio.
+                        // The mat2(1.0, -1.0, 1.0, 1.0) applies a rotation and skew.
+                        vec2 p_img = (gl_FragCoord.xy * 2.0 - r) / r.y * mat2(1.0, -1.0, 1.0, 1.0);
+
+                        // Apply custom tanh function and clamp values for the background effect.
+                        vec2 l_val = myTanh(p_img * 5.0 + 2.0);
+                        l_val = min(l_val, l_val * 3.0);
+                        vec2 clamped = clamp(l_val, -2.0, 0.0);
+
+                        // Calculate difference in y-component after clamping.
+                        float diff_y = clamped.y - l_val.y;
+
+                        // Calculate a term that contributes to the background color.
+                        // Added a small epsilon to safe_px to prevent division by zero when p_img.x is near zero.
+                        float safe_px = abs(p_img.x) < 0.001 ? 0.001 : p_img.x;
+                        float term = (0.1 - max(0.01 - dot(p_img, p_img) / 200.0, 0.0) * (diff_y / safe_px))
+                                     / abs(length(p_img) - 0.7);
+
+                        o_bg += vec4(term);
+                        // Ensure background color components are non-negative.
+                        o_bg *= max(o_bg, vec4(0.0));
+                    }
+
+                    // ---------------------------
+                    // Foreground (Animation) Layer calculations
+                    // ---------------------------
+                    {
+                        // Transform fragment coordinates for the animation layer.
+                        vec2 p_anim = (gl_FragCoord.xy * 2.0 - r) / r.y / 0.7;
+                        vec2 d = vec2(-1.0, 1.0);
+
+                        // Calculate a denominator for complex transformation.
+                        float denom = 0.1 + 5.0 / dot(5.0 * p_anim - d, 5.0 * p_anim - d);
+
+                        // Apply a transformation to 'c' based on 'p_anim' and 'd'.
+                        vec2 c = p_anim * mat2(1.0, 1.0, d.x / denom, d.y / denom);
+                        vec2 v = c;
+
+                        // Apply a time-varying transformation to 'v' for animation.
+                        // The mat2 uses a combination of cosine and logarithm for dynamic movement.
+                        v *= mat2(cos(log(length(v)) + t * 0.2 + vec4(0.0, 33.0, 11.0, 0.0))) * 5.0;
+
+                        vec4 animAccum = vec4(0.0);
+                        // Loop to create iterative animation patterns.
+                        for (int i = 1; i <= 9; i++) {
+                            float fi = float(i);
+                            animAccum += sin(vec4(v.x, v.y, v.y, v.x)) + vec4(1.0);
+                            v += 0.7 * sin(vec2(v.y, v.x) * fi + t) / fi + 0.5;
+                        }
+
+                        // Calculate the final animated term using various complex functions.
+                        vec4 animTerm = 1.0 - exp(-exp(c.x * vec4(0.6, -0.4, -1.0, 0.0))
+                                             / animAccum
+                                             / (0.1 + 0.1 * pow(length(sin(v / 0.3) * 0.2 + c * vec2(1.0, 2.0)) - 1.0, 2.0))
+                                             / (1.0 + 7.0 * exp(0.3 * c.y - dot(c, c)))
+                                             / (0.03 + abs(length(p_anim) - 0.7)) * 0.2);
+                        o_anim += animTerm;
+                    }
+
+                    // ---------------------------
+                    // Blend Layers and final color output
+                    // ---------------------------
+                    // Mix the background and animation layers with 50% opacity for the animation.
+                    // Boost brightness by multiplying by 1.5 to make the output visible, then clamp.
+                    vec4 finalColor = mix(o_bg, o_anim, 0.5) * 1.5;
+                    finalColor = clamp(finalColor, 0.0, 1.0); // Clamp colors to valid range [0, 1]
+                    gl_FragColor = finalColor; // Set the final fragment color
+                }
+            `;
+
+        // Utility function to compile a WebGL shader.
+        function createShader(gl, type, source) {
+          const shader = gl.createShader(type); // Create a new shader object
+          gl.shaderSource(shader, source); // Set the shader source code
+          gl.compileShader(shader); // Compile the shader
+
+          // Check for compilation errors and log them.
+          if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+            console.error(
+              "Shader compile failed with: " + gl.getShaderInfoLog(shader)
+            );
+            gl.deleteShader(shader); // Delete shader if compilation fails
+            return null;
+          }
+          return shader; // Return the compiled shader
+        }
+
+        // Utility function to create and link a WebGL program.
+        function createProgram(gl, vsSource, fsSource) {
+          // Create vertex and fragment shaders.
+          const vertexShader = createShader(gl, gl.VERTEX_SHADER, vsSource);
+          const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fsSource);
+
+          // Create a new WebGL program.
+          const program = gl.createProgram();
+          gl.attachShader(program, vertexShader); // Attach vertex shader
+          gl.attachShader(program, fragmentShader); // Attach fragment shader
+          gl.linkProgram(program); // Link the program
+
+          // Check for linking errors and log them.
+          if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+            console.error(
+              "Program failed to link: " + gl.getProgramInfoLog(program)
+            );
+            gl.deleteProgram(program); // Delete program if linking fails
+            return null;
+          }
+          return program; // Return the linked program
+        }
+
+        // Create the WebGL program from the shaders.
+        const program = createProgram(gl, vsSource, fsSource);
+        gl.useProgram(program); // Use the created program
+
+        // Get the locations of attributes and uniforms in the shader.
+        const positionLocation = gl.getAttribLocation(program, "a_position");
+        const timeLocation = gl.getUniformLocation(program, "t");
+        const resolutionLocation = gl.getUniformLocation(program, "r");
+
+        // Define vertices for a full-screen quad (two triangles).
+        // This quad will cover the entire canvas.
+        const vertices = new Float32Array([
+          -1,
+          -1, // Bottom-left
+          1,
+          -1, // Bottom-right
+          -1,
+          1, // Top-left
+          -1,
+          1, // Top-left (repeated for second triangle)
+          1,
+          -1, // Bottom-right (repeated for second triangle)
+          1,
+          1, // Top-right
+        ]);
+
+        // Create a buffer for the vertices and bind it.
+        const buffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+        gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW); // Load vertex data
+
+        // Enable the attribute for position and specify its layout.
+        gl.enableVertexAttribArray(positionLocation);
+        gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
+
+        // Function to resize the canvas to fit the window and update the viewport.
+        function resize() {
+          canvas.width = window.innerWidth;
+          canvas.height = window.innerHeight;
+          gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
+        }
+
+        // Add an event listener to resize the canvas when the window is resized.
+        window.addEventListener("resize", resize);
+        resize(); // Initial resize call to set up canvas dimensions
+
+        let startTime = performance.now(); // Record the start time for animation
+
+        // The main render loop for continuous animation.
+        function render() {
+          let currentTime = performance.now();
+          let delta = (currentTime - startTime) / 1000; // Calculate time elapsed in seconds
+
+          // Pass the elapsed time and canvas resolution to the shader as uniforms.
+          gl.uniform1f(timeLocation, delta);
+          gl.uniform2f(resolutionLocation, canvas.width, canvas.height);
+
+          // Draw the full-screen quad using the specified shader program.
+          gl.drawArrays(gl.TRIANGLES, 0, 6); // Draw 6 vertices (2 triangles)
+
+          requestAnimationFrame(render); // Request the next animation frame
+        }
+
+        // Start the animation loop.
+        requestAnimationFrame(render);
+      })();
+    </script>
+  </body>
+</html>

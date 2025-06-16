@@ -1,0 +1,1649 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Seoul Subway Real-time Arrival Map</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        background-color: #e0e0e0;
+        margin: 0;
+        overflow: hidden; /* Prevent scrollbars if content slightly exceeds viewport */
+      }
+
+      #app-container {
+        display: flex;
+        width: 1920px; /* Match canvas width */
+        height: 1080px; /* Match canvas height */
+        background-color: #fff;
+        box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+        position: relative; /* For tooltip positioning */
+      }
+
+      #map-container {
+        position: relative;
+        flex-grow: 1; /* Takes up available space */
+        background-color: #f8f8f8; /* Canvas background matches this */
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        overflow: hidden; /* Ensure canvas stays within bounds */
+      }
+
+      #subwayCanvas {
+        border: 1px solid #ccc;
+        display: block; /* Remove extra space below canvas */
+      }
+
+      #sidebar {
+        width: 400px; /* Adjust sidebar width as needed */
+        background-color: #f0f0f0;
+        padding: 20px;
+        box-sizing: border-box;
+        overflow-y: auto; /* Enable scrolling for subway info */
+        border-left: 1px solid #ccc;
+      }
+
+      h1 {
+        color: #333;
+        text-align: center;
+        margin-bottom: 20px;
+      }
+
+      h2 {
+        color: #555;
+        margin-top: 0;
+        border-bottom: 1px solid #ddd;
+        padding-bottom: 5px;
+        margin-bottom: 15px;
+      }
+
+      #subwayInfo {
+        font-size: 14px;
+        color: #333;
+      }
+
+      .info-message {
+        color: #666;
+        text-align: center;
+        padding: 20px;
+      }
+
+      .loading-message {
+        color: #007bff;
+        text-align: center;
+        padding: 20px;
+      }
+
+      .error-message {
+        color: #dc3545;
+        text-align: center;
+        padding: 20px;
+        font-weight: bold;
+      }
+
+      .subway-line {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 0;
+        border-bottom: 1px dashed #eee;
+      }
+
+      .subway-line:last-child {
+        border-bottom: none;
+      }
+
+      .line-info {
+        flex-grow: 1;
+      }
+
+      .line-name {
+        font-weight: bold;
+        color: #000;
+        margin-bottom: 5px;
+      }
+
+      .status-msg {
+        font-weight: bold;
+        color: #28a745; /* Green for general status */
+        flex-shrink: 0; /* Don't shrink status message */
+        text-align: right;
+        margin-left: 10px;
+      }
+
+      .arrival-msg {
+        font-weight: bold;
+        color: #dc3545; /* Red for arriving/departing */
+        flex-shrink: 0;
+        text-align: right;
+        margin-left: 10px;
+      }
+
+      #canvasTooltip {
+        position: absolute;
+        background-color: rgba(0, 0, 0, 0.75);
+        color: white;
+        padding: 5px 8px;
+        border-radius: 4px;
+        font-size: 12px;
+        pointer-events: none; /* Allows mouse events to pass through to canvas */
+        display: none; /* Hidden by default */
+        transform: translate(-50%, -100%); /* Center horizontally, move up */
+        white-space: nowrap; /* Prevent text wrapping */
+        z-index: 100;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app-container">
+      <div id="map-container">
+        <canvas id="subwayCanvas" width="1920" height="1080"></canvas>
+        <div id="canvasTooltip"></div>
+      </div>
+      <div id="sidebar">
+        <h1>Seoul Subway Real-time</h1>
+        <div id="subwayInfo">
+          <p class="info-message">
+            지하철역을 클릭하면 실시간 도착 정보가 표시됩니다.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const API_KEY = "4343596363646b7235337454537843"; // Your Seoul Open API Key
+      const canvas = document.getElementById("subwayCanvas");
+      const ctx = canvas.getContext("2d");
+      const canvasTooltip = document.getElementById("canvasTooltip");
+
+      // Line Colors
+      const LINE1_COLOR = "#0052A4"; // Blue
+      const LINE2_COLOR = "#3CB44A"; // Green
+      const LINE3_COLOR = "#F36D1B"; // Orange
+      const LINE4_COLOR = "#2C93D8"; // Sky Blue
+      const LINE5_COLOR = "#995B24"; // Purple-Brown
+      const LINE6_COLOR = "#CD7C2F"; // Brown
+      const LINE7_COLOR = "#546500"; // Dark Green/Olive
+      const LINE8_COLOR = "#ED5482"; // Pink
+
+      const STATION_DOT_COLOR = "#666";
+      const STATION_TEXT_COLOR = "black";
+      const STATION_DOT_RADIUS = 3;
+      const CLICK_TOLERANCE = 10; // Pixels around the station dot for click detection
+
+      const LINE_COLORS = {
+        1001: LINE1_COLOR, // Line 1
+        1002: LINE2_COLOR, // Line 2
+        1003: LINE3_COLOR, // Line 3
+        1004: LINE4_COLOR, // Line 4
+        1005: LINE5_COLOR, // Line 5
+        1006: LINE6_COLOR, // Line 6
+        1007: LINE7_COLOR, // Line 7
+        1008: LINE8_COLOR, // Line 8
+        1063: "#747F00", // 경의중앙선 (Olive Green)
+        1065: "#003366", // 공항철도 (Dark Blue)
+        1075: "#FABE00", // 분당선 (Yellow)
+        1077: "#D40056", // 신분당선 (Red-Pink)
+        // Add more line IDs and colors as you expand the map
+      };
+
+      // Global variables for train data and currently selected station
+      let currentAllTrainData = []; // Stores all data fetched from STATION_NAMES
+      let trainsOnMap = []; // For canvas hover detection
+      let selectedStationName = null; // Currently clicked station
+
+      // Stations for which to fetch data (your provided list, combined from earlier)
+      // This list should ideally be generated from all unique stations in allLinePaths for completeness.
+      const STATION_NAMES = [
+        // Line 1
+        "소요산",
+        "동두천",
+        "보산",
+        "동두천중앙",
+        "지행",
+        "덕정",
+        "덕계",
+        "양주",
+        "녹양",
+        "가능",
+        "의정부",
+        "회룡",
+        "망월사",
+        "도봉산",
+        "도봉",
+        "방학",
+        "창동",
+        "녹천",
+        "월계",
+        "광운대",
+        "석계",
+        "신이문",
+        "외대앞",
+        "회기",
+        "청량리",
+        "제기동",
+        "신설동",
+        "동묘앞",
+        "동대문",
+        "종로5가",
+        "종로3가",
+        "종각",
+        "시청",
+        "서울",
+        "남영",
+        "용산",
+        "노량진",
+        "대방",
+        "신길",
+        "영등포",
+        "신도림",
+        "구로",
+        "가산디지털단지",
+        "독산",
+        "금천구청",
+        "광명",
+        "구일",
+        "개봉",
+        "오류동",
+        "온수",
+        "역곡",
+        "부천",
+        "송내",
+        "중동",
+        "부개",
+        "부평",
+        "백운",
+        "동암",
+        "간석",
+        "주안",
+        "도원",
+        "제물포",
+        "동인천",
+        "인천",
+        "병점",
+        "세마",
+        "오산대",
+        "오산",
+        "진위",
+        "송탄",
+        "서정리",
+        "평택지제",
+        "평택",
+        "성환",
+        "직산",
+        "두정",
+        "천안",
+        "봉명",
+        "쌍용",
+        "아산",
+        "탕정",
+        "배방",
+        "온양온천",
+        "신창",
+        // Line 2
+        "을지로입구",
+        "을지로3가",
+        "을지로4가",
+        "동대문역사문화공원",
+        "신당",
+        "상왕십리",
+        "왕십리",
+        "한양대",
+        "뚝섬",
+        "성수",
+        "건대입구",
+        "강변",
+        "잠실나루",
+        "잠실",
+        "잠실새내",
+        "종합운동장",
+        "삼성",
+        "선릉",
+        "역삼",
+        "강남",
+        "교대",
+        "서초",
+        "방배",
+        "사당",
+        "낙성대",
+        "서울대입구",
+        "봉천",
+        "신림",
+        "신대방",
+        "구로디지털단지",
+        "대림",
+        "문래",
+        "영등포구청",
+        "당산",
+        "합정",
+        "홍대입구",
+        "신촌",
+        "이대",
+        "아현",
+        "충정로",
+        "용답",
+        "신답",
+        "용두",
+        "도림천",
+        "양천구청",
+        "신정네거리",
+        "까치산",
+        // Line 3
+        "대화",
+        "주엽",
+        "정발산",
+        "마두",
+        "백석",
+        "대곡",
+        "화정",
+        "원흥",
+        "삼송",
+        "지축",
+        "구파발",
+        "연신내",
+        "불광",
+        "녹번",
+        "홍제",
+        "무악재",
+        "독립문",
+        "경복궁",
+        "안국",
+        "충무로",
+        "동대입구",
+        "약수",
+        "금호",
+        "옥수",
+        "압구정",
+        "신사",
+        "고속터미널",
+        "남부터미널",
+        "양재",
+        "매봉",
+        "도곡",
+        "대치",
+        "학여울",
+        "대청",
+        "일원",
+        "수서",
+        "가락시장",
+        "경찰병원",
+        "오금",
+        // Line 4
+        "당고개",
+        "상계",
+        "노원",
+        "쌍문",
+        "수유",
+        "미아",
+        "미아사거리",
+        "길음",
+        "성신여대입구",
+        "한성대입구",
+        "혜화",
+        "명동",
+        "회현",
+        "숙대입구",
+        "삼각지",
+        "신용산",
+        "이촌",
+        "동작",
+        "총신대입구(이수)",
+        "남태령",
+        "과천",
+        "인덕원",
+        "평촌",
+        "범계",
+        "금정",
+        "산본",
+        "상록수",
+        "오이도",
+        // Line 5
+        "방화",
+        "개화산",
+        "김포공항",
+        "송정",
+        "마곡",
+        "발산",
+        "우장산",
+        "화곡",
+        "목동",
+        "오목교",
+        "여의도",
+        "여의나루",
+        "마포",
+        "애오개",
+        "서대문",
+        "광화문",
+        "청구",
+        "신금호",
+        "행당",
+        "마장",
+        "답십리",
+        "장한평",
+        "군자",
+        "아차산",
+        "광나루",
+        "천호",
+        "강동",
+        "길동",
+        "굽은다리",
+        "명일",
+        "고덕",
+        "상일동",
+        "강일",
+        "미사",
+        "하남풍산",
+        "하남시청",
+        "하남검단산",
+        "둔촌동",
+        "올림픽공원",
+        "방이",
+        "개롱",
+        "거여",
+        "마천",
+        // Line 6
+        "응암",
+        "역촌",
+        "독바위",
+        "구산",
+        "새절",
+        "증산",
+        "디지털미디어시티",
+        "월드컵경기장",
+        "마포구청",
+        "상수",
+        "광흥창",
+        "대흥",
+        "효창공원앞",
+        "녹사평",
+        "이태원",
+        "한강진",
+        "버티고개",
+        "보문",
+        "안암",
+        "고려대",
+        "월곡",
+        "상월곡",
+        "돌곶이",
+        "화랑대",
+        "봉화산",
+        // Line 7
+        "장암",
+        "수락산",
+        "마들",
+        "중계",
+        "하계",
+        "공릉",
+        "먹골",
+        "중화",
+        "상봉",
+        "면목",
+        "사가정",
+        "용마산",
+        "중곡",
+        "어린이대공원",
+        "뚝섬유원지",
+        "강남구청",
+        "학동",
+        "논현",
+        "반포",
+        "내방",
+        "남성",
+        "숭실대입구",
+        "상도",
+        "장승배기",
+        "신대방삼거리",
+        "보라매",
+        "신풍",
+        "철산",
+        "광명사거리",
+        "천왕",
+        "까치울",
+        "부천종합운동장",
+        "춘의",
+        "신중동",
+        "부천시청",
+        "상동",
+        "삼산체육관",
+        "굴포천",
+        "부평구청",
+        "산곡",
+        "석남",
+        // Line 8
+        "암사",
+        "몽촌토성",
+        "석촌",
+        "송파",
+        "문정",
+        "장지",
+        "복정",
+        "산성",
+        "남한산성입구",
+        "단대오거리",
+        "신흥",
+        "수진",
+        // Other lines (add if needed, ensure they are also in LINE_COLORS)
+        // "경의중앙선" stations, "공항철도" stations, "분당선" stations, "신분당선" stations
+      ];
+
+      // IMPORTANT:
+      // You MUST populate this object with accurate coordinates for EACH station
+      // listed above and in allLinePaths, based on your desired 1920x1080 map layout.
+      // Each station should also have a 'lines' array indicating which subway lines pass through it.
+      const allStationCoordinates = {
+        // --- Line 1 Stations (Example: YOU NEED TO FILL ALL OF THEM!) ---
+        소요산: { x: 100, y: 50, lines: [1] },
+        동두천: { x: 120, y: 60, lines: [1] },
+        보산: { x: 140, y: 70, lines: [1] },
+        동두천중앙: { x: 160, y: 80, lines: [1] },
+        지행: { x: 180, y: 90, lines: [1] },
+        덕정: { x: 200, y: 100, lines: [1] },
+        덕계: { x: 220, y: 110, lines: [1] },
+        양주: { x: 240, y: 120, lines: [1] },
+        녹양: { x: 260, y: 130, lines: [1] },
+        가능: { x: 280, y: 140, lines: [1] },
+        의정부: { x: 300, y: 150, lines: [1] },
+        회룡: { x: 320, y: 160, lines: [1] },
+        망월사: { x: 340, y: 170, lines: [1] },
+        도봉산: { x: 360, y: 180, lines: [1, 7] }, // Example of transfer
+        도봉: { x: 380, y: 190, lines: [1] },
+        방학: { x: 400, y: 200, lines: [1] },
+        창동: { x: 420, y: 210, lines: [1, 4] }, // Example of transfer
+        녹천: { x: 440, y: 220, lines: [1] },
+        월계: { x: 460, y: 230, lines: [1] },
+        광운대: { x: 480, y: 240, lines: [1] },
+        석계: { x: 500, y: 250, lines: [1, 6] },
+        신이문: { x: 520, y: 260, lines: [1] },
+        외대앞: { x: 540, y: 270, lines: [1] },
+        회기: { x: 560, y: 280, lines: [1] },
+        청량리: { x: 580, y: 290, lines: [1] },
+        제기동: { x: 600, y: 300, lines: [1] },
+        신설동: { x: 620, y: 310, lines: [1, 2] },
+        동묘앞: { x: 640, y: 320, lines: [1, 6] },
+        동대문: { x: 660, y: 330, lines: [1, 4] },
+        종로5가: { x: 680, y: 340, lines: [1] },
+        종로3가: { x: 700, y: 350, lines: [1, 3, 5] },
+        종각: { x: 720, y: 360, lines: [1] },
+        시청: { x: 740, y: 370, lines: [1, 2] },
+        서울: { x: 760, y: 380, lines: [1, 4] },
+        남영: { x: 780, y: 390, lines: [1] },
+        용산: { x: 800, y: 400, lines: [1] },
+        노량진: { x: 820, y: 410, lines: [1] },
+        대방: { x: 840, y: 420, lines: [1] },
+        신길: { x: 860, y: 430, lines: [1, 5] },
+        영등포: { x: 880, y: 440, lines: [1] },
+        신도림: { x: 900, y: 450, lines: [1, 2] },
+        구로: { x: 920, y: 460, lines: [1] },
+        가산디지털단지: { x: 940, y: 470, lines: [1, 7] },
+        독산: { x: 960, y: 480, lines: [1] },
+        금천구청: { x: 980, y: 490, lines: [1] },
+        광명: { x: 1000, y: 500, lines: [1] },
+        구일: { x: 930, y: 470, lines: [1] }, // Branch
+        개봉: { x: 950, y: 480, lines: [1] },
+        오류동: { x: 970, y: 490, lines: [1] },
+        온수: { x: 990, y: 500, lines: [1, 7] },
+        역곡: { x: 1010, y: 510, lines: [1] },
+        부천: { x: 1030, y: 520, lines: [1] },
+        송내: { x: 1050, y: 530, lines: [1] },
+        중동: { x: 1070, y: 540, lines: [1] },
+        부개: { x: 1090, y: 550, lines: [1] },
+        부평: { x: 1110, y: 560, lines: [1] },
+        백운: { x: 1130, y: 570, lines: [1] },
+        동암: { x: 1150, y: 580, lines: [1] },
+        간석: { x: 1170, y: 590, lines: [1] },
+        주안: { x: 1190, y: 600, lines: [1] },
+        도원: { x: 1210, y: 610, lines: [1] },
+        제물포: { x: 1230, y: 620, lines: [1] },
+        동인천: { x: 1250, y: 630, lines: [1] },
+        인천: { x: 1270, y: 640, lines: [1] },
+        병점: { x: 980, y: 550, lines: [1] }, // South branch
+        세마: { x: 1000, y: 560, lines: [1] },
+        오산대: { x: 1020, y: 570, lines: [1] },
+        오산: { x: 1040, y: 580, lines: [1] },
+        진위: { x: 1060, y: 590, lines: [1] },
+        송탄: { x: 1080, y: 600, lines: [1] },
+        서정리: { x: 1100, y: 610, lines: [1] },
+        평택지제: { x: 1120, y: 620, lines: [1] },
+        평택: { x: 1140, y: 630, lines: [1] },
+        성환: { x: 1160, y: 640, lines: [1] },
+        직산: { x: 1180, y: 650, lines: [1] },
+        두정: { x: 1200, y: 660, lines: [1] },
+        천안: { x: 1220, y: 670, lines: [1] },
+        봉명: { x: 1240, y: 680, lines: [1] },
+        쌍용: { x: 1260, y: 690, lines: [1] },
+        아산: { x: 1280, y: 700, lines: [1] },
+        탕정: { x: 1300, y: 710, lines: [1] },
+        배방: { x: 1320, y: 720, lines: [1] },
+        온양온천: { x: 1340, y: 730, lines: [1] },
+        신창: { x: 1360, y: 740, lines: [1] },
+
+        // --- Line 2 Stations ---
+        을지로입구: { x: 720, y: 390, lines: [2] },
+        // 시청, 을지로3가, 을지로4가, 동대문역사문화공원, 신당, 상왕십리, 왕십리, 한양대, 뚝섬, 성수, 건대입구,
+        // 강변, 잠실나루, 잠실, 잠실새내, 종합운동장, 삼성, 선릉, 역삼, 강남, 교대, 서초, 방배, 사당, 낙성대,
+        // 서울대입구, 봉천, 신림, 신대방, 구로디지털단지, 대림, 문래, 영등포구청, 당산, 합정, 홍대입구, 신촌,
+        // 이대, 아현, 충정로 (All these need coordinates)
+        성수: { x: 1000, y: 450, lines: [2] }, // Already in previous data.
+        용답: { x: 1020, y: 420, lines: [2] }, // Branch
+        신답: { x: 1040, y: 390, lines: [2] },
+        용두: { x: 1060, y: 360, lines: [2] },
+        도림천: { x: 880, y: 480, lines: [2] }, // Branch
+        양천구청: { x: 860, y: 510, lines: [2] },
+        신정네거리: { x: 840, y: 540, lines: [2] },
+        // 까치산 (Line 5 also)
+
+        // --- Line 3 Stations ---
+        대화: { x: 200, y: 100, lines: [3] },
+        주엽: { x: 220, y: 120, lines: [3] },
+        정발산: { x: 240, y: 140, lines: [3] },
+        마두: { x: 260, y: 160, lines: [3] },
+        백석: { x: 280, y: 180, lines: [3] },
+        대곡: { x: 300, y: 200, lines: [3] },
+        화정: { x: 320, y: 220, lines: [3] },
+        원흥: { x: 340, y: 240, lines: [3] },
+        삼송: { x: 360, y: 260, lines: [3] },
+        지축: { x: 380, y: 280, lines: [3] },
+        구파발: { x: 400, y: 300, lines: [3] },
+        연신내: { x: 420, y: 320, lines: [3, 6] },
+        불광: { x: 440, y: 340, lines: [3, 6] },
+        녹번: { x: 460, y: 360, lines: [3] },
+        홍제: { x: 480, y: 380, lines: [3] },
+        무악재: { x: 500, y: 400, lines: [3] },
+        독립문: { x: 520, y: 420, lines: [3] },
+        경복궁: { x: 540, y: 440, lines: [3] },
+        안국: { x: 560, y: 460, lines: [3] },
+        // 종로3가, 을지로3가, 충무로, 동대입구, 약수 (Already in previous data)
+        금호: { x: 780, y: 620, lines: [3] },
+        옥수: { x: 800, y: 640, lines: [3] },
+        압구정: { x: 820, y: 660, lines: [3] },
+        신사: { x: 840, y: 680, lines: [3] },
+        // 고속터미널, 교대, 남부터미널, 양재 (Already in previous data)
+        매봉: { x: 900, y: 800, lines: [3] },
+        도곡: { x: 920, y: 820, lines: [3] },
+        대치: { x: 940, y: 840, lines: [3] },
+        학여울: { x: 960, y: 860, lines: [3] },
+        대청: { x: 980, y: 880, lines: [3] },
+        일원: { x: 1000, y: 900, lines: [3] },
+        수서: { x: 1020, y: 920, lines: [3] },
+        // 가락시장, 경찰병원, 오금 (Already in previous data or will be added)
+
+        // --- Line 4 Stations ---
+        당고개: { x: 1200, y: 50, lines: [4] },
+        상계: { x: 1180, y: 70, lines: [4] },
+        // 노원, 창동, 쌍문, 수유, 미아, 미아사거리, 길음, 성신여대입구, 한성대입구, 혜화, 동대문,
+        // 동대문역사문화공원, 충무로, 명동, 회현, 서울, 숙대입구, 삼각지, 신용산, 이촌, 동작,
+        // 총신대입구(이수), 사당, 남태령, 과천, 인덕원, 평촌, 범계, 금정, 산본, 상록수, 오이도 (All these need coordinates)
+
+        // --- Line 5 Stations ---
+        방화: { x: 100, y: 500, lines: [5] },
+        개화산: { x: 120, y: 510, lines: [5] },
+        김포공항: { x: 140, y: 520, lines: [5] },
+        송정: { x: 160, y: 530, lines: [5] },
+        마곡: { x: 180, y: 540, lines: [5] },
+        발산: { x: 200, y: 550, lines: [5] },
+        우장산: { x: 220, y: 560, lines: [5] },
+        화곡: { x: 240, y: 570, lines: [5] },
+        // 까치산 (transfer with line 2)
+        목동: { x: 280, y: 590, lines: [5] },
+        오목교: { x: 300, y: 600, lines: [5] },
+        // 영등포구청, 신길, 여의도, 여의나루, 마포, 공덕, 애오개, 충정로, 서대문, 광화문, 종로3가, 을지로4가,
+        // 동대문역사문화공원, 청구, 신금호, 행당, 왕십리, 마장, 답십리, 장한평, 군자, 아차산, 광나루,
+        // 천호, 강동 (All these need coordinates)
+        길동: { x: 1200, y: 450, lines: [5] }, // Hanam branch
+        굽은다리: { x: 1220, y: 440, lines: [5] },
+        명일: { x: 1240, y: 430, lines: [5] },
+        고덕: { x: 1260, y: 420, lines: [5] },
+        상일동: { x: 1280, y: 410, lines: [5] },
+        강일: { x: 1300, y: 400, lines: [5] },
+        미사: { x: 1320, y: 390, lines: [5] },
+        하남풍산: { x: 1340, y: 380, lines: [5] },
+        하남시청: { x: 1360, y: 370, lines: [5] },
+        하남검단산: { x: 1380, y: 360, lines: [5] },
+        둔촌동: { x: 1180, y: 550, lines: [5] }, // Macheon branch
+        올림픽공원: { x: 1200, y: 560, lines: [5] },
+        방이: { x: 1220, y: 570, lines: [5] },
+        오금: { x: 1240, y: 580, lines: [3, 5] },
+        개롱: { x: 1260, y: 590, lines: [5] },
+        거여: { x: 1280, y: 600, lines: [5] },
+        // 마천 (already in previous data)
+
+        // --- Line 6 Stations ---
+        응암: { x: 100, y: 250, lines: [6] },
+        역촌: { x: 120, y: 260, lines: [6] },
+        // 불광, 독바위, 연신내, 구산, 새절, 증산, 디지털미디어시티, 월드컵경기장, 마포구청, 합정, 상수,
+        // 광흥창, 대흥, 공덕, 효창공원앞, 삼각지, 녹사평, 이태원, 한강진, 버티고개, 약수, 청구, 신당,
+        // 동묘앞, 보문, 안암, 고려대, 월곡, 상월곡, 돌곶이, 석계, 태릉입구, 화랑대, 봉화산 (All these need coordinates)
+
+        // --- Line 7 Stations ---
+        장암: { x: 300, y: 50, lines: [7] },
+        // 도봉산, 수락산, 마들, 노원, 중계, 하계, 공릉, 태릉입구, 먹골, 중화, 상봉, 면목, 사가정,
+        // 용마산, 중곡, 군자, 어린이대공원, 건대입구, 뚝섬유원지, 청담, 강남구청, 학동, 논현, 반포,
+        // 고속터미널, 내방, 총신대입구(이수), 남성, 숭실대입구, 상도, 장승배기, 신대방삼거리, 보라매, 신풍,
+        // 대림, 남구로, 가산디지털단지, 철산, 광명사거리, 천왕, 온수, 까치울, 부천종합운동장, 춘의,
+        // 신중동, 부천시청, 상동, 삼산체육관, 굴포천, 부평구청, 산곡, 석남 (All these need coordinates)
+
+        // --- Line 8 Stations ---
+        // 암사, 천호, 강동구청, 몽촌토성, 잠실, 석촌, 송파, 가락시장, 문정, 장지, 복정, 산성, 남한산성입구,
+        // 단대오거리, 신흥, 수진, 모란 (All these need coordinates)
+
+        // ... ETC. - YOU MUST CONTINUE ADDING ALL MISSING STATIONS WITH THEIR X, Y, AND LINE IDs!
+      };
+
+      const allLinePaths = {
+        1: [
+          [
+            "소요산",
+            "동두천",
+            "보산",
+            "동두천중앙",
+            "지행",
+            "덕정",
+            "덕계",
+            "양주",
+            "녹양",
+            "가능",
+            "의정부",
+            "회룡",
+            "망월사",
+            "도봉산",
+            "도봉",
+            "방학",
+            "창동",
+            "녹천",
+            "월계",
+            "광운대",
+          ],
+          [
+            "광운대",
+            "석계",
+            "신이문",
+            "외대앞",
+            "회기",
+            "청량리",
+            "제기동",
+            "신설동",
+            "동묘앞",
+            "동대문",
+            "종로5가",
+            "종로3가",
+            "종각",
+            "시청",
+            "서울",
+            "남영",
+            "용산",
+            "노량진",
+            "대방",
+            "신길",
+            "영등포",
+            "신도림",
+          ],
+          ["구로", "가산디지털단지", "독산", "금천구청", "광명"],
+          [
+            "구로",
+            "구일",
+            "개봉",
+            "오류동",
+            "온수",
+            "역곡",
+            "부천",
+            "송내",
+            "중동",
+            "부개",
+            "부평",
+            "백운",
+            "동암",
+            "간석",
+            "주안",
+            "도원",
+            "제물포",
+            "동인천",
+            "인천",
+          ],
+          ["신도림", "구로"],
+          [
+            "구로",
+            "병점",
+            "세마",
+            "오산대",
+            "오산",
+            "진위",
+            "송탄",
+            "서정리",
+            "평택지제",
+            "평택",
+            "성환",
+            "직산",
+            "두정",
+            "천안",
+            "봉명",
+            "쌍용",
+            "아산",
+            "탕정",
+            "배방",
+            "온양온천",
+            "신창",
+          ],
+        ],
+        2: [
+          [
+            "시청",
+            "을지로입구",
+            "을지로3가",
+            "을지로4가",
+            "동대문역사문화공원",
+            "신당",
+            "상왕십리",
+            "왕십리",
+            "한양대",
+            "뚝섬",
+            "성수",
+            "건대입구",
+            "강변",
+            "잠실나루",
+            "잠실",
+            "잠실새내",
+            "종합운동장",
+            "삼성",
+            "선릉",
+            "역삼",
+            "강남",
+            "교대",
+            "서초",
+            "방배",
+            "사당",
+            "낙성대",
+            "서울대입구",
+            "봉천",
+            "신림",
+            "신대방",
+            "구로디지털단지",
+            "대림",
+            "신도림",
+            "문래",
+            "영등포구청",
+            "당산",
+            "합정",
+            "홍대입구",
+            "신촌",
+            "이대",
+            "아현",
+            "충정로",
+            "시청",
+          ],
+          ["성수", "용답", "신답", "용두", "신설동"],
+          ["신도림", "도림천", "양천구청", "신정네거리", "까치산"],
+        ],
+        3: [
+          [
+            "대화",
+            "주엽",
+            "정발산",
+            "마두",
+            "백석",
+            "대곡",
+            "화정",
+            "원흥",
+            "삼송",
+            "지축",
+            "구파발",
+            "연신내",
+            "불광",
+            "녹번",
+            "홍제",
+            "무악재",
+            "독립문",
+            "경복궁",
+            "안국",
+            "종로3가",
+            "을지로3가",
+            "충무로",
+            "동대입구",
+            "약수",
+            "금호",
+            "옥수",
+            "압구정",
+            "신사",
+            "고속터미널",
+            "교대",
+            "남부터미널",
+            "양재",
+            "매봉",
+            "도곡",
+            "대치",
+            "학여울",
+            "대청",
+            "일원",
+            "수서",
+            "가락시장",
+            "경찰병원",
+            "오금",
+          ],
+        ],
+        4: [
+          [
+            "당고개",
+            "상계",
+            "노원",
+            "창동",
+            "쌍문",
+            "수유",
+            "미아",
+            "미아사거리",
+            "길음",
+            "성신여대입구",
+            "한성대입구",
+            "혜화",
+            "동대문",
+            "동대문역사문화공원",
+            "충무로",
+            "명동",
+            "회현",
+            "서울",
+            "숙대입구",
+            "삼각지",
+            "신용산",
+            "이촌",
+            "동작",
+            "총신대입구(이수)",
+            "사당",
+            "남태령",
+            "과천",
+            "인덕원",
+            "평촌",
+            "범계",
+            "금정",
+            "산본",
+            "상록수",
+            "오이도",
+          ],
+        ],
+        5: [
+          [
+            "방화",
+            "개화산",
+            "김포공항",
+            "송정",
+            "마곡",
+            "발산",
+            "우장산",
+            "화곡",
+            "까치산",
+            "목동",
+            "오목교",
+            "영등포구청",
+            "신길",
+            "여의도",
+            "여의나루",
+            "마포",
+            "공덕",
+            "애오개",
+            "충정로",
+            "서대문",
+            "광화문",
+            "종로3가",
+            "을지로4가",
+            "동대문역사문화공원",
+            "청구",
+            "신금호",
+            "행당",
+            "왕십리",
+            "마장",
+            "답십리",
+            "장한평",
+            "군자",
+            "아차산",
+            "광나루",
+            "천호",
+            "강동",
+          ],
+          [
+            "강동",
+            "길동",
+            "굽은다리",
+            "명일",
+            "고덕",
+            "상일동",
+            "강일",
+            "미사",
+            "하남풍산",
+            "하남시청",
+            "하남검단산",
+          ], // Hanam branch
+          [
+            "강동",
+            "둔촌동",
+            "올림픽공원",
+            "방이",
+            "오금",
+            "개롱",
+            "거여",
+            "마천",
+          ], // Macheon branch
+        ],
+        6: [
+          [
+            "응암",
+            "역촌",
+            "불광",
+            "독바위",
+            "연신내",
+            "구산",
+            "새절",
+            "증산",
+            "디지털미디어시티",
+            "월드컵경기장",
+            "마포구청",
+            "합정",
+            "상수",
+            "광흥창",
+            "대흥",
+            "공덕",
+            "효창공원앞",
+            "삼각지",
+            "녹사평",
+            "이태원",
+            "한강진",
+            "버티고개",
+            "약수",
+            "청구",
+            "신당",
+            "동묘앞",
+            "보문",
+            "안암",
+            "고려대",
+            "월곡",
+            "상월곡",
+            "돌곶이",
+            "석계",
+            "태릉입구",
+            "화랑대",
+            "봉화산",
+          ],
+        ],
+        7: [
+          [
+            "장암",
+            "도봉산",
+            "수락산",
+            "마들",
+            "노원",
+            "중계",
+            "하계",
+            "공릉",
+            "태릉입구",
+            "먹골",
+            "중화",
+            "상봉",
+            "면목",
+            "사가정",
+            "용마산",
+            "중곡",
+            "군자",
+            "어린이대공원",
+            "건대입구",
+            "뚝섬유원지",
+            "청담",
+            "강남구청",
+            "학동",
+            "논현",
+            "반포",
+            "고속터미널",
+            "내방",
+            "총신대입구(이수)",
+            "남성",
+            "숭실대입구",
+            "상도",
+            "장승배기",
+            "신대방삼거리",
+            "보라매",
+            "신풍",
+            "대림",
+            "남구로",
+            "가산디지털단지",
+            "철산",
+            "광명사거리",
+            "천왕",
+            "온수",
+            "까치울",
+            "부천종합운동장",
+            "춘의",
+            "신중동",
+            "부천시청",
+            "상동",
+            "삼산체육관",
+            "굴포천",
+            "부평구청",
+            "산곡",
+            "석남",
+          ],
+        ],
+        8: [
+          [
+            "암사",
+            "천호",
+            "강동구청",
+            "몽촌토성",
+            "잠실",
+            "석촌",
+            "송파",
+            "가락시장",
+            "문정",
+            "장지",
+            "복정",
+            "산성",
+            "남한산성입구",
+            "단대오거리",
+            "신흥",
+            "수진",
+            "모란",
+          ],
+        ],
+      };
+
+      document.addEventListener("DOMContentLoaded", () => {
+        drawMapAndStations(); // Initial draw without highlight
+        fetchSubwayData(); // Start background fetching for map
+        // Refresh map data every 30 seconds
+        setInterval(fetchSubwayData, 30000);
+      });
+
+      // Function to draw the map lines and stations
+      function drawMapAndStations(highlightedStation = null) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "#f8f8f8";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Draw all subway lines
+        for (const lineId in allLinePaths) {
+          // Changed lineNum to lineId for clarity
+          const color = LINE_COLORS[lineId];
+          if (!color) {
+            console.warn(`Color not defined for line ID: ${lineId}`);
+            continue;
+          }
+          ctx.strokeStyle = color;
+          ctx.lineWidth = 4;
+
+          allLinePaths[lineId].forEach((segment) => {
+            ctx.beginPath();
+            if (segment.length > 0) {
+              const startCoords = allStationCoordinates[segment[0]];
+              if (startCoords) {
+                ctx.moveTo(startCoords.x, startCoords.y);
+                for (let i = 1; i < segment.length; i++) {
+                  const nextCoords = allStationCoordinates[segment[i]];
+                  if (nextCoords) {
+                    ctx.lineTo(nextCoords.x, nextCoords.y);
+                  }
+                }
+              }
+            }
+            ctx.stroke();
+          });
+        }
+
+        // Draw all stations and their names
+        ctx.font = "10px Arial";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+
+        for (const stationName in allStationCoordinates) {
+          const coords = allStationCoordinates[stationName];
+
+          // Draw station dot
+          ctx.beginPath();
+          ctx.arc(coords.x, coords.y, STATION_DOT_RADIUS, 0, Math.PI * 2);
+          ctx.fillStyle = "white"; // White dot
+          ctx.fill();
+
+          // Draw border color based on the first line or highlight
+          if (highlightedStation && stationName === highlightedStation) {
+            ctx.strokeStyle = "red"; // Highlight color
+            ctx.lineWidth = 3;
+          } else if (coords.lines && coords.lines.length > 0) {
+            // Use the color of the first line the station belongs to
+            const firstLineId = coords.lines[0];
+            ctx.strokeStyle = LINE_COLORS[firstLineId] || STATION_DOT_COLOR; // Use actual lineId
+            ctx.lineWidth = 1.5;
+          } else {
+            ctx.strokeStyle = STATION_DOT_COLOR;
+            ctx.lineWidth = 1.5;
+          }
+          ctx.stroke();
+
+          // Draw station name
+          ctx.fillStyle = STATION_TEXT_COLOR;
+          ctx.fillText(
+            stationName,
+            coords.x,
+            coords.y + STATION_DOT_RADIUS + 8
+          );
+        }
+      }
+
+      // Draws train indicators on top of the map
+      function drawTrainIndicators() {
+        // Redraw map elements and stations with the current selected station highlighted
+        drawMapAndStations(selectedStationName);
+
+        trainsOnMap = []; // Clear previous train positions for hover detection
+
+        currentAllTrainData.forEach((train) => {
+          const { subwayId, arvlCd, statnNm, arvlMsg2, arvlMsg3, trainLineNm } =
+            train;
+
+          let stationToMark = arvlMsg3; // The station where the train is currently located
+          // Fallback to statnNm if arvlMsg3 is not specific or empty
+          if (
+            !stationToMark ||
+            stationToMark === "정보 없음" ||
+            stationToMark === "현재역"
+          ) {
+            stationToMark = statnNm;
+          }
+
+          const coords = allStationCoordinates[stationToMark];
+
+          if (coords) {
+            const radius = 6;
+            let color = "gray"; // Default for unknown status
+            let borderColor = "white";
+
+            // Use line color for train indicator background if available, otherwise generic
+            const lineIndicatorColor =
+              LINE_COLORS[subwayId] || "rgba(128, 128, 128, 0.7)";
+
+            if (arvlCd === "1" || arvlCd === "2") {
+              // Arrival/Departure at station
+              color = "rgba(255, 0, 0, 0.8)"; // Red for arriving/departing
+              borderColor = "black";
+            } else if (arvlCd === "5") {
+              // Arrived previous station (just before the current one)
+              color = "rgba(255, 165, 0, 0.8)"; // Orange for previous station arrival
+              borderColor = "black";
+            } else if (arvlCd === "99") {
+              // In operation (far away, usually means approaching)
+              color = "rgba(0, 0, 255, 0.6)"; // Blue for far away (in operation)
+              borderColor = "white";
+            } else {
+              // Other statuses, default to line color or gray
+              color = lineIndicatorColor;
+              borderColor = "white";
+            }
+
+            ctx.beginPath();
+            ctx.arc(coords.x, coords.y, radius, 0, Math.PI * 2);
+            ctx.fillStyle = color;
+            ctx.fill();
+            ctx.strokeStyle = borderColor;
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+
+            trainsOnMap.push({
+              x: coords.x,
+              y: coords.y,
+              radius: radius,
+              tooltipText: `${trainLineNm} (${
+                lineMap[subwayId] || subwayId
+              }) - ${arvlMsg2} (${arvlMsg3})`,
+            });
+          } else {
+            // console.warn(`Coordinates not found for station: ${stationToMark} (Line ID: ${subwayId}). Train will not be displayed on map.`);
+          }
+        });
+      }
+
+      // --- Event Listeners ---
+      canvas.addEventListener("mousemove", (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
+
+        let hoveredTrain = null;
+        for (const train of trainsOnMap) {
+          const distance = Math.sqrt(
+            (mouseX - train.x) ** 2 + (mouseY - train.y) ** 2
+          );
+          if (distance < train.radius) {
+            hoveredTrain = train;
+            break;
+          }
+        }
+
+        if (hoveredTrain) {
+          canvasTooltip.style.display = "block";
+          // Position relative to the document, adjusted for scrolling
+          canvasTooltip.style.left = `${e.pageX}px`;
+          canvasTooltip.style.top = `${e.pageY - 10}px`; // Move up slightly
+          canvasTooltip.textContent = hoveredTrain.tooltipText;
+        } else {
+          canvasTooltip.style.display = "none";
+        }
+      });
+
+      canvas.addEventListener("mouseout", () => {
+        canvasTooltip.style.display = "none";
+      });
+
+      canvas.addEventListener("click", (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const clickX = e.clientX - rect.left;
+        const clickY = e.clientY - rect.top;
+
+        let clickedStation = null;
+        for (const stationName in allStationCoordinates) {
+          const coords = allStationCoordinates[stationName];
+          // Check if click is within an expanded radius for easier clicking
+          const distance = Math.sqrt(
+            (clickX - coords.x) ** 2 + (clickY - coords.y) ** 2
+          );
+          if (distance < STATION_DOT_RADIUS + CLICK_TOLERANCE) {
+            clickedStation = stationName;
+            break;
+          }
+        }
+
+        if (clickedStation) {
+          selectedStationName = clickedStation; // Set the selected station
+          fetchAndDisplayClickedStationInfo(selectedStationName); // Fetch and display info for this specific station
+          drawTrainIndicators(); // Redraw map with highlight and trains
+        } else {
+          selectedStationName = null; // No station selected
+          document.getElementById("subwayInfo").innerHTML =
+            '<p class="info-message">지하철역을 클릭하면 실시간 도착 정보가 표시됩니다.</p>';
+          drawTrainIndicators(); // Redraw map without highlight
+        }
+      });
+
+      // --- Data Fetching and Processing ---
+
+      // This function fetches data for ALL stations in STATION_NAMES (for map display)
+      async function fetchSubwayData() {
+        try {
+          // Only show loading message for map update if no specific station is selected
+          if (selectedStationName === null) {
+            document.getElementById("subwayInfo").innerHTML =
+              '<p class="info-message">실시간 지하철 도착 정보를 불러오는 중... (지도 업데이트)</p>';
+          }
+
+          // Filter out duplicate station names before fetching to reduce redundant API calls
+          const uniqueStationNames = [...new Set(STATION_NAMES)];
+
+          const fetchPromises = uniqueStationNames.map((stationName) => {
+            const endpoint = `http://swopenapi.seoul.go.kr/api/subway/${API_KEY}/xml/realtimeStationArrival/0/20/${encodeURIComponent(
+              stationName
+            )}`;
+            return fetch(endpoint)
+              .then((response) => {
+                if (!response.ok) {
+                  return response.text().then((text) => {
+                    throw new Error(
+                      `HTTP error! Status: ${
+                        response.status
+                      } for ${stationName}. API message: ${text.substring(
+                        0,
+                        100
+                      )}...`
+                    );
+                  });
+                }
+                return response.text();
+              })
+              .catch((error) => {
+                console.error(`Error fetching data for ${stationName}:`, error);
+                return null; // Return null for failed fetches to allow Promise.all to succeed
+              });
+          });
+
+          const allXmlResponses = await Promise.all(fetchPromises);
+          let newAllTrainData = [];
+
+          allXmlResponses.forEach((xmlText) => {
+            if (xmlText) {
+              const parser = new DOMParser();
+              const xmlDoc = parser.parseFromString(xmlText, "text/xml");
+
+              const resultCode =
+                xmlDoc.getElementsByTagName("code")[0]?.textContent;
+              if (resultCode && resultCode !== "INFO-000") {
+                // console.warn(`API returned error for some station: ${resultCode}, Message: ${xmlDoc.getElementsByTagName('message')[0]?.textContent}`);
+                return; // Skip this XML if it has an error
+              }
+
+              const rows = xmlDoc.getElementsByTagName("row");
+              for (let i = 0; i < rows.length; i++) {
+                const row = rows[i];
+                const train = {
+                  trainLineNm:
+                    row.getElementsByTagName("trainLineNm")[0]?.textContent ||
+                    "정보 없음",
+                  arvlMsg2:
+                    row.getElementsByTagName("arvlMsg2")[0]?.textContent ||
+                    "정보 없음",
+                  arvlMsg3:
+                    row.getElementsByTagName("arvlMsg3")[0]?.textContent || "", // Current station where train is
+                  subwayId:
+                    row.getElementsByTagName("subwayId")[0]?.textContent,
+                  btrainNo:
+                    row.getElementsByTagName("btrainNo")[0]?.textContent,
+                  recptnDt:
+                    row.getElementsByTagName("recptnDt")[0]?.textContent,
+                  updnLine:
+                    row.getElementsByTagName("updnLine")[0]?.textContent,
+                  statnNm: row.getElementsByTagName("statnNm")[0]?.textContent, // Target station for arrival info
+                  arvlCd: row.getElementsByTagName("arvlCd")[0]?.textContent,
+                  barvlDt:
+                    row.getElementsByTagName("barvlDt")[0]?.textContent ||
+                    "N/A",
+                };
+                newAllTrainData.push(train);
+              }
+            }
+          });
+
+          currentAllTrainData = newAllTrainData; // Update global data cache for map
+          drawTrainIndicators(); // Redraw trains on map
+
+          // If a station was already selected, refresh its info display using the newly fetched data
+          if (selectedStationName) {
+            displayStationInfo(selectedStationName, currentAllTrainData); // Pass currentAllTrainData
+          }
+        } catch (error) {
+          console.error("Error fetching subway data for map:", error);
+          if (selectedStationName === null) {
+            document.getElementById("subwayInfo").innerHTML = `
+                                <p class="error-message">지도 데이터 업데이트 실패: ${error.message}</p>
+                            `;
+          }
+        }
+      }
+
+      // Function to fetch and display data for a SINGLE clicked station
+      async function fetchAndDisplayClickedStationInfo(stationName) {
+        const subwayInfoDiv = document.getElementById("subwayInfo");
+        subwayInfoDiv.innerHTML = `<h2>${stationName}역 실시간 도착 정보</h2><p class="loading-message">정보를 불러오는 중...</p>`;
+
+        try {
+          const endpoint = `http://swopenapi.seoul.go.kr/api/subway/${API_KEY}/xml/realtimeStationArrival/0/20/${encodeURIComponent(
+            stationName
+          )}`;
+          const response = await fetch(endpoint);
+
+          if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(
+              `HTTP error! Status: ${
+                response.status
+              }. API message: ${errorText.substring(0, 100)}...`
+            );
+          }
+
+          const xmlText = await response.text();
+          const parser = new DOMParser();
+          const xmlDoc = parser.parseFromString(xmlText, "text/xml");
+
+          const resultCode =
+            xmlDoc.getElementsByTagName("code")[0]?.textContent;
+          const developerMessage =
+            xmlDoc.getElementsByTagName("developerMessage")[0]?.textContent;
+
+          if (resultCode && resultCode !== "INFO-000") {
+            subwayInfoDiv.innerHTML = `<h2>${stationName}역 실시간 도착 정보</h2><p class="error-message">API 오류 발생: ${resultCode}<br>${
+              developerMessage || "알 수 없는 오류"
+            }</p>`;
+            console.error(
+              "API returned an error code for clicked station:",
+              resultCode,
+              developerMessage
+            );
+            return;
+          }
+
+          const rows = xmlDoc.getElementsByTagName("row");
+          let clickedStationTrainData = [];
+
+          if (rows.length === 0) {
+            subwayInfoDiv.innerHTML = `<h2>${stationName}역 실시간 도착 정보</h2><p class="info-message">현재 ${stationName}역에 대한 도착 정보가 없습니다.</p>`;
+            return;
+          }
+
+          for (let i = 0; i < rows.length; i++) {
+            const row = rows[i];
+            const train = {
+              trainLineNm:
+                row.getElementsByTagName("trainLineNm")[0]?.textContent ||
+                "정보 없음",
+              arvlMsg2:
+                row.getElementsByTagName("arvlMsg2")[0]?.textContent ||
+                "정보 없음",
+              arvlMsg3:
+                row.getElementsByTagName("arvlMsg3")[0]?.textContent || "",
+              subwayId: row.getElementsByTagName("subwayId")[0]?.textContent,
+              btrainNo: row.getElementsByTagName("btrainNo")[0]?.textContent,
+              recptnDt: row.getElementsByTagName("recptnDt")[0]?.textContent,
+              updnLine: row.getElementsByTagName("updnLine")[0]?.textContent,
+              statnNm: row.getElementsByTagName("statnNm")[0]?.textContent,
+              arvlCd: row.getElementsByTagName("arvlCd")[0]?.textContent,
+              barvlDt:
+                row.getElementsByTagName("barvlDt")[0]?.textContent || "N/A",
+            };
+            clickedStationTrainData.push(train);
+          }
+
+          // Display the fetched data for the clicked station
+          displayStationInfo(stationName, clickedStationTrainData);
+        } catch (error) {
+          console.error(
+            `Error fetching data for clicked station ${stationName}:`,
+            error
+          );
+          subwayInfoDiv.innerHTML = `<h2>${stationName}역 실시간 도착 정보</h2><p class="error-message">정보를 불러오는 데 실패했습니다: ${error.message}</p>`;
+        }
+      }
+
+      const lineMap = {
+        1001: "1호선",
+        1002: "2호선",
+        1003: "3호선",
+        1004: "4호선",
+        1005: "5호선",
+        1006: "6호선",
+        1007: "7호선",
+        1008: "8호선",
+        1063: "경의중앙선",
+        1065: "공항철도",
+        1075: "분당선",
+        1077: "신분당선",
+      };
+
+      // Function to display info for a specific station (now takes data as argument)
+      function displayStationInfo(stationName, dataToDisplay) {
+        const subwayInfoDiv = document.getElementById("subwayInfo");
+        subwayInfoDiv.innerHTML = `<h2>${stationName}역 실시간 도착 정보</h2>`;
+
+        // Filter data where statnNm is the clicked station or arvlMsg3 indicates arrival at this station
+        const stationTrains = dataToDisplay.filter(
+          (train) =>
+            train.statnNm === stationName ||
+            train.arvlMsg3.includes(stationName) // Use includes for partial matches like "전역 진입" (entering previous station) or "도착" (arrived)
+        );
+
+        if (stationTrains.length === 0) {
+          subwayInfoDiv.innerHTML += `<p class="info-message">현재 ${stationName}역에 대한 도착 정보가 없습니다.</p>`;
+          return;
+        }
+
+        // Sort data for better readability: arriving/departing first, then by line, then by time
+        stationTrains.sort((a, b) => {
+          // Prioritize "도착" (arrived) or "출발" (departed)
+          const aIsArrivingDeparting = a.arvlCd === "1" || a.arvlCd === "2";
+          const bIsArrivingDeparting = b.arvlCd === "1" || b.arvlCd === "2";
+
+          if (aIsArrivingDeparting && !bIsArrivingDeparting) return -1;
+          if (!aIsArrivingDeparting && bIsArrivingDeparting) return 1;
+
+          // Then sort by line number
+          if (a.subwayId !== b.subwayId) {
+            return parseInt(a.subwayId) - parseInt(b.subwayId);
+          }
+          // Then sort by remaining arrival time (barvlDt)
+          return parseInt(a.barvlDt) - parseInt(b.barvlDt);
+        });
+
+        // Use a Set to track unique trains to avoid displaying duplicates (e.g., if API sends same train multiple times)
+        const seenTrains = new Set();
+        stationTrains.forEach((train) => {
+          // A unique key for each train based on its ID, line, and status
+          const uniqueKey = `${train.btrainNo}-${train.subwayId}-${train.updnLine}-${train.arvlMsg2}`;
+
+          if (!seenTrains.has(uniqueKey)) {
+            seenTrains.add(uniqueKey);
+
+            let lineNameDisplay = train.trainLineNm;
+            if (lineMap[train.subwayId]) {
+              // Prepend the common line name (e.g., "1호선") for clarity
+              lineNameDisplay = `${lineMap[train.subwayId]} (${
+                train.trainLineNm
+              })`;
+            }
+
+            const subwayLineDiv = document.createElement("div");
+            subwayLineDiv.classList.add("subway-line");
+            subwayLineDiv.innerHTML = `
+                                <div class="line-info">
+                                    <div class="line-name">${lineNameDisplay}</div>
+                                    <div>방면: ${
+                                      train.updnLine || "정보 없음"
+                                    }</div>
+                                    <div>현재 위치: ${
+                                      train.arvlMsg3 || "알 수 없음"
+                                    }</div>
+                                </div>
+                                <div class="${
+                                  train.arvlMsg2.includes("도착") ||
+                                  train.arvlMsg2.includes("출발")
+                                    ? "arrival-msg"
+                                    : "status-msg"
+                                }">
+                                    ${train.arvlMsg2}
+                                    ${
+                                      train.barvlDt !== "N/A" &&
+                                      train.barvlDt !== "0"
+                                        ? ` (약 ${train.barvlDt}초)`
+                                        : ""
+                                    }
+                                </div>
+                            `;
+            subwayInfoDiv.appendChild(subwayLineDiv);
+          }
+        });
+      }
+    </script>
+  </body>
+</html>

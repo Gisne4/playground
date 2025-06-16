@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Scroll Effect</title>
+    <style>
+      body {
+        margin: 0;
+        font-family: sans-serif;
+        background-color: #f0f0f0;
+        overflow-x: hidden;
+      }
+
+      .container {
+        height: 100vh;
+        overflow-y: auto;
+        scroll-snap-type: y proximity;
+      }
+
+      .container > div {
+        height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 2em;
+        color: #333;
+        text-align: center;
+        position: relative;
+        scroll-snap-align: start;
+      }
+
+      .navigation-dots {
+        position: fixed;
+        top: 50%;
+        right: 20px;
+        transform: translateY(-50%);
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+        z-index: 10;
+      }
+
+      .nav-dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background-color: rgba(0, 0, 0, 0.3);
+        cursor: pointer;
+        border: 1px solid transparent;
+        transition: background-color 0.3s ease, border-color 0.3s ease;
+      }
+
+      .nav-dot.active {
+        background-color: #007bff;
+        border-color: #007bff;
+      }
+
+      .visual {
+        background-color: #e9ecef;
+      }
+
+      .con1 {
+        background-color: #ced4da;
+      }
+
+      .con2 {
+        background-color: #adb5bd;
+      }
+
+      .con3 {
+        background-color: #6c757d;
+      }
+
+      .con4 {
+        background-color: #343a40;
+        color: white;
+      }
+
+      .container > div h2 {
+        font-size: 3em;
+        margin-bottom: 20px;
+        opacity: 0;
+        transform: translateY(30px);
+      }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollToPlugin.min.js"></script>
+  </head>
+  <body>
+    <div class="navigation-dots">
+      <div class="nav-dot"></div>
+      <div class="nav-dot"></div>
+      <div class="nav-dot"></div>
+      <div class="nav-dot"></div>
+      <div class="nav-dot"></div>
+    </div>
+
+    <div class="container">
+      <div class="visual"></div>
+      <div class="con1"></div>
+      <div class="con2"></div>
+      <div class="con3"></div>
+      <div class="con4"></div>
+    </div>
+
+    <script>
+      gsap.registerPlugin(ScrollTrigger, ScrollToPlugin);
+
+      document.addEventListener("DOMContentLoaded", () => {
+        const container = document.querySelector(".container");
+        const divs = gsap.utils.toArray(".container > div");
+        const navDots = gsap.utils.toArray(".nav-dot");
+
+        divs.forEach((div, index) => {
+          ScrollTrigger.create({
+            trigger: div,
+            scroller: container,
+            start: "top center",
+            end: "bottom center",
+            snap: 1 / (div.length - 1),
+            onEnter: () => setActiveDot(index),
+            onEnterBack: () => setActiveDot(index),
+            markers: false,
+          });
+        });
+
+        navDots.forEach((dot, index) => {
+          dot.addEventListener("click", () => {
+            gsap.to(container, {
+              duration: 1,
+              scrollTo: divs[index],
+              ease: "power2.inOut",
+            });
+          });
+        });
+
+        function setActiveDot(index) {
+          navDots.forEach((dot) => dot.classList.remove("active"));
+          navDots[index].classList.add("active");
+        }
+
+        setActiveDot(0);
+
+        let isScrolling = false;
+
+        container.addEventListener(
+          "wheel",
+          (e) => {
+            e.preventDefault();
+
+            if (!isScrolling) {
+              isScrolling = true;
+              const currentScroll = container.scrollTop;
+              const deltaY = e.deltaY;
+              const scrollAmount = window.innerHeight;
+
+              let targetScroll =
+                currentScroll + (deltaY > 0 ? scrollAmount : -scrollAmount);
+              targetScroll = Math.max(
+                0,
+                Math.min(
+                  targetScroll,
+                  container.scrollHeight - container.clientHeight
+                )
+              );
+
+              gsap.to(container, {
+                duration: 1.2,
+                scrollTo: targetScroll,
+                ease: "power2.inOutt",
+                onComplete: () => {
+                  isScrolling = false;
+                },
+              });
+            }
+          },
+          { passive: false }
+        );
+      });
+    </script>
+  </body>
+</html>

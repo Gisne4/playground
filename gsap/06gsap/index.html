@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.7/dist/gsap.min.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.7/dist/ScrollTrigger.min.js"></script>
+    <style>
+      * {
+        margin: 0px;
+        padding: 0px;
+      }
+      .con01 {
+        width: 100vw;
+        height: 100vh;
+        position: relative;
+        margin-top: 900px;
+      }
+      .con01 video {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+      .con01 .title {
+        width: 100%;
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        color: #fff;
+        text-align: center;
+      }
+      .con01 .title h2 {
+        font-size: 100px;
+      }
+    </style>
+  </head>
+  <body>
+    <section class="con01">
+      <video autoplay="" muted="" loop="" playinline="">
+        <source src="215484_small.mp4" type="video/mp4" />
+      </video>
+      <div class="title">
+        <h2>Creative<br />digital design</h2>
+      </div>
+    </section>
+    <script>
+      //   gsap.registerPlugin(ScrollTrigger);
+      gsap
+        .timeline({
+          scrollTrigger: {
+            trigger: ".con01",
+            start: "0% 80%",
+            end: "100% 100%",
+            scrub: 2,
+            markers: true,
+          },
+        })
+
+        .fromTo(
+          ".con01 video",
+          { "clip-path": "inset(60% 60% 60% 60% round 30%)" },
+          {
+            "clip-path": "inset(0% 0% 0% 0% round 0%)",
+            ease: "none",
+            duration: 10,
+          }
+        );
+    </script>
+  </body>
+</html>

@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>서울역 실시간 지하철 도착 정보</title>
+    <style>
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        margin: 20px;
+        background-color: #f4f7f6;
+        color: #333;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+      h1 {
+        color: #2c3e50;
+        text-align: center;
+        margin-bottom: 20px;
+      }
+      .container {
+        /* Adjusted max-width for the new canvas dimensions */
+        max-width: 1240px;
+        margin: 0 auto;
+        background-color: #fff;
+        padding: 25px;
+        border-radius: 8px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        position: relative; /* For canvas tooltip */
+      }
+      .subway-map-container {
+        position: relative;
+        margin-bottom: 20px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        overflow: hidden; /* Ensure drawing stays within bounds */
+      }
+      canvas {
+        display: block; /* Remove extra space below canvas */
+        background-color: #f8f8f8; /* Light background for the drawn map */
+      }
+      .canvas-tooltip {
+        position: absolute;
+        background-color: rgba(0, 0, 0, 0.75);
+        color: white;
+        padding: 5px 10px;
+        border-radius: 5px;
+        font-size: 0.8em;
+        pointer-events: none; /* Do not block mouse events on canvas */
+        white-space: nowrap;
+        z-index: 10;
+        display: none; /* Hidden by default */
+        transform: translate(-50%, -100%); /* Position above cursor/indicator */
+        top: 0;
+        left: 0;
+      }
+      .subway-info-list {
+        width: 100%;
+        margin-top: 20px;
+        border-top: 1px solid #eee;
+        padding-top: 15px;
+      }
+      .subway-line {
+        border-bottom: 1px solid #eee;
+        padding: 10px 0;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 15px;
+      }
+      .subway-line:last-child {
+        border-bottom: none;
+      }
+      .line-info {
+        flex-grow: 1;
+      }
+      .line-name {
+        font-weight: bold;
+        color: #34495e;
+        font-size: 1em;
+      }
+      .arrival-msg {
+        background-color: #e8f5e9;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-weight: bold;
+        color: #2e7d32;
+        font-size: 0.85em;
+        min-width: 100px;
+        text-align: center;
+      }
+      .status-msg {
+        background-color: #f0f4c3;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-weight: bold;
+        color: #fbc02d;
+        font-size: 0.85em;
+        min-width: 100px;
+        text-align: center;
+      }
+      .error-message {
+        color: #d32f2f;
+        text-align: center;
+        padding: 20px;
+        background-color: #ffebee;
+        border-radius: 5px;
+        border: 1px solid #ef9a9a;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>서울역 실시간 지하철 도착 정보</h1>
+
+      <div class="subway-map-container">
+        <canvas id="subwayCanvas" width="1200" height="800"></canvas>
+        <div class="canvas-tooltip" id="canvasTooltip"></div>
+      </div>
+
+      <div id="subwayInfo" class="subway-info-list">
+        <p class="loading-message">실시간 지하철 도착 정보를 불러오는 중...</p>
+      </div>
+    </div>
+
+    <script>
+      // Your API Key
+      const API_KEY = "4343596363646b7235337454537843";
+      const STATION_NAME = "서울"; // The station name we are interested in
+
+      const API_ENDPOINT = `http://swopenapi.seoul.go.kr/api/subway/${API_KEY}/xml/realtimeStationArrival/0/20/${encodeURIComponent(
+        STATION_NAME
+      )}`;
+
+      // Image loading removed
+
+      const canvas = document.getElementById("subwayCanvas");
+      const ctx = canvas.getContext("2d");
+      const canvasTooltip = document.getElementById("canvasTooltip");
+
+      // Line color for Seoul Metro Line 1
+      const LINE1_COLOR = "#0052A4";
+      const STATION_DOT_COLOR = "#666";
+      const STATION_TEXT_COLOR = "black";
+      const STATION_DOT_RADIUS = 3;
+
+      // Adjusted coordinates for drawing the map schematically on a 1200x800 canvas
+      const allStationCoordinates = {
+        // Top-right branch (Uijeongbu/Soyosan area)
+        소요산: { x: 100, y: 100 },
+        동두천: { x: 150, y: 100 },
+        보산: { x: 200, y: 100 },
+        동두천중앙: { x: 250, y: 100 },
+        지행: { x: 300, y: 100 },
+        덕정: { x: 350, y: 100 },
+        덕계: { x: 400, y: 100 },
+        양주: { x: 450, y: 100 },
+        녹양: { x: 500, y: 100 },
+        가능: { x: 550, y: 100 },
+        의정부: { x: 600, y: 100 },
+        회룡: { x: 650, y: 100 },
+        망월사: { x: 700, y: 100 },
+        도봉산: { x: 750, y: 100 },
+        도봉: { x: 800, y: 100 },
+        방학: { x: 850, y: 100 },
+        창동: { x: 900, y: 100 },
+        녹천: { x: 950, y: 100 },
+        월계: { x: 1000, y: 100 },
+
+        // Main East-West line through Seoul
+        광운대: { x: 1050, y: 100 }, // Connected from top branch
+        석계: { x: 1080, y: 150 }, // Move down for turn
+        신이문: { x: 1050, y: 180 },
+        외대앞: { x: 1000, y: 180 },
+        회기: { x: 950, y: 180 },
+        청량리: { x: 900, y: 180 }, // Start of main horizontal line
+        제기동: { x: 850, y: 180 },
+        신설동: { x: 800, y: 180 },
+        동묘앞: { x: 750, y: 180 },
+        동대문: { x: 700, y: 180 },
+        종로5가: { x: 650, y: 180 },
+        종로3가: { x: 600, y: 180 },
+        종각: { x: 550, y: 180 },
+        시청: { x: 500, y: 180 },
+        서울: { x: 450, y: 180 }, // Main station focus
+
+        // Main line continuing South
+        남영: { x: 450, y: 230 },
+        용산: { x: 450, y: 280 },
+        노량진: { x: 450, y: 330 },
+        대방: { x: 450, y: 380 },
+        신길: { x: 450, y: 430 },
+        영등포: { x: 450, y: 480 },
+        신도림: { x: 450, y: 530 },
+
+        // Guro split for branches
+        구로: { x: 450, y: 580 },
+
+        // Gasan Digital Complex / Gwangmyeong branch (from Guro-ish area, moved to left)
+        가산디지털단지: { x: 400, y: 580 },
+        독산: { x: 350, y: 580 },
+        금천구청: { x: 300, y: 580 },
+        광명: { x: 250, y: 580 },
+
+        // Incheon branch (from Guro, moving left-down)
+        구일: { x: 450, y: 630 },
+        개봉: { x: 450, y: 680 },
+        오류동: { x: 400, y: 680 }, // Horizontal move
+        온수: { x: 350, y: 680 },
+        역곡: { x: 300, y: 680 },
+        부천: { x: 250, y: 680 },
+        송내: { x: 200, y: 680 },
+        중동: { x: 150, y: 680 },
+        부개: { x: 100, y: 680 },
+        부평: { x: 100, y: 730 }, // Down
+        백운: { x: 150, y: 730 },
+        동암: { x: 200, y: 730 },
+        간석: { x: 250, y: 730 },
+        주안: { x: 300, y: 730 },
+        도원: { x: 350, y: 730 },
+        제물포: { x: 400, y: 730 },
+        동인천: { x: 450, y: 730 },
+        인천: { x: 500, y: 730 },
+
+        // Cheonan/Sinchang branch (from Shindorim/Guro, moving right-down)
+        병점: { x: 500, y: 630 },
+        세마: { x: 550, y: 630 },
+        오산대: { x: 600, y: 630 },
+        오산: { x: 650, y: 630 },
+        진위: { x: 700, y: 630 },
+        송탄: { x: 750, y: 630 },
+        서정리: { x: 800, y: 630 },
+        평택지제: { x: 850, y: 630 },
+        평택: { x: 900, y: 630 },
+        성환: { x: 950, y: 630 },
+        직산: { x: 1000, y: 630 },
+        두정: { x: 1050, y: 630 },
+        천안: { x: 1100, y: 630 },
+        봉명: { x: 1100, y: 680 }, // Down
+        쌍용: { x: 1050, y: 680 },
+        아산: { x: 1000, y: 680 },
+        탕정: { x: 950, y: 680 },
+        배방: { x: 900, y: 680 },
+        온양온천: { x: 850, y: 680 },
+        신창: { x: 800, y: 680 },
+      };
+
+      // Simplified segments for drawing lines. Order matters for drawing continuous lines.
+      const simplifiedLine1Paths = [
+        // Northern segment (Soyosan -> Gwangun Univ)
+        [
+          "소요산",
+          "동두천",
+          "보산",
+          "동두천중앙",
+          "지행",
+          "덕정",
+          "덕계",
+          "양주",
+          "녹양",
+          "가능",
+          "의정부",
+          "회룡",
+          "망월사",
+          "도봉산",
+          "도봉",
+          "방학",
+          "창동",
+          "녹천",
+          "월계",
+          "광운대",
+        ],
+
+        // Main line (Gwangun Univ -> Shindorim)
+        [
+          "광운대",
+          "석계",
+          "신이문",
+          "외대앞",
+          "회기",
+          "청량리",
+          "제기동",
+          "신설동",
+          "동묘앞",
+          "동대문",
+          "종로5가",
+          "종로3가",
+          "종각",
+          "시청",
+          "서울",
+          "남영",
+          "용산",
+          "노량진",
+          "대방",
+          "신길",
+          "영등포",
+          "신도림",
+        ],
+
+        // Guro -> Gwangmyeong branch (connecting from Guro)
+        ["구로", "가산디지털단지", "독산", "금천구청", "광명"],
+
+        // Guro -> Incheon branch
+        [
+          "구로",
+          "구일",
+          "개봉",
+          "오류동",
+          "온수",
+          "역곡",
+          "부천",
+          "송내",
+          "중동",
+          "부개",
+          "부평",
+          "백운",
+          "동암",
+          "간석",
+          "주안",
+          "도원",
+          "제물포",
+          "동인천",
+          "인천",
+        ],
+
+        // Sinchang/Cheonan branch (connecting from Shindorim, then "구로", then "병점")
+        // This assumes a visual connection flow for drawing.
+        ["신도림", "구로"], // Connect Shindorim to Guro
+        [
+          "구로",
+          "병점",
+          "세마",
+          "오산대",
+          "오산",
+          "진위",
+          "송탄",
+          "서정리",
+          "평택지제",
+          "평택",
+          "성환",
+          "직산",
+          "두정",
+          "천안",
+          "봉명",
+          "쌍용",
+          "아산",
+          "탕정",
+          "배방",
+          "온양온천",
+          "신창",
+        ],
+      ];
+
+      // Stores parsed train data with their calculated canvas positions
+      let trainsOnMap = [];
+
+      // Call fetchSubwayData directly on DOMContentLoaded, as no image is loaded
+      document.addEventListener("DOMContentLoaded", () => {
+        drawSubwayMapBackground(); // Draw the lines and stations
+        fetchSubwayData();
+      });
+
+      function drawSubwayMapBackground() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "#f8f8f8"; // Background color for the canvas
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Draw all subway lines (simplified for Line 1)
+        ctx.strokeStyle = LINE1_COLOR;
+        ctx.lineWidth = 4; // Line thickness
+
+        simplifiedLine1Paths.forEach((segment) => {
+          ctx.beginPath();
+          if (segment.length > 0) {
+            const startCoords = allStationCoordinates[segment[0]];
+            if (startCoords) {
+              ctx.moveTo(startCoords.x, startCoords.y);
+              for (let i = 1; i < segment.length; i++) {
+                const nextCoords = allStationCoordinates[segment[i]];
+                if (nextCoords) {
+                  ctx.lineTo(nextCoords.x, nextCoords.y);
+                }
+              }
+            }
+          }
+          ctx.stroke();
+        });
+
+        // Draw all stations and their names
+        ctx.fillStyle = STATION_DOT_COLOR;
+        ctx.font = "10px Arial";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+
+        for (const stationName in allStationCoordinates) {
+          const coords = allStationCoordinates[stationName];
+          // Draw station dot
+          ctx.beginPath();
+          ctx.arc(coords.x, coords.y, STATION_DOT_RADIUS, 0, Math.PI * 2);
+          ctx.fillStyle = "white"; // White dot
+          ctx.fill();
+          ctx.strokeStyle = LINE1_COLOR; // Line 1 color border
+          ctx.lineWidth = 1.5;
+          ctx.stroke();
+
+          // Draw station name
+          ctx.fillStyle = STATION_TEXT_COLOR;
+          // Position text slightly below/right of the dot for readability
+          ctx.fillText(
+            stationName,
+            coords.x,
+            coords.y + STATION_DOT_RADIUS + 8
+          );
+        }
+      }
+
+      function drawTrainIndicators(trainData) {
+        drawSubwayMapBackground(); // Redraw map elements first
+
+        trainsOnMap = []; // Clear previous train positions
+
+        trainData.forEach((train) => {
+          const { subwayId, arvlCd, statnNm, arvlMsg2, arvlMsg3, trainLineNm } =
+            train;
+
+          // Only draw if it's Line 1 (1001) and we have coordinates for the station
+          if (subwayId === "1001") {
+            let stationToMark = arvlMsg3; // Station where the train currently is
+            if (!stationToMark || stationToMark === "정보 없음") {
+              // Fallback to statnNm if arvlMsg3 is not available
+              stationToMark = statnNm;
+            }
+
+            const coords = allStationCoordinates[stationToMark]; // Use allStationCoordinates
+
+            if (coords) {
+              const radius = 6;
+              let color = "gray"; // Default for unknown status
+              let borderColor = "white";
+
+              if (arvlCd === "1" || arvlCd === "2") {
+                color = "rgba(255, 0, 0, 0.8)"; // Red for arriving/departing
+                borderColor = "black";
+              } else if (arvlCd === "5") {
+                color = "rgba(255, 165, 0, 0.8)"; // Orange for previous station arrival
+                borderColor = "black";
+              } else if (arvlCd === "99") {
+                color = "rgba(0, 0, 255, 0.6)"; // Blue for far away (in operation)
+                borderColor = "white";
+              } else {
+                color = "rgba(128, 128, 128, 0.7)"; // Gray for other statuses
+                borderColor = "white";
+              }
+
+              ctx.beginPath();
+              ctx.arc(coords.x, coords.y, radius, 0, Math.PI * 2);
+              ctx.fillStyle = color;
+              ctx.fill();
+              ctx.strokeStyle = borderColor;
+              ctx.lineWidth = 1.5;
+              ctx.stroke();
+
+              // Store train info for tooltip
+              trainsOnMap.push({
+                x: coords.x,
+                y: coords.y,
+                radius: radius,
+                tooltipText: `${trainLineNm} - ${arvlMsg2} (${arvlMsg3})`,
+              });
+            } else {
+              console.warn(
+                `Coordinates not found for station: ${stationToMark} on Line 1`
+              );
+            }
+          }
+        });
+      }
+
+      // Canvas tooltip logic remains the same
+      canvas.addEventListener("mousemove", (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
+
+        let hoveredTrain = null;
+        for (const train of trainsOnMap) {
+          const distance = Math.sqrt(
+            (mouseX - train.x) ** 2 + (mouseY - train.y) ** 2
+          );
+          if (distance < train.radius) {
+            hoveredTrain = train;
+            break;
+          }
+        }
+
+        if (hoveredTrain) {
+          canvasTooltip.style.display = "block";
+          canvasTooltip.style.left = `${hoveredTrain.x}px`;
+          canvasTooltip.style.top = `${hoveredTrain.y - 10}px`;
+          canvasTooltip.textContent = hoveredTrain.tooltipText;
+        } else {
+          canvasTooltip.style.display = "none";
+        }
+      });
+
+      canvas.addEventListener("mouseout", () => {
+        canvasTooltip.style.display = "none";
+      });
+
+      async function fetchSubwayData() {
+        try {
+          document.getElementById("subwayInfo").innerHTML =
+            '<p class="loading-message">실시간 지하철 도착 정보를 불러오는 중...</p>';
+          const response = await fetch(API_ENDPOINT);
+
+          if (!response.ok) {
+            const errorText = await response.text();
+            console.error("API error response:", errorText);
+            throw new Error(
+              `HTTP error! Status: ${
+                response.status
+              }. API message: ${errorText.substring(0, 100)}...`
+            );
+          }
+
+          const xmlText = await response.text();
+          parseAndDisplaySubwayInfo(xmlText);
+        } catch (error) {
+          console.error("Error fetching subway data:", error);
+          document.getElementById("subwayInfo").innerHTML = `
+                    <p class="error-message">데이터를 불러오는 데 실패했습니다. <br>네트워크 연결을 확인하거나 API 키와 엔드포인트 URL을 다시 확인해 주세요.<br>오류: ${error.message}</p>
+                `;
+        }
+      }
+
+      function parseAndDisplaySubwayInfo(xmlString) {
+        const parser = new DOMParser();
+        const xmlDoc = parser.parseFromString(xmlString, "text/xml");
+        const subwayInfoDiv = document.getElementById("subwayInfo");
+        subwayInfoDiv.innerHTML = "";
+
+        const resultCode = xmlDoc.getElementsByTagName("code")[0]?.textContent;
+        const developerMessage =
+          xmlDoc.getElementsByTagName("developerMessage")[0]?.textContent;
+
+        if (resultCode && resultCode !== "INFO-000") {
+          subwayInfoDiv.innerHTML = `
+                    <p class="error-message">API 오류 발생: ${resultCode}<br>
+                    ${developerMessage || "알 수 없는 오류"}</p>
+                `;
+          console.error(
+            "API returned an error code:",
+            resultCode,
+            developerMessage
+          );
+          return;
+        }
+
+        const rows = xmlDoc.getElementsByTagName("row");
+        let parsedTrainData = [];
+
+        if (rows.length === 0) {
+          subwayInfoDiv.innerHTML =
+            '<p class="loading-message">현재 도착 정보가 없습니다.</p>';
+          drawSubwayMapBackground();
+          return;
+        }
+
+        for (let i = 0; i < rows.length; i++) {
+          const row = rows[i];
+          const train = {
+            trainLineNm:
+              row.getElementsByTagName("trainLineNm")[0]?.textContent ||
+              "정보 없음",
+            arvlMsg2:
+              row.getElementsByTagName("arvlMsg2")[0]?.textContent ||
+              "정보 없음",
+            arvlMsg3:
+              row.getElementsByTagName("arvlMsg3")[0]?.textContent || "",
+            subwayId: row.getElementsByTagName("subwayId")[0]?.textContent,
+            btrainNo: row.getElementsByTagName("btrainNo")[0]?.textContent,
+            recptnDt: row.getElementsByTagName("recptnDt")[0]?.textContent,
+            updnLine: row.getElementsByTagName("updnLine")[0]?.textContent,
+            statnNm: row.getElementsByTagName("statnNm")[0]?.textContent,
+            arvlCd: row.getElementsByTagName("arvlCd")[0]?.textContent,
+          };
+          parsedTrainData.push(train);
+
+          let lineNameDisplay = train.trainLineNm;
+          const lineMap = {
+            1001: "1호선",
+            1002: "2호선",
+            1003: "3호선",
+            1004: "4호선",
+            1005: "5호선",
+            1006: "6호선",
+            1007: "7호선",
+            1008: "8호선",
+            1009: "9호선",
+            1063: "경의중앙선",
+            1065: "공항철도",
+            1075: "분당선",
+            1077: "신분당선",
+          };
+          if (lineMap[train.subwayId]) {
+            lineNameDisplay = `${lineMap[train.subwayId]} (${
+              train.trainLineNm
+            })`;
+          }
+
+          const subwayLineDiv = document.createElement("div");
+          subwayLineDiv.classList.add("subway-line");
+          subwayLineDiv.innerHTML = `
+                    <div class="line-info">
+                        <div class="line-name">${lineNameDisplay}</div>
+                    </div>
+                    <div class="${
+                      train.arvlMsg2.includes("도착")
+                        ? "arrival-msg"
+                        : "status-msg"
+                    }">${train.arvlMsg2}</div>
+                `;
+          subwayInfoDiv.appendChild(subwayLineDiv);
+        }
+
+        drawTrainIndicators(parsedTrainData);
+      }
+    </script>
+  </body>
+</html>

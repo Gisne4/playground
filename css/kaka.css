@@ -1,0 +1,255 @@
+.icon i {
+  font-size: 100px;
+}
+.visuals {
+  display: flex;
+}
+.imgs {
+  width: 300px;
+  height: 200px;
+  overflow: hidden;
+  position: relative;
+}
+.imgs img {
+  position: absolute;
+  width: inherit;
+  height: inherit;
+  transform: translate(300px);
+}
+.visuals ul {
+  list-style: none;
+}
+.con1 {
+  display: flex;
+}
+.con1 div {
+  position: relative;
+  height: 500px;
+  width: 50%;
+  border: 1px solid black;
+  text-align: center;
+  align-content: center;
+}
+.con1_right h2 {
+  position: absolute;
+  font-size: 30px;
+  -webkit-text-stroke: 3px rgb(36, 81, 148);
+  align-content: center;
+  font-weight: 900;
+  color: rgb(24, 236, 226);
+  background-color: rgba(0, 0, 0, 0.253);
+  top: -25px;
+  left: 0px;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.con2 ul {
+  display: flex;
+  list-style: none;
+  padding: 0px;
+  text-align: center;
+  gap: 20px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.con2 li {
+  width: calc(100% / 4 - 20px);
+}
+.con2 div {
+  overflow: hidden;
+}
+.con2 img {
+  width: 100%;
+}
+.con3 ul {
+  list-style: none;
+  display: flex;
+  gap: 10px;
+}
+.con3 li {
+  width: calc(100% / 4 - 10px);
+  background-image: url(/img/pic1.jpg);
+  height: 200px;
+  overflow: hidden;
+}
+.con3 li:nth-child(1) div {
+  transform: translate(-100%);
+  transition: 1s;
+}
+.con3 li:nth-child(2) div {
+  transform: translate(-100%, 100%);
+  transition: 1s;
+}
+.con3 li:nth-child(3) div {
+  transform: translate(100%, 100%);
+  transition: 1s;
+}
+.con3 li:nth-child(4) div {
+  transform: translate(100%);
+  transition: 1s;
+}
+.con3 li h1 {
+  background-color: rgb(60, 101, 138);
+}
+.con4 {
+  text-align: center;
+}
+.con4 button {
+  position: relative;
+  padding-inline: 80px;
+  padding-block: 60px;
+  overflow: hidden;
+}
+.con4 img {
+  position: absolute;
+  top: -2px;
+  right: -40px;
+  width: 500px;
+  transform: translate(-500px);
+  transition: 1s;
+}
+.con4 h2 {
+  position: relative;
+  z-index: 50;
+}
+.con5 {
+  width: 100%;
+  height: 100vh;
+  position: relative;
+  text-align: center;
+}
+.con5 video {
+  width: 100%;
+  height: 100%;
+}
+.con5 img {
+  position: absolute;
+  top: 0px;
+  left: 0px;
+  width: 100%;
+}
+.con5 button {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  padding-block: 40px;
+  padding-inline: 30px;
+  border-radius: 20px;
+  background: unset;
+  color: white;
+  border: white 1px solid;
+  overflow: hidden;
+}
+.con5 button div {
+  position: absolute;
+  width: 500px;
+  height: 500px;
+  background-color: rgb(75, 48, 48);
+  top: 0px;
+  left: 0px;
+}
+.con5 button h1 {
+  position: relative;
+  z-index: 50;
+}
+.con6 {
+  width: 100%;
+  height: 100vh;
+  background-color: rgb(219, 207, 207);
+  text-align: center;
+}
+.con6 button {
+  background: unset;
+  color: white;
+  position: relative;
+  padding: 100px;
+  font-size: 100px;
+  border-radius: 100%;
+  top: 30%;
+}
+.con6 i {
+  position: relative;
+  z-index: 50;
+}
+.con6 img {
+  position: absolute;
+  width: 300px;
+  top: 7px;
+  left: 0px;
+  transform: scale(0);
+  transition: 1s;
+}
+.con7 {
+  width: 100%;
+  display: flex;
+  gap: 20px;
+}
+.con7 img {
+  width: 250px;
+  height: 150px;
+}
+.con7 ul {
+  display: flex;
+  width: 250px;
+  height: 150px;
+  overflow: hidden;
+}
+.con9 {
+  width: 100%;
+}
+.con9 ul {
+  display: flex;
+  list-style: none;
+
+  justify-content: space-between;
+}
+.con9 ul li {
+  width: calc(100% / 3);
+  text-align: center;
+}
+.con9 ul li ul {
+  display: grid;
+  height: calc(100% / 3);
+  overflow: hidden;
+}
+.con10 {
+  width: 100%;
+  justify-items: center;
+}
+.con10 div {
+  width: 600px;
+  overflow: hidden;
+  position: relative;
+}
+.con10 div i {
+  color: rgb(241, 53, 53);
+  background-color: rgba(59, 179, 139, 0.568);
+  padding: 5px;
+  border-radius: 100%;
+}
+.con10 div .left {
+  position: absolute;
+  top: 50px;
+  left: 10px;
+}
+.con10 div .right {
+  position: absolute;
+  top: 50px;
+  right: 10px;
+}
+
+.con10 ul {
+  overflow: hidden;
+  margin: 0px auto;
+  padding: 0px;
+  width: 800px;
+}
+
+.con10 ul li {
+  width: 200px;
+}
+.con10 ul li img {
+  width: 200px;
+}

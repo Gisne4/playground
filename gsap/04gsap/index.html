@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.7/dist/gsap.min.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.7/dist/ScrollTrigger.min.js"></script>
+    <style>
+      * {
+        margin: 0px;
+        padding: 0px;
+      }
+      li {
+        list-style: none;
+      }
+      section {
+        height: 100vh;
+        background-color: #222;
+        color: #fff;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+
+      /*con01*/
+
+      .con01 {
+        position: relative;
+      }
+      .con01 h2 {
+        font-size: 120px;
+        -webkit-text-stroke: 2px orange;
+        color: transparent;
+        text-transform: uppercase;
+      }
+      .con01 li {
+        width: 250px;
+        height: 350px;
+        background-color: pink;
+        position: absolute;
+        left: 50%;
+        top: 50%;
+
+        border-radius: 20px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 2rem;
+        font-weight: bold;
+      }
+      .con01 .card1 {
+        background-color: lightseagreen;
+        transform: translate(-50%, -50%) rotate(12deg);
+      }
+      .con01 .card2 {
+        background-color: pink;
+        transform: translate(-50%, -50%) rotate(-12deg);
+      }
+      .con01 .card3 {
+        background-color: yellow;
+        transform: translate(-50%, -50%) rotate(18deg);
+      }
+      .con01 .card4 {
+        background-color: lightblue;
+        transform: translate(-50%, -50%) rotate(-18deg);
+      }
+      .con01 .card5 {
+        background-color: lightcoral;
+        transform: translate(-50%, -50%) rotate(-3deg);
+      }
+
+      /*con02*/
+      .con02 ul {
+        width: 70%;
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        font-weight: bold;
+        /* background-color: #ccc; */
+      }
+      .con02 li {
+        width: calc(100% / 4 - 10px);
+        height: 300px;
+        background-color: orange;
+        border-radius: 20px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        color: #222;
+        font-size: 1.2rem;
+        transform: translateY(200px);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <section class="con01">
+        <h2>section 01</h2>
+        <ul>
+          <li class="card1">Card1</li>
+          <li class="card2">Card2</li>
+          <li class="card3">Card3</li>
+          <li class="card4">Card4</li>
+          <li class="card5">Card5</li>
+        </ul>
+      </section>
+      <section class="con02">
+        <ul>
+          <li>Card1</li>
+          <li>Card2</li>
+          <li>Card3</li>
+          <li>Card4</li>
+        </ul>
+      </section>
+    </div>
+    <script>
+      gsap.registerPlugin(ScrollTrigger);
+
+      //con01
+
+      gsap
+        .timeline({
+          scrollTrigger: {
+            trigger: ".con01",
+            start: "100% 100%",
+            end: "100% 80%",
+            scrub: 2,
+            markers: true,
+          },
+        })
+        .fromTo(".con01 li.card1", { y: "400px" }, { y: 0 }, 1.2)
+        .fromTo(".con01 li.card2", { y: "400px" }, { y: 0 }, 1.4)
+        .fromTo(".con01 li.card3", { y: "400px" }, { y: 0 }, 1.6)
+        .fromTo(".con01 li.card4", { y: "400px" }, { y: 0 }, 1.8)
+        .fromTo(".con01 li.card5", { y: "400px" }, { y: 0 }, 2);
+
+      //con02
+
+      gsap
+        .timeline({
+          scrollTrigger: {
+            trigger: ".con02 ul",
+            start: "top 90%",
+            end: "20% 40%",
+            scrub: 2,
+            //  markers: true,
+          },
+        })
+
+        .to(".con02 li:nth-child(1)", { y: "0px", duration: 1 }, 0.2)
+        .to(".con02 li:nth-child(2)", { y: "0px", duration: 1 }, 0.4)
+        .to(".con02 li:nth-child(3)", { y: "0px", duration: 1 }, 0.6)
+        .to(".con02 li:nth-child(4)", { y: "0px", duration: 1 }, 0.8);
+    </script>
+  </body>
+</html>

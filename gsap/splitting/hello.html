@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <script src="jquery-3.7.1.min.js"></script>
+    <script src="splitting.min.js"></script>
+    <style>
+      body {
+        height: 2000px;
+      }
+      div {
+        font-size: 100px;
+        text-align: center;
+        margin-top: 1000px;
+      }
+      .splitting .char {
+        display: inline-block;
+        animation: slide-in 1s cubic-bezier(0.5, 0, 0.5, 1) both;
+        animation-delay: calc(60ms * var(--char-index));
+      }
+
+      @keyframes slide-in {
+        from {
+          transform: translateY(-1em) rotate(-0.5turn) scale(0.5);
+          opacity: 0;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div data-splitting>Hello World!</div>
+    <script>
+      $(window).on("scroll", function () {
+        let sc = $(this).scrollTop();
+        // console.log(sc);
+        if (sc > 700) {
+          Splitting();
+        }
+      });
+    </script>
+  </body>
+</html>

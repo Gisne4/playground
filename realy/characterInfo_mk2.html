@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>3D Rotating Card Effect</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      /* Custom CSS for the 3D card effect */
+      body {
+        font-family: "Inter", sans-serif;
+        perspective: 1000px; /* Defines the 3D space for the children */
+        background: linear-gradient(to bottom right, #3730a3, #6b21a8);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 1rem;
+        margin: 0;
+      }
+
+      .card-container {
+        transform-style: preserve-3d;
+        /* Unified transition for card's transform (rotation and scale) when mouse leaves */
+        transition: transform 0.5s ease-out;
+        width: 100%;
+        max-width: 300px;
+        aspect-ratio: 2 / 3;
+        position: relative;
+        border-radius: 1rem;
+        overflow: hidden; /* Crucial to hide the glare when it's outside the card area */
+        background-color: #1f2937;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        /* Initial transform for the card when not hovered, or when mouse leaves */
+        transform: rotateY(0deg) rotateX(0deg) scale(1);
+      }
+
+      /* Glare effect */
+      .card-glare {
+        position: absolute;
+        /* Make the glare element larger than the card to allow for movement and blur */
+        width: 200%;
+        height: 200%;
+        /* Center the larger glare element over the card initially */
+        top: -50%;
+        left: -50%;
+        /* Radial gradient for the glare */
+        background: radial-gradient(
+          circle at center,
+          rgba(255, 255, 255, 0.3) 0%,
+          /* Strongest white at the center */ rgba(255, 255, 255, 0.1) 20%,
+          /* Fades out slightly */ rgba(255, 255, 255, 0) 70%
+            /* Fully transparent towards the edges */
+        );
+        /* Apply a blur to soften the glare effect */
+        filter: blur(20px);
+        /* Initial state: hidden */
+        opacity: 0;
+        /* Transition for smooth fade in/out and return to default position */
+        transition: transform 0.5s ease-out, opacity 0.5s ease-out;
+        /* Ensure the glare is above the card content */
+        z-index: 1;
+      }
+
+      /* Card content styling */
+      .card-content {
+        position: relative;
+        z-index: 10; /* Ensure content is above the glare */
+        padding: 1.5rem;
+        color: #ffffff;
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+      }
+
+      .card-content h2 {
+        font-size: 1.875rem;
+        font-weight: 700;
+        margin-bottom: 1rem;
+        /* Adding 3D text shadow effect */
+        text-shadow: 2px 2px 0px rgba(0, 0, 0, 0.1),
+          4px 4px 0px rgba(0, 0, 0, 0.05), 6px 6px 0px rgba(0, 0, 0, 0.02);
+      }
+
+      .card-content p {
+        font-size: 1.125rem;
+        margin-bottom: 1.5rem;
+      }
+
+      .card-content button {
+        background-color: #9333ea;
+        color: #ffffff;
+        font-weight: 600;
+        padding: 0.5rem 1.5rem;
+        border-radius: 9999px;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
+          0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        transition: background-color 0.2s ease-in-out;
+        border: none;
+        cursor: pointer;
+      }
+
+      .card-content button:hover {
+        background-color: #7e22ce;
+      }
+
+      /* Responsive adjustments for smaller screens */
+      @media (max-width: 768px) {
+        .card-container {
+          max-width: 250px;
+        }
+      }
+
+      @media (max-width: 480px) {
+        .card-container {
+          max-width: 200px;
+        }
+        .card-content h2 {
+          font-size: 1.5rem;
+        }
+        .card-content p {
+          font-size: 1rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card-container">
+      <div class="card-content">
+        <h2>Awesome Card</h2>
+        <p>This is a cool 3D rotating card with a shiny glare effect!</p>
+        <button>Learn More</button>
+      </div>
+      <div class="card-glare"></div>
+    </div>
+
+    <script>
+      // Get references to the card container and glare element
+      const card = document.querySelector(".card-container");
+      const glare = document.querySelector(".card-glare");
+
+      // Function to handle mouse movement over the card
+      card.addEventListener("mousemove", (e) => {
+        // Get the bounding rectangle of the card to calculate mouse position relative to it
+        const rect = card.getBoundingClientRect();
+
+        // Calculate offsetX and offsetY relative to the card container
+        const offsetX = e.clientX - rect.left;
+        const offsetY = e.clientY - rect.top;
+
+        // Get the width and height of the card
+        const { offsetWidth: width, offsetHeight: height } = card;
+
+        // --- Card Rotation Calculation ---
+        // Calculate rotation angles based on the provided formulas
+        // For rotateY: mouseX (offsetX) from 0 to width, mapping to -20deg to +20deg
+        // For rotateX: mouseY (offsetY) from 0 to height, mapping to +20deg to -20deg
+        const rotateY = -1 * ((offsetX / width) * 40 - 20); // -20deg to +20deg
+        const rotateX = (offsetY / height) * 40 - 20; // +20deg to -20deg
+
+        // Apply the transform to the card
+        // Temporarily remove transition for immediate response during mousemove
+        card.style.transition = "0.2";
+        card.style.transform = `perspective(400px) rotateY(${rotateY}deg) rotateX(${rotateX}deg) scale(1.05)`;
+
+        // --- Glare Position Calculation ---
+        // Map offsetX and offsetY (0 to width/height) to a percentage range for glare translation
+        // This will move the center of the larger glare element relative to the card's center.
+        // (offsetX / width - 0.5) * 100 maps 0-width to -50 to 50
+        const glareX = (offsetX / width - 0.5) * 100;
+        const glareY = (offsetY / height - 0.5) * 100;
+
+        // Apply the transform to the glare
+        // Temporarily remove transition for immediate response during mousemove
+        glare.style.transition = "none";
+        glare.style.transform = `translate(${glareX}%, ${glareY}%)`;
+        glare.style.opacity = "1"; // Make glare visible
+      });
+
+      // Function to reset the card's rotation and glare when the mouse leaves
+      card.addEventListener("mouseleave", () => {
+        // Add a transition for smooth return to original state for the card
+        card.style.transition = "transform 0.5s ease-out";
+        // Reset the card's transform
+        card.style.transform = "rotateY(0deg) rotateX(0deg) scale(1)";
+
+        // Add a transition for smooth return to initial state for the glare
+        glare.style.transition =
+          "transform 0.5s ease-out, opacity 0.5s ease-out";
+        // Reset the glare's transform to its default centered position (relative to its 200% parent)
+        // and fade it out
+        glare.style.transform = "translate(0%, 0%)";
+        glare.style.opacity = "0";
+      });
+    </script>
+  </body>
+</html>

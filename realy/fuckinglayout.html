@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Grok's Black Hole Parallax with CSS Animation</title>
+    <link
+      href="https://fonts.googleapis.com/css?family=Dosis:200,400"
+      rel="stylesheet"
+      type="text/css"
+    />
+    <link
+      href="https://fonts.googleapis.com/css?family=Raavi"
+      rel="stylesheet"
+      type="text/css"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      /* Global reset */
+      * {
+        padding: 0;
+        margin: 0;
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        overflow: hidden; /* Body overflow is still hidden for parallax */
+        height: 100%;
+        width: 100%;
+        background: #000000; /* Set body background to black */
+      }
+
+      /* Styles for the links block (from Grok's Black Hole) - still fixed to viewport */
+      .links {
+        position: fixed;
+        list-style: none;
+        width: 180px;
+        bottom: 40px;
+        right: 20px;
+        padding: 0;
+        margin: 0;
+        z-index: 10; /* Ensure links are above parallax content */
+      }
+
+      .links li {
+        border-bottom: rgba(255, 255, 255, 0.1) 1px solid;
+      }
+
+      .links li a {
+        transition: opacity 0.2s ease-out;
+        -webkit-font-smoothing: subpixel-antialiased;
+        font-family: "Dosis", sans-serif;
+        text-transform: uppercase;
+        text-align: right;
+        padding: 0.25em 0;
+        letter-spacing: 2px;
+        font-weight: 200;
+        font-size: 12px;
+        display: block;
+        width: 100%;
+        opacity: 0.4;
+        color: #fff;
+        text-decoration: none;
+      }
+
+      .links li a:hover {
+        opacity: 0.8;
+      }
+
+      .links li .who:before {
+        opacity: 0.5;
+        content: "@";
+        float: left;
+      }
+
+      .links li .blog:before {
+        opacity: 0.5;
+        content: "</>";
+        float: left;
+      }
+
+      /* Modal styling for WebGL not supported message */
+      .modal {
+        display: none;
+        position: fixed;
+        z-index: 100; /* Ensure modal is on top of everything */
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+        background-color: rgba(0, 0, 0, 0.4);
+      }
+
+      .modal-content {
+        background-color: #fefefe;
+        margin: 15% auto;
+        padding: 20px;
+        border: 1px solid #888;
+        width: 80%;
+        max-width: 500px;
+        text-align: center;
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        font-family: "Dosis", sans-serif;
+        color: #333;
+      }
+
+      .close-button {
+        color: #aaa;
+        float: right;
+        font-size: 28px;
+        font-weight: bold;
+      }
+
+      .close-button:hover,
+      .close-button:focus {
+        color: black;
+        text-decoration: none;
+        cursor: pointer;
+      }
+
+      /* --- Parallax CSS --- */
+      .parallax {
+        height: 100vh;
+        background-color: #fff; /* Re-added background for other parallax sections */
+        overflow-x: hidden;
+        overflow-y: scroll;
+        perspective: 300px;
+        position: relative;
+        z-index: 0;
+      }
+      .parallax_group {
+        position: relative;
+        transform-style: preserve-3d;
+        height: 100vh;
+        transition: 0.5s;
+      }
+      .parallax_layer {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        right: 0;
+      }
+
+      .layer_fore {
+        transform: translateZ(100px) scale(0.7);
+      }
+      .layer_base {
+        transform: translateZ(0);
+      }
+      .layer_back {
+        transform: translateZ(-300px) scale(2);
+      }
+      .layer_deep {
+        transform: translateZ(-600px) scale(3);
+      }
+
+      /* Content styling */
+      .fullscreen {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        gap: 20px;
+        position: relative;
+        overflow: hidden;
+        background-color: #000;
+      }
+
+      /* WebGL Canvas Styling */
+      #glcanvas {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        display: block;
+        z-index: 0;
+      }
+
+      /* Ensure content is above the canvas */
+      .fullscreen .title,
+      .fullscreen .subtitle,
+      .fullscreen .call-to-action {
+        position: relative;
+        z-index: 1;
+        color: #d8dbe2;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+      }
+
+      .title {
+        font-size: 48px;
+        text-align: center;
+      }
+
+      .subtitle {
+        font-size: 24px;
+        font-family: "Dosis", sans-serif;
+        text-align: center;
+        margin-top: 10px;
+      }
+
+      .call-to-action {
+        background-color: #58a4b0;
+        color: #d8dbe2;
+        border: none;
+        padding: 15px 30px;
+        font-size: 18px;
+        font-family: "Dosis", sans-serif;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        cursor: pointer;
+        border-radius: 5px;
+        transition: background-color 0.3s ease, transform 0.2s ease;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+      }
+
+      .call-to-action:hover {
+        background-color: #373f51;
+        transform: translateY(-2px);
+      }
+
+      .fore {
+        width: 50%;
+        height: 25vh;
+        background-color: rgba(88, 164, 176, 0.9);
+        margin-top: 100vh;
+        position: relative;
+        opacity: 0.9;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-left: auto;
+        margin-right: auto;
+      }
+
+      .base {
+        position: relative;
+        margin-top: 150vh;
+        width: 100%;
+        height: 50vh;
+        background-color: rgba(169, 188, 208, 0.7);
+        opacity: 0.7;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+
+      .back {
+        width: 100%;
+        height: 50vh;
+        background-color: rgba(250, 250, 252, 0.5);
+        margin-top: 80vh;
+        position: relative;
+        opacity: 0.5;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+
+      /* Original .deep layer - now mostly for background */
+      .deep {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+        overflow: hidden;
+        color: rgba(
+          255,
+          255,
+          255,
+          0.2
+        ); /* Keep text color for original purpose if needed */
+        font-size: 400px; /* Keep font size for original purpose if needed */
+        background-color: rgba(0, 0, 0, 0.3); /* Ensure it's dark */
+        border: solid 3px; /* Keep border for original purpose if needed */
+      }
+
+      /* --- New CSS Animation Layer and its styles --- */
+      /* This is the new group for the animation, placed closer */
+      .new-animation-group {
+        position: relative;
+        transform-style: preserve-3d;
+        height: 100vh; /* Make this group a full viewport height section */
+        background-color: #000; /* Ensure a black background for this section */
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        overflow: hidden; /* Hide overflow from animation boxes */
+      }
+
+      /* Container styles for positioning and reflection effect */
+      .new-animation-group .container {
+        position: relative;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 100%;
+        /* Reflection effect, adjusted for a subtle look */
+        -webkit-box-reflect: below 2px
+          linear-gradient(transparent, rgba(0, 0, 0, 0.5));
+      }
+
+      /* Box styles for size, border-radius, overflow, and animation */
+      .new-animation-group .container .box {
+        width: 250px;
+        height: 250px;
+        border-radius: 0.5rem;
+        overflow: hidden;
+        flex-shrink: 0;
+        background: linear-gradient(
+          45deg,
+          #00f376 10%,
+          transparent 10%,
+          transparent 50%,
+          #00f376 50%,
+          #00f376 60%,
+          transparent 60%,
+          transparent 100%
+        );
+        background-size: 40px 40px;
+        transform: rotate(calc(var(--i) * 90deg));
+        animation: animate 0.3s linear infinite;
+      }
+
+      /* Media queries for responsiveness of the animation boxes */
+      @media (min-width: 768px) {
+        .new-animation-group .container .box {
+          width: 400px;
+          height: 400px;
+        }
+      }
+
+      @media (min-width: 1024px) {
+        .new-animation-group .container .box {
+          width: 600px;
+          height: 600px;
+        }
+      }
+
+      /* Keyframes for the animation (re-used name from original, which is fine) */
+      @keyframes animate {
+        0% {
+          background-position: 0;
+        }
+        100% {
+          background-position: 40px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="parallax">
+      <div class="parallax_group">
+        <div class="parallax_layer layer_fore">
+          <div class="fullscreen">
+            <canvas id="glcanvas"></canvas>
+            <div class="title">FIRST PAGE</div>
+            <p class="subtitle">Welcome to the void.</p>
+            <button class="call-to-action">Explore Further</button>
+          </div>
+          <div class="fore">
+            <div class="title">FIRST FORE</div>
+          </div>
+          <div class="fore">
+            <div class="title">FORE</div>
+          </div>
+        </div>
+        <div class="parallax_layer layer_base">
+          <div class="base">
+            <div class="title">FIRST BASE</div>
+          </div>
+          <div class="base">
+            <div class="title">BASE</div>
+          </div>
+        </div>
+        <div class="parallax_layer layer_back">
+          <div class="back">
+            <div class="title">FIRST BACK</div>
+          </div>
+          <div class="back">
+            <div class="title">BACK</div>
+          </div>
+        </div>
+        <div class="parallax_layer layer_deep">
+          <div class="title">DEEP BACKGROUND</div>
+        </div>
+      </div>
+
+      <div class="parallax_group new-animation-group">
+        <div class="container">
+          <div class="box" style="--i: 1"></div>
+          <div class="box" style="--i: 2"></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="webgl-modal" class="modal">
+      <div class="modal-content">
+        <span class="close-button">&times;</span>
+        <p>
+          Your browser does not support WebGL. Please try a different browser or
+          update your graphics drivers.
+        </p>
+      </div>
+    </div>
+
+    <script>
+      // --- Grok's Black Hole WebGL Script ---
+      (function () {
+        const canvas = document.getElementById("glcanvas");
+        const gl = canvas.getContext("webgl");
+        const webglModal = document.getElementById("webgl-modal");
+        const closeButton = document.querySelector(".close-button");
+
+        function showModal() {
+          webglModal.style.display = "block";
+        }
+        function hideModal() {
+          webglModal.style.display = "none";
+        }
+        closeButton.addEventListener("click", hideModal);
+        window.addEventListener("click", (event) => {
+          if (event.target == webglModal) {
+            hideModal();
+          }
+        });
+
+        if (!gl) {
+          showModal();
+          return;
+        }
+
+        const vsSource = `
+                attribute vec2 a_position;
+                void main() { gl_Position = vec4(a_position, 0.0, 1.0); }
+            `;
+        const fsSource = `
+                precision mediump float;
+                uniform float t;
+                uniform vec2 r;
+                vec2 myTanh(vec2 x) {
+                    vec2 ex = exp(x);
+                    vec2 emx = exp(-x);
+                    return (ex - emx) / (ex + emx);
+                }
+                void main() {
+                    vec4 o_bg = vec4(0.0);
+                    vec4 o_anim = vec4(0.0);
+                    {
+                        vec2 p_img = (gl_FragCoord.xy * 2.0 - r) / r.y * mat2(1.0, -1.0, 1.0, 1.0);
+                        vec2 l_val = myTanh(p_img * 5.0 + 2.0);
+                        l_val = min(l_val, l_val * 3.0);
+                        vec2 clamped = clamp(l_val, -2.0, 0.0);
+                        float diff_y = clamped.y - l_val.y;
+                        float safe_px = abs(p_img.x) < 0.001 ? 0.001 : p_img.x;
+                        float term = (0.1 - max(0.01 - dot(p_img, p_img) / 200.0, 0.0) * (diff_y / safe_px))
+                                     / abs(length(p_img) - 0.7);
+                        o_bg += vec4(term);
+                        o_bg *= max(o_bg, vec4(0.0));
+                    }
+                    {
+                        vec2 p_anim = (gl_FragCoord.xy * 2.0 - r) / r.y / 0.7;
+                        vec2 d = vec2(-1.0, 1.0);
+                        float denom = 0.1 + 5.0 / dot(5.0 * p_anim - d, 5.0 * p_anim - d);
+                        vec2 c = p_anim * mat2(1.0, 1.0, d.x / denom, d.y / denom);
+                        vec2 v = c;
+                        v *= mat2(cos(log(length(v)) + t * 0.2 + vec4(0.0, 33.0, 11.0, 0.0))) * 5.0;
+                        vec4 animAccum = vec4(0.0);
+                        for (int i = 1; i <= 9; i++) {
+                            float fi = float(i);
+                            animAccum += sin(vec4(v.x, v.y, v.y, v.x)) + vec4(1.0);
+                            v += 0.7 * sin(vec2(v.y, v.x) * fi + t) / fi + 0.5;
+                        }
+                        vec4 animTerm = 1.0 - exp(-exp(c.x * vec4(0.6, -0.4, -1.0, 0.0))
+                                                     / animAccum
+                                                     / (0.1 + 0.1 * pow(length(sin(v / 0.3) * 0.2 + c * vec2(1.0, 2.0)) - 1.0, 2.0))
+                                                     / (1.0 + 7.0 * exp(0.3 * c.y - dot(c, c)))
+                                                     / (0.03 + abs(length(p_anim) - 0.7)) * 0.2);
+                        o_anim += animTerm;
+                    }
+                    vec4 finalColor = mix(o_bg, o_anim, 0.5) * 1.5;
+                    finalColor = clamp(finalColor, 0.0, 1.0);
+                    gl_FragColor = finalColor;
+                }
+            `;
+
+        function createShader(gl, type, source) {
+          const shader = gl.createShader(type);
+          gl.shaderSource(shader, source);
+          gl.compileShader(shader);
+          if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+            console.error(
+              "Shader compile failed with: " + gl.getShaderInfoLog(shader)
+            );
+            gl.deleteShader(shader);
+            return null;
+          }
+          return shader;
+        }
+
+        function createProgram(gl, vsSource, fsSource) {
+          const vertexShader = createShader(gl, gl.VERTEX_SHADER, vsSource);
+          const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fsSource);
+          const program = gl.createProgram();
+          gl.attachShader(program, vertexShader);
+          gl.attachShader(program, fragmentShader);
+          gl.linkProgram(program);
+          if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+            console.error(
+              "Program failed to link: " + gl.getProgramInfoLog(program)
+            );
+            gl.deleteProgram(program);
+            return null;
+          }
+          return program;
+        }
+
+        const program = createProgram(gl, vsSource, fsSource);
+        gl.useProgram(program);
+
+        const positionLocation = gl.getAttribLocation(program, "a_position");
+        const timeLocation = gl.getUniformLocation(program, "t");
+        const resolutionLocation = gl.getUniformLocation(program, "r");
+
+        const vertices = new Float32Array([
+          -1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, 1,
+        ]);
+
+        const buffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+        gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
+
+        gl.enableVertexAttribArray(positionLocation);
+        gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
+
+        function resize() {
+          const parent = canvas.parentElement;
+          if (parent) {
+            canvas.width = parent.clientWidth;
+            canvas.height = parent.clientHeight;
+          } else {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+          }
+          gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
+        }
+
+        window.addEventListener("resize", resize);
+        resize();
+
+        let startTime = performance.now();
+
+        function render() {
+          let currentTime = performance.now();
+          let delta = (currentTime - startTime) / 1000;
+          gl.uniform1f(timeLocation, delta);
+          gl.uniform2f(resolutionLocation, canvas.width, canvas.height);
+          gl.drawArrays(gl.TRIANGLES, 0, 6);
+          requestAnimationFrame(render);
+        }
+
+        requestAnimationFrame(render);
+      })();
+
+      const parallaxContainer = document.querySelector(".parallax");
+      parallaxContainer.addEventListener("scroll", () => {
+        const scrollTop = parallaxContainer.scrollTop;
+        // console.log('Parallax Scroll Top:', scrollTop);
+      });
+    </script>
+  </body>
+</html>

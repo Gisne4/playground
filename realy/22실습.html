@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <script src="js/jquery-3.7.1.min.js"></script>
+    <style>
+      * {
+        margin: 0px;
+        padding: 0px;
+      }
+      li {
+        list-style: none;
+      }
+      .small {
+        position: relative;
+        display: flex;
+        z-index: 100;
+      }
+      body {
+        justify-items: center;
+      }
+      .large {
+        width: 300px;
+        height: 300px;
+      }
+      .small img {
+        width: 50px;
+        height: 50px;
+        margin: 10px;
+      }
+      .pic01 {
+        transform: scale(1.5);
+      }
+      .large img {
+        width: 300px;
+        height: 300px;
+        object-fit: cover;
+        transition: 0.5s;
+        display: none;
+      }
+
+      .large {
+        position: relative;
+      }
+
+      .large li {
+        width: 300px;
+        height: 300px;
+        position: absolute;
+        left: 0px;
+        top: 0px;
+        overflow: hidden;
+        box-sizing: border-box;
+      }
+
+      .large .active img {
+        display: block;
+      }
+    </style>
+  </head>
+  <body>
+    <ul class="large">
+      <li class="pic01 active"><img src="img/pic1.jpg" alt="" /></li>
+      <li class="pic02"><img src="img/pic2.jpg" alt="" /></li>
+      <li class="pic03"><img src="img/pic3.jpg" alt="" /></li>
+      <li class="pic04"><img src="img/pic4.jpg" alt="" /></li>
+    </ul>
+    <ul class="small">
+      <li class="pic1"><img src="img/pic1.jpg" alt="" /></li>
+      <li class="pic2"><img src="img/pic2.jpg" alt="" /></li>
+      <li class="pic3"><img src="img/pic3.jpg" alt="" /></li>
+      <li class="pic4"><img src="img/pic4.jpg" alt="" /></li>
+    </ul>
+
+    <script>
+      $(".small li").on("click", function () {
+        i = $(this).index();
+        console.log(i);
+        $(".large li").removeClass("active").css({ transform: "scale(1)" });
+        $(".large li")
+          .eq(i)
+          .addClass("active")
+          .css({ transform: "scale(1.5)", transition: "1s" });
+        // $(".large li").css({ transform: "scale(1)" });
+      });
+    </script>
+  </body>
+</html>
