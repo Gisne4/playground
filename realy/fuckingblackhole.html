@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Grok's Black Hole</title>
+    <title>Grok's Black Hole - Hurricane Distortion</title>
     <link
       href="https://fonts.googleapis.com/css?family=Dosis:200,400"
       rel="stylesheet"
@@ -25,252 +25,157 @@
         width: 100vw;
         height: 100vh;
       }
-
-      /* Styles for the links block, positioning it absolutely */
-      .links {
-        position: absolute;
-        list-style: none; /* Removes default list bullets */
-        width: 180px;
-        bottom: 40px;
-        right: 20px;
-        padding: 0;
-        margin: 0;
-      }
-
-      /* Styles for each list item in the links block */
-      .links li {
-        border-bottom: rgba(255, 255, 255, 0.1) 1px solid; /* Light, transparent bottom border */
-      }
-
-      /* Styles for the anchor tags within the list items */
-      .links li a {
-        transition: opacity 0.2s ease-out; /* Smooth opacity transition on hover */
-        -webkit-font-smoothing: subpixel-antialiased; /* Font rendering optimization for WebKit browsers */
-        font-family: "Dosis", sans-serif; /* Font family from Google Fonts */
-        text-transform: uppercase; /* Uppercase text */
-        text-align: right; /* Right-align text */
-        padding: 0.25em 0; /* Vertical padding */
-        letter-spacing: 2px; /* Letter spacing */
-        font-weight: 200; /* Light font weight */
-        font-size: 12px; /* Font size */
-        display: block; /* Makes the entire line clickable */
-        width: 100%; /* Occupies full width of the parent list item */
-        opacity: 0.4; /* Initial opacity (semi-transparent) */
-        color: #fff; /* White text color */
-        text-decoration: none; /* Remove underline from links */
-      }
-
-      /* Increased opacity on hover for links */
-      .links li a:hover {
-        opacity: 0.8;
-      }
-
-      /* Pseudo-element to add an '@' before the "who" link */
-      .links li .who:before {
-        opacity: 0.5;
-        content: "@";
-        float: left;
-      }
-
-      /* Pseudo-element to add '</>' before the "blog" link */
-      .links li .blog:before {
-        opacity: 0.5;
-        content: "</>";
-        float: left;
-      }
-
-      /* Modal styling for WebGL not supported message */
-      .modal {
-        display: none; /* Hidden by default */
-        position: fixed; /* Stay in place */
-        z-index: 1; /* Sit on top */
-        left: 0;
-        top: 0;
-        width: 100%; /* Full width */
-        height: 100%; /* Full height */
-        overflow: auto; /* Enable scroll if needed */
-        background-color: rgba(0, 0, 0, 0.4); /* Black w/ opacity */
-      }
-
-      .modal-content {
-        background-color: #fefefe;
-        margin: 15% auto; /* 15% from the top and centered */
-        padding: 20px;
-        border: 1px solid #888;
-        width: 80%; /* Could be more or less, depending on screen size */
-        max-width: 500px; /* Max width for larger screens */
-        text-align: center;
-        border-radius: 8px;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-        font-family: "Dosis", sans-serif;
-        color: #333;
-      }
-
-      .close-button {
-        color: #aaa;
-        float: right;
-        font-size: 28px;
-        font-weight: bold;
-      }
-
-      .close-button:hover,
-      .close-button:focus {
-        color: black;
-        text-decoration: none;
-        cursor: pointer;
-      }
     </style>
   </head>
   <body>
     <canvas id="glcanvas"></canvas>
 
-    <!-- The Modal for WebGL unsupported message -->
-    <div id="webgl-modal" class="modal">
-      <div class="modal-content">
-        <span class="close-button">&times;</span>
-        <p>
-          Your browser does not support WebGL. Please try a different browser or
-          update your graphics drivers.
-        </p>
-      </div>
-    </div>
-
     <script>
-      // Inspired by https://x.com/XorDev and https://x.com/lamps_apple
       (function () {
         const canvas = document.getElementById("glcanvas");
         const gl = canvas.getContext("webgl");
-        const webglModal = document.getElementById("webgl-modal");
-        const closeButton = document.querySelector(".close-button");
-
-        // Function to show the modal
-        function showModal() {
-          webglModal.style.display = "block";
-        }
-
-        // Function to hide the modal
-        function hideModal() {
-          webglModal.style.display = "none";
-        }
-
-        // Event listener for the close button
-        closeButton.addEventListener("click", hideModal);
-
-        // Close the modal if the user clicks outside of it
-        window.addEventListener("click", (event) => {
-          if (event.target == webglModal) {
-            hideModal();
-          }
-        });
-
-        // Check for WebGL support
-        if (!gl) {
-          showModal(); // Show custom modal instead of alert
-          return;
-        }
 
         // Vertex shader source code
         // This shader simply passes through the position data.
         const vsSource = `
-                attribute vec2 a_position;
-                void main() {
-                    gl_Position = vec4(a_position, 0.5, 1.0);
-                }
-            `;
+                    attribute vec2 a_position;
+                    void main() {
+                        gl_Position = vec4(a_position, 0.0, 1.0);
+                    }
+                `;
 
         // Fragment shader source code
-        // This shader creates the visual effect of the black hole.
-        // It combines a background layer and an animated foreground layer.
+        // This shader creates the visual effect of the black hole with added rotation and distortion.
+        // It combines a background layer and an animated foreground layer,
+        // applying transformations to the fragment coordinates before calculating the effects.
         const fsSource = `
-                precision mediump float;
-                uniform float t; // Time uniform for animation
-                uniform vec2 r;  // Resolution uniform (width, height)
+                    precision mediump float;
+                    uniform float t; // Time uniform for animation
+                    uniform vec2 r;  // Resolution uniform (width, height)
+                    uniform float u_rotateSpeed; // Uniform for rotation speed
+                    uniform float u_distortionStrength; // Uniform for distortion strength
+                    uniform float u_distortionSpeed; // Uniform for distortion frequency/tightness
+                    uniform float u_scale; // Uniform for overall scale
 
-                // Custom tanh function for vec2 since built-in tanh is unavailable in WebGL GLSL for vec2.
-                // This function calculates the hyperbolic tangent for each component of a vec2.
-                vec2 myTanh(vec2 x) {
-                    vec2 ex = exp(x);
-                    vec2 emx = exp(-x);
-                    return (ex - emx) / (ex + emx);
-                }
 
-                void main() {
-                    vec4 o_bg = vec4(0.0);   // Initialize background color
-                    vec4 o_anim = vec4(0.0); // Initialize animation color
-
-                    // ---------------------------
-                    // Background (Image) Layer calculations
-                    // ---------------------------
-                    {
-                        // Transform fragment coordinates to a normalized space, scaled by aspect ratio.
-                        // The mat2(1.0, -1.0, 1.0, 1.0) applies a rotation and skew.
-                        vec2 p_img = (gl_FragCoord.xy * 2.0 - r) / r.y * mat2(1.0, -1.0, 1.0, 1.0);
-
-                        // Apply custom tanh function and clamp values for the background effect.
-                        vec2 l_val = myTanh(p_img * 5.0 + 2.0);
-                        l_val = min(l_val, l_val * 3.0);
-                        vec2 clamped = clamp(l_val, -2.0, 0.0);
-
-                        // Calculate difference in y-component after clamping.
-                        float diff_y = clamped.y - l_val.y;
-
-                        // Calculate a term that contributes to the background color.
-                        // Added a small epsilon to safe_px to prevent division by zero when p_img.x is near zero.
-                        float safe_px = abs(p_img.x) < 0.001 ? 0.001 : p_img.x;
-                        float term = (0.1 - max(0.01 - dot(p_img, p_img) / 200.0, 0.0) * (diff_y / safe_px))
-                                     / abs(length(p_img) - 0.7);
-
-                        o_bg += vec4(term);
-                        // Ensure background color components are non-negative.
-                        o_bg *= max(o_bg, vec4(0.0));
+                    // Custom tanh function for vec2 since built-in tanh is unavailable in WebGL GLSL for vec2.
+                    // This function calculates the hyperbolic tangent for each component of a vec2.
+                    vec2 myTanh(vec2 x) {
+                        vec2 ex = exp(x);
+                        vec2 emx = exp(-x);
+                        return (ex - emx) / (ex + emx);
                     }
 
-                    // ---------------------------
-                    // Foreground (Animation) Layer calculations
-                    // ---------------------------
-                    {
-                        // Transform fragment coordinates for the animation layer.
-                        vec2 p_anim = (gl_FragCoord.xy * 2.0 - r) / r.y / 0.7;
-                        vec2 d = vec2(-1.0, 1.0);
+                    void main() {
+                        vec4 o_bg = vec4(0.0);   // Initialize background color
+                        vec4 o_anim = vec4(0.0); // Initialize animation color
 
-                        // Calculate a denominator for complex transformation.
-                        float denom = 0.1 + 5.0 / dot(5.0 * p_anim - d, 5.0 * p_anim - d);
+                        // Normalized fragment coordinates, with origin at center, adjusted for aspect ratio.
+                        // This is the initial coordinate space for distortion and rotation.
+                        vec2 initial_uv_normalized = (gl_FragCoord.xy * 2.0 - r) / r.y;
 
-                        // Apply a transformation to 'c' based on 'p_anim' and 'd'.
-                        vec2 c = p_anim * mat2(1.0, 1.0, d.x / denom, d.y / denom);
-                        vec2 v = c;
+                        // Apply overall scale to the initial normalized UV coordinates
+                        initial_uv_normalized *= u_scale;
 
-                        // Apply a time-varying transformation to 'v' for animation.
-                        // The mat2 uses a combination of cosine and logarithm for dynamic movement.
-                        v *= mat2(cos(log(length(v)) + t * 0.2 + vec4(0.0, 33.0, 11.0, 0.0))) * 5.0;
+                        // --- Distortion and Rotation Logic ---
+                        // Define animation parameters for rotation and distortion
+                        float angle = t * u_rotateSpeed; // Controls the speed of rotation (now using uniform)
 
-                        vec4 animAccum = vec4(0.0);
-                        // Loop to create iterative animation patterns.
-                        for (int i = 1; i <= 9; i++) {
-                            float fi = float(i);
-                            animAccum += sin(vec4(v.x, v.y, v.y, v.x)) + vec4(1.0);
-                            v += 0.7 * sin(vec2(v.y, v.x) * fi + t) / fi + 0.5;
+                        // Calculate a 2D rotation matrix based on the current angle
+                        mat2 rotation = mat2(cos(angle), -sin(angle),
+                                             sin(angle),  cos(angle));
+
+                        // Calculate the distance from the center for distortion effect
+                        float dist = length(initial_uv_normalized);
+                        // Normalize initial_uv_normalized to get direction vector. Handle division by zero.
+                        vec2 normalized_initial_uv_direction = (dist == 0.0) ? vec2(0.0) : initial_uv_normalized / dist;
+
+                        // Create a distortion factor using a sine wave, dependent on distance and time.
+                        // This causes a rippling/swirling effect pushing pixels outwards/inwards.
+                        float distortFactor = sin(dist * u_distortionSpeed + t * 2.0) * u_distortionStrength; // Now using uniforms
+                        // Apply distortion by adding a perturbed vector based on the distortion factor
+                        vec2 distorted_uv = initial_uv_normalized + normalized_initial_uv_direction * distortFactor;
+
+                        // Apply the calculated rotation to the distorted coordinates
+                        vec2 final_transformed_uv = rotation * distorted_uv;
+                        // --- End Distortion and Rotation Logic ---
+
+
+                        // ---------------------------
+                        // Background (Image) Layer calculations
+                        // These calculations now use the final_transformed_uv
+                        // ---------------------------
+                        {
+                            // Transform coordinates for the background layer, using the new transformed UV.
+                            // The mat2(1.0, -1.0, 1.0, 1.0) applies a specific rotation and skew.
+                            vec2 p_img = final_transformed_uv * mat2(1.0, -1.0, 1.0, 1.0);
+
+                            // Apply custom tanh function and clamp values for the background effect.
+                            vec2 l_val = myTanh(p_img * 5.0 + 2.0);
+                            l_val = min(l_val, l_val * 3.0);
+                            vec2 clamped = clamp(l_val, -2.0, 0.0);
+
+                            // Calculate difference in y-component after clamping.
+                            float diff_y = clamped.y - l_val.y;
+
+                            // Calculate a term that contributes to the background color.
+                            // Added a small epsilon to safe_px to prevent division by zero when p_img.x is near zero.
+                            float safe_px = abs(p_img.x) < 0.001 ? 0.001 : p_img.x;
+                            float term = (0.1 - max(0.01 - dot(p_img, p_img) / 200.0, 0.0) * (diff_y / safe_px))
+                                         / abs(length(p_img) - 0.7);
+
+                            o_bg += vec4(term);
+                            // Ensure background color components are non-negative.
+                            o_bg *= max(o_bg, vec4(0.0));
                         }
 
-                        // Calculate the final animated term using various complex functions.
-                        vec4 animTerm = 1.0 - exp(-exp(c.x * vec4(0.6, -0.4, -1.0, 0.0))
-                                             / animAccum
-                                             / (0.1 + 0.1 * pow(length(sin(v / 0.3) * 0.2 + c * vec2(1.0, 2.0)) - 1.0, 2.0))
-                                             / (1.0 + 7.0 * exp(0.3 * c.y - dot(c, c)))
-                                             / (0.03 + abs(length(p_anim) - 0.7)) * 0.2);
-                        o_anim += animTerm;
-                    }
+                        // ---------------------------
+                        // Foreground (Animation) Layer calculations
+                        // These calculations now use the final_transformed_uv
+                        // ---------------------------
+                        {
+                            // Transform coordinates for the animation layer, using the new transformed UV.
+                            vec2 p_anim = final_transformed_uv / 0.7;
+                            vec2 d = vec2(-1.0, 1.0);
 
-                    // ---------------------------
-                    // Blend Layers and final color output
-                    // ---------------------------
-                    // Mix the background and animation layers with 50% opacity for the animation.
-                    // Boost brightness by multiplying by 1.5 to make the output visible, then clamp.
-                    vec4 finalColor = mix(o_bg, o_anim, 0.5) * 1.5;
-                    finalColor = clamp(finalColor, 0.0, 1.0); // Clamp colors to valid range [0, 1]
-                    gl_FragColor = finalColor; // Set the final fragment color
-                }
-            `;
+                            // Calculate a denominator for complex transformation.
+                            float denom = 0.1 + 5.0 / dot(5.0 * p_anim - d, 5.0 * p_anim - d);
+
+                            // Apply a transformation to 'c' based on 'p_anim' and 'd'.
+                            vec2 c = p_anim * mat2(1.0, 1.0, d.x / denom, d.y / denom);
+                            vec2 v = c;
+
+                            // Apply a time-varying transformation to 'v' for animation.
+                            // The mat2 uses a combination of cosine and logarithm for dynamic movement.
+                            v *= mat2(cos(log(length(v)) + t * 0.2 + vec4(0.0, 33.0, 11.0, 0.0))) * 5.0;
+
+                            vec4 animAccum = vec4(0.0);
+                            // Loop to create iterative animation patterns.
+                            for (int i = 1; i <= 9; i++) {
+                                float fi = float(i);
+                                animAccum += sin(vec4(v.x, v.y, v.y, v.x)) + vec4(1.0);
+                                v += 0.7 * sin(vec2(v.y, v.x) * fi + t) / fi + 0.5;
+                            }
+
+                            // Calculate the final animated term using various complex functions.
+                            vec4 animTerm = 1.0 - exp(-exp(c.x * vec4(0.6, -0.4, -1.0, 0.0))
+                                                      / animAccum
+                                                      / (0.1 + 0.1 * pow(length(sin(v / 0.3) * 0.2 + c * vec2(1.0, 2.0)) - 1.0, 2.0))
+                                                      / (1.0 + 7.0 * exp(0.3 * c.y - dot(c, c)))
+                                                      / (0.03 + abs(length(p_anim) - 0.7)) * 0.2);
+                            o_anim += animTerm;
+                        }
+
+                        // ---------------------------
+                        // Blend Layers and final color output
+                        // ---------------------------
+                        // Mix the background and animation layers with 50% opacity for the animation.
+                        // Boost brightness by multiplying by 1.5 to make the output visible, then clamp.
+                        vec4 finalColor = mix(o_bg, o_anim, 0.5) * 1.5;
+                        finalColor = clamp(finalColor, 0.0, 1.0); // Clamp colors to valid range [0, 1]
+                        gl_FragColor = finalColor; // Set the final fragment color
+                    }
+                `;
 
         // Utility function to compile a WebGL shader.
         function createShader(gl, type, source) {
@@ -321,6 +226,27 @@
         const timeLocation = gl.getUniformLocation(program, "t");
         const resolutionLocation = gl.getUniformLocation(program, "r");
 
+        // Get locations for the new uniforms
+        const rotateSpeedLocation = gl.getUniformLocation(
+          program,
+          "u_rotateSpeed"
+        );
+        const distortionStrengthLocation = gl.getUniformLocation(
+          program,
+          "u_distortionStrength"
+        );
+        const distortionSpeedLocation = gl.getUniformLocation(
+          program,
+          "u_distortionSpeed"
+        );
+        const scaleLocation = gl.getUniformLocation(program, "u_scale"); // Get location for new scale uniform
+
+        // Define default values for the new constants
+        const DEFAULT_ROTATE_SPEED = 0.5; // Slightly increased for more swirling motion
+        const DEFAULT_DISTORTION_STRENGTH = 0.0; // Increased for more pronounced distortion
+        const DEFAULT_DISTORTION_SPEED = 0.0; // Increased for tighter, faster ripples
+        const DEFAULT_SCALE = 1.0; // New default scale value
+
         // Define vertices for a full-screen quad (two triangles).
         // This quad will cover the entire canvas.
         const vertices = new Float32Array([
@@ -368,6 +294,12 @@
           // Pass the elapsed time and canvas resolution to the shader as uniforms.
           gl.uniform1f(timeLocation, delta);
           gl.uniform2f(resolutionLocation, canvas.width, canvas.height);
+
+          // Pass the new constant values to their respective uniforms
+          gl.uniform1f(rotateSpeedLocation, DEFAULT_ROTATE_SPEED);
+          gl.uniform1f(distortionStrengthLocation, DEFAULT_DISTORTION_STRENGTH);
+          gl.uniform1f(distortionSpeedLocation, DEFAULT_DISTORTION_SPEED);
+          gl.uniform1f(scaleLocation, DEFAULT_SCALE); // Pass the new scale uniform
 
           // Draw the full-screen quad using the specified shader program.
           gl.drawArrays(gl.TRIANGLES, 0, 6); // Draw 6 vertices (2 triangles)

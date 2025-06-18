@@ -29,6 +29,9 @@
         justify-content: center;
         padding: 1rem;
         margin: 0;
+        height: 100vh;
+        box-sizing: border-box;
+        gap: 5%;
       }
 
       .container {
@@ -387,20 +390,6 @@
             <span id="pressure">Loading...</span>
           </p>
         </div>
-        <div class="input-message-section">
-          <div class="input-group">
-            <input
-              type="text"
-              id="city-input"
-              placeholder="Enter city name"
-              class="city-input"
-            />
-            <button id="get-weather-btn" class="get-weather-btn">
-              Get Weather
-            </button>
-          </div>
-          <div id="message-box" class="message-box hidden" role="alert"></div>
-        </div>
       </div>
 
       <div class="forecast-section">
@@ -415,8 +404,22 @@
         </ul>
       </div>
     </div>
-    <div id="map"></div>
-    <div id="chartjs-tooltip" class="chartjs-tooltip"></div>
+    <div class="input-message-section">
+      <div class="input-group">
+        <input
+          type="text"
+          id="city-input"
+          placeholder="Enter city name"
+          class="city-input"
+        />
+        <button id="get-weather-btn" class="get-weather-btn">
+          Get Weather
+        </button>
+      </div>
+      <div id="message-box" class="message-box hidden" role="alert"></div>
+      <div id="map"></div>
+      <div id="chartjs-tooltip" class="chartjs-tooltip"></div>
+    </div>
 
     <script>
       // API Key for OpenWeatherMap - Replace with your own key if needed
