@@ -36,9 +36,9 @@
         --card-radius: 30px;
 
         /* NEW CUSTOM COLOR VARIABLES */
-        --pc-main-bg: #1a1a1a;
-        --pc-text-light: white;
-        --pc-text-medium: rgba(255, 255, 255, 0.7);
+        --pc-main-bg: #08192c;
+        --pc-text-light: rgb(142, 206, 231);
+        --pc-text-medium: rgba(42, 115, 138, 0.7);
         --pc-card-inner-bg-opacity: 0.9;
         --pc-glass-base-opacity: 0.1; /* For info box background/border, button border */
         --pc-button-hover-opacity: 0.4; /* For button hover border */
@@ -46,23 +46,13 @@
         --pc-p-gradient-bottom: #4a4ac0;
       }
 
-      body {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        min-height: 100vh;
-        margin: 0;
-        background-color: var(--pc-main-bg);
-        font-family: sans-serif;
-        color: var(--pc-text-light);
-        overflow: hidden;
-      }
-
       .pc-card-wrapper {
         perspective: 500px;
         transform: translate3d(0, 0, 0.1px);
-        position: relative;
+        position: absolute;
         touch-action: none;
+        right: 100px;
+        top: 50%;
       }
 
       .pc-card-wrapper::before {
@@ -372,6 +362,7 @@
         cursor: pointer;
         transition: all 0.2s ease;
         backdrop-filter: blur(10px);
+        background-color: var(--pc-main-bg);
       }
 
       .pc-contact-btn:hover {
@@ -659,10 +650,10 @@
       const CFG = { S: 600, I: 1500, IX: 70, IY: 60 };
       const N = "KRLEE",
         T = "Software Engineer",
-        H = "javicodes",
+        H = "GISNE4",
         S = "Online",
         CT = "Contact Me",
-        A = "../img/Untitled-2.png";
+        A = "https://gisne4.github.io/playground/img/Untitled-2.png";
       // NEW: Customizable Color/Design Values
       const CLR = {
         mainBg: "#1a1a1a",
